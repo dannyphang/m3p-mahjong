@@ -207,6 +207,8 @@ export class App implements OnDestroy, AfterViewChecked {
 
     this.socket.on('gameOver', (details) => {
       this.hideGameOverModal.set(false);
+      const honorOrder = ['东', '南', '西', '北', '中', '发', '白'];
+      
       if (details && details.hand) {
         if (details.winningTile) {
           const wIdx = details.hand.findIndex((t: Tile) => t.type === details.winningTile.type && t.value === details.winningTile.value);
@@ -214,9 +216,17 @@ export class App implements OnDestroy, AfterViewChecked {
             details.hand.splice(wIdx, 1);
           }
         }
-        const honorOrder = ['东', '南', '西', '北', '中', '发', '白'];
         regularHandSort(details.hand, honorOrder);
       }
+      
+      if (details && details.allHands) {
+        Object.values(details.allHands).forEach((handArray: any) => {
+          if (Array.isArray(handArray)) {
+            regularHandSort(handArray, honorOrder);
+          }
+        });
+      }
+      
       this.gameOverDetails.set(details);
     });
 

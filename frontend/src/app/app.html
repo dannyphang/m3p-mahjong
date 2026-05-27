@@ -421,14 +421,36 @@
                 </div>
               }
 
+              <!-- All Players Hands -->
+              @if (details.allHands) {
+                <div style="margin-bottom: 24px; padding-top: 16px; border-top: 1px solid #333;">
+                  <h4 style="color: var(--gold-primary); margin-bottom: 12px; font-size: 14px;">Players' Final Hands & Feis:</h4>
+                  @for (p of gameState()?.players; track p.id) {
+                    <div style="margin-bottom: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px;">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                        <span style="color: #fff;">{{ p.name }}</span>
+                        <span style="color: #fdd835;">Total Feis: {{ details.totalFeis?.[p.id] || 0 }}</span>
+                      </div>
+                      <div style="display: flex; gap: 2px; flex-wrap: wrap;">
+                        @for (t of details.allHands[p.id]; track $index) {
+                          <div class="mj-tile-small" style="width: 24px; height: 32px; cursor: default;">
+                            <img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain;" />
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
               <!-- Settlements coins exchanges -->
-              <div style="margin-bottom: 24px;">
+              <div style="margin-bottom: 24px; border-top: 1px solid #333; padding-top: 16px;">
                 <h4 style="color: var(--gold-primary); margin-bottom: 8px; font-size: 14px;">Settlements Ledger:</h4>
                 @for (p of gameState()?.players; track p.id) {
                   <div class="score-row">
                     <span>{{ p.name }}</span>
-                    <strong [style.color]="(details.settlements?.[p.id] || 0) > 0 ? '#4caf50' : (details.settlements?.[p.id] || 0) < 0 ? '#f44336' : '#a0a0ab'">
-                      {{ (details.settlements?.[p.id] || 0) > 0 ? '+' : '' }}{{ details.settlements?.[p.id] || 0 }} Coins
+                    <strong [style.color]="(details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) > 0 ? '#4caf50' : (details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) < 0 ? '#f44336' : '#a0a0ab'">
+                      {{ (details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) > 0 ? '+' : '' }}{{ (details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) }} Coins
                     </strong>
                   </div>
                 }

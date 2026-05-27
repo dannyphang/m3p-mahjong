@@ -94,11 +94,16 @@ class GameState {
 
   processImmediatePayout(playerId, amount, reason, targetId = null) {
     let received = 0;
+
     this.players.forEach(p => {
       if (p.id !== playerId) {
         if (!targetId || p.id === targetId) {
-          this.accumulatedPoints[p.id] -= amount;
-          received += amount;
+          let actualAmount = amount;
+
+          if (actualAmount > 0) {
+            this.accumulatedPoints[p.id] -= actualAmount;
+            received += actualAmount;
+          }
         }
       }
     });
@@ -817,7 +822,6 @@ class GameState {
       const flyTile = hand.splice(flyIdx, 1)[0];
       this.flowers[playerId].push(flyTile);
       this.addLog(`${player.name} exposes Joker (炖飞)!`);
-      this.processImmediatePayout(playerId, 1, '炖飞 (Exposing Joker)');
       
       this.broadcastState();
       // Draw compensation card
@@ -890,9 +894,33 @@ class GameState {
       settlements[winnerId] += payout;
     }
 
+    // Calculate End-of-Round Fei Settlements
+    const totalFeis = {};
+    const allHands = {};
+    this.players.forEach(p => {
+      const exposedFeis = this.flowers[p.id].filter(f => f.type === 'fly').length;
+      const hiddenFeis = this.hands[p.id].filter(t => t.type === 'fly').length;
+      totalFeis[p.id] = exposedFeis + hiddenFeis;
+      allHands[p.id] = p.id === winnerId ? finalHand : [...this.hands[p.id]];
+    });
+
+    const feiSettlements = {};
+    this.players.forEach(p => feiSettlements[p.id] = 0);
+    for (let i = 0; i < this.players.length; i++) {
+      for (let j = i + 1; j < this.players.length; j++) {
+        const p1 = this.players[i].id;
+        const p2 = this.players[j].id;
+        const diff = totalFeis[p1] - totalFeis[p2];
+        if (diff !== 0) {
+          feiSettlements[p1] += diff;
+          feiSettlements[p2] -= diff;
+        }
+      }
+    }
+
     // Apply settlements to accumulated points
     this.players.forEach(p => {
-      this.accumulatedPoints[p.id] += settlements[p.id];
+      this.accumulatedPoints[p.id] += settlements[p.id] + feiSettlements[p.id];
     });
 
     // Calculate next dealer index for the next round (don't apply it to current state yet)
@@ -913,6 +941,9 @@ class GameState {
       flowers: this.flowers[winnerId],
       scoreResult,
       settlements,
+      feiSettlements,
+      allHands,
+      totalFeis,
       isSelfDraw,
       isTianHu,
       isDiHu
@@ -927,9 +958,44 @@ class GameState {
     this.nextConsecutiveDealerWins = this.consecutiveDealerWins + 1; // Dealer連庄
     this.nextDealerIndex = this.dealerIndex;
 
+    const totalFeis = {};
+    const allHands = {};
+    this.players.forEach(p => {
+      const exposedFeis = this.flowers[p.id].filter(f => f.type === 'fly').length;
+      const hiddenFeis = this.hands[p.id].filter(t => t.type === 'fly').length;
+      totalFeis[p.id] = exposedFeis + hiddenFeis;
+      allHands[p.id] = [...this.hands[p.id]];
+    });
+
+    const feiSettlements = {};
+    const settlements = {};
+    this.players.forEach(p => {
+      feiSettlements[p.id] = 0;
+      settlements[p.id] = 0;
+    });
+
+    for (let i = 0; i < this.players.length; i++) {
+      for (let j = i + 1; j < this.players.length; j++) {
+        const p1 = this.players[i].id;
+        const p2 = this.players[j].id;
+        const diff = totalFeis[p1] - totalFeis[p2];
+        if (diff !== 0) {
+          feiSettlements[p1] += diff;
+          feiSettlements[p2] -= diff;
+        }
+      }
+    }
+
+    this.players.forEach(p => {
+      this.accumulatedPoints[p.id] += feiSettlements[p.id];
+    });
+
     io.to(this.roomId).emit('gameOver', {
       draw: true,
-      settlements: this.players.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
+      settlements,
+      feiSettlements,
+      allHands,
+      totalFeis
     });
     this.broadcastState();
   }
