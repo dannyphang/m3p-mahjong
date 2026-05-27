@@ -580,6 +580,12 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
     breakdown.push({ name: '十八罗汉 (Eighteen Arhats)', fan: 10 });
   }
 
+  // La Ta Hu / No Flowers (邋遢胡 / 无花)
+  if (flowers.length === 0) {
+    totalFan += 10;
+    breakdown.push({ name: '邋遢胡 (No Flowers)', fan: 10 });
+  }
+
   // Cap at 10 Fan max (爆番/Limit)
   if (totalFan > 10) {
     totalFan = 10;
