@@ -856,30 +856,20 @@ class GameState {
     });
 
     if (isSelfDraw) {
-      // Self draw: All other players pay winner.
-      // Dealer pays / receives double
+      // Self draw: All other players pay winner x1
       this.players.forEach(p => {
         if (p.id === winnerId) return;
 
-        let multiplier = 1;
-        if (winnerId === this.players[this.dealerIndex].id || p.id === this.players[this.dealerIndex].id) {
-          multiplier = 2; // Dealer wins or dealer pays is doubled
-        }
-
+        const multiplier = 1;
         const payout = baseCoins * multiplier;
         settlements[p.id] -= payout;
         settlements[winnerId] += payout;
       });
     } else {
-      // Win on discard: Discarder pays winner double. Third player pays nothing.
-      // Or standard M3P: Discarder pays, and if dealer is involved, doubled.
+      // Win on discard: Discarder pays winner x1.5
       const discarderId = this.lastDiscard ? this.lastDiscard.playerId : this.players[this.currentTurn].id;
 
-      let multiplier = 1;
-      if (winnerId === this.players[this.dealerIndex].id || discarderId === this.players[this.dealerIndex].id) {
-        multiplier = 2;
-      }
-
+      const multiplier = 1.5;
       const payout = baseCoins * multiplier;
       settlements[discarderId] -= payout;
       settlements[winnerId] += payout;
