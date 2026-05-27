@@ -1,4 +1,4 @@
-import { Component, signal, effect, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, signal, effect, OnDestroy, ViewChild, ElementRef, AfterViewChecked, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { io, Socket } from 'socket.io-client';
@@ -130,7 +130,8 @@ export class App implements OnDestroy, AfterViewChecked {
     }
 
     // Connect to Node.js backend
-    this.socket = io('http://localhost:3000');
+    const backendUrl = isDevMode() ? 'http://localhost:3000' : 'https://mahjong-new.onrender.com';
+    this.socket = io(backendUrl);
 
     this.socket.on('connect', () => {
       this.socket?.emit('joinRoom', {
