@@ -1,1 +1,485 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+:root {
+  --wood-dark: #1e130c;
+  --wood-light: #2c1b10;
+  --table-green: radial-gradient(circle, #0e5b30 0%, #063c1e 100%);
+  --gold-primary: #ffd700;
+  --gold-glow: 0 0 15px rgba(255, 215, 0, 0.6);
+  --text-light: #f5f5f7;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --tile-bg-front: linear-gradient(135deg, #ffffff 0%, #eaeaea 100%);
+  --tile-bg-back: linear-gradient(135deg, #028043 0%, #014c27 100%);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Outfit', sans-serif;
+  user-select: none;
+}
+
+body {
+  background-color: #0c0907;
+  color: var(--text-light);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Premium Mahogany Wood Table Frame */
+.mahjong-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: var(--table-green);
+  border: 16px solid var(--wood-dark);
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+/* Header bar */
+.game-header {
+  height: 60px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 10;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold-primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
+}
+
+.room-info {
+  font-size: 14px;
+  color: #a0a0ab;
+}
+
+/* Lobby overlays */
+.lobby-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(12, 9, 7, 0.85);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 40px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+.lobby-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--gold-primary);
+}
+
+.lobby-desc {
+  font-size: 14px;
+  color: #a0a0ab;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #80808a;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-light);
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.form-input:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #ffd700 0%, #cca100 100%);
+  color: #1e130c;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-light);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  background: var(--glass-bg);
+}
+
+/* Mahjong Tiles Styling */
+.mj-tile {
+  width: 54px;
+  height: 72px;
+  background: var(--tile-bg-front);
+  border-radius: 6px;
+  border-top: 4px solid #ffffff;
+  border-left: 2px solid #eaeaea;
+  border-right: 4px solid #b8b8b8;
+  border-bottom: 8px solid #a1a1a1;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.mj-tile.selected {
+  transform: translateY(-16px);
+  box-shadow: 0 15px 25px rgba(0,0,0,0.5), var(--gold-glow);
+  border-color: var(--gold-primary);
+}
+
+.mj-tile.dragging {
+  opacity: 0.35;
+  transform: scale(0.9) rotate(3deg);
+  border: 2px dashed var(--gold-primary) !important;
+  box-shadow: none !important;
+}
+
+.mj-tile.drag-over {
+  transform: scale(1.08) translateY(-14px);
+  border: 2px solid var(--gold-primary) !important;
+  box-shadow: var(--gold-glow) !important;
+}
+
+.mj-tile.new-drawn-tile {
+  animation: draw-pulse 1.8s infinite ease-in-out, draw-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-color: var(--gold-primary) !important;
+}
+
+@keyframes draw-pulse {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3), 0 6px 12px rgba(0,0,0,0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.85), 0 10px 20px rgba(255, 215, 0, 0.4);
+    transform: scale(1.03) translateY(-4px);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3), 0 6px 12px rgba(0,0,0,0.3);
+    transform: scale(1);
+  }
+}
+
+@keyframes draw-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.mj-tile:hover:not(.back) {
+  transform: translateY(-8px);
+}
+
+.mj-tile.back {
+  background: var(--tile-bg-back);
+  border-top: 4px solid #04b35f;
+  border-left: 2px solid #038d4a;
+  border-right: 4px solid #013f20;
+  border-bottom: 8px solid #002d16;
+  cursor: default;
+}
+
+/* Tile contents */
+.tile-inner {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.tile-inner.circle { color: #026635; }
+.tile-inner.honor-red { color: #d32f2f; }
+.tile-inner.honor-green { color: #2e7d32; }
+.tile-inner.honor-blue { color: #1565c0; }
+.tile-inner.fly { color: #f57c00; font-size: 22px; }
+.tile-inner.flower { color: #ad1457; font-size: 18px; }
+.tile-inner.animal { color: #6a1b9a; font-size: 18px; }
+
+/* Visual layout for the 3 players table */
+.game-table-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: 20px;
+}
+
+.player-zone {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+/* Bottom Player (Active User) */
+.player-bottom {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+}
+
+/* Left Player (Opponent 1) */
+.player-left {
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+/* Right Player (Opponent 2) */
+.player-right {
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+/* Central Discards Board */
+.center-board {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 480px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 4px solid var(--wood-light);
+  border-radius: 16px;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.discard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  min-height: 80px;
+}
+
+/* Discard tile (smaller) */
+.mj-tile-small {
+  width: 30px;
+  height: 40px;
+  font-size: 14px;
+  background: var(--tile-bg-front);
+  border-radius: 3px;
+  border-top: 2px solid #ffffff;
+  border-left: 1px solid #eaeaea;
+  border-right: 2px solid #b8b8b8;
+  border-bottom: 4px solid #a1a1a1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #111;
+}
+
+/* Notification Claim Actions (Touch points/HUD) */
+.hud-actions {
+  display: flex;
+  gap: 16px;
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+.hud-btn {
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-size: 20px;
+  font-weight: 800;
+  border: 2px solid var(--gold-primary);
+  background: rgba(26, 19, 12, 0.95);
+  color: var(--gold-primary);
+  cursor: pointer;
+  box-shadow: var(--gold-glow);
+  transition: all 0.3s;
+}
+
+.hud-btn:hover {
+  transform: scale(1.1);
+  background: var(--gold-primary);
+  color: #1e130c;
+}
+
+/* Logs panel */
+.logs-panel {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  width: 240px;
+  max-height: 180px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 11px;
+  overflow-y: auto;
+  border: 1px solid var(--glass-border);
+  z-index: 5;
+}
+
+.logs-title {
+  font-weight: 700;
+  color: var(--gold-primary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.log-item {
+  margin-bottom: 4px;
+  color: #c8c8cd;
+}
+
+/* Score ledger Modal */
+.score-modal {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-card {
+  background: rgba(30, 19, 12, 0.95);
+  border: 3px solid var(--gold-primary);
+  border-radius: 20px;
+  padding: 30px;
+  width: 90%;
+  max-width: 520px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+.scrollable-breakdown {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.scrollable-breakdown::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollable-breakdown::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+.scrollable-breakdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.5);
+  border-radius: 4px;
+}
+.scrollable-breakdown::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-primary);
+}
+
+.score-title {
+  font-size: 24px;
+  color: var(--gold-primary);
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.score-row.total {
+  border-top: 2px solid var(--gold-primary);
+  border-bottom: none;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--gold-primary);
+  margin-top: 10px;
+}
