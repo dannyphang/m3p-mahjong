@@ -49,6 +49,7 @@ class GameState {
     this.currentTurn = 0; // index of players (0, 1, 2)
     this.dealerIndex = 0; // index of dealer
     this.consecutiveDealerWins = 0;
+    this.roundNumber = 0;
     this.status = 'WAITING'; // WAITING, COMPENSATING, PLAYING, GAME_OVER
     this.lastDiscard = null; // { tile, playerId }
     this.lastDrawnTile = null; // { playerId, tile }
@@ -152,6 +153,7 @@ class GameState {
       roomId: this.roomId,
       players: this.players,
       status: this.status,
+      roundNumber: this.roundNumber,
       currentTurn: this.currentTurn,
       dealerIndex: this.dealerIndex,
       consecutiveDealerWins: this.consecutiveDealerWins,
@@ -211,8 +213,9 @@ class GameState {
 
   startGame() {
     this.status = 'PLAYING';
+    this.roundNumber++;
     this.deck = shuffleDeck(createDeck());
-    this.addLog('Game started! Dealing cards...');
+    this.addLog(`Game started! Round ${this.roundNumber}. Dealing cards...`);
 
     // Deal cards: Dealer gets 14, others 13
     const dealerId = this.players[this.dealerIndex].id;
@@ -801,6 +804,9 @@ class GameState {
     delete jokerTile.substitutedFor;
     delete jokerTile.substitutedType;
 
+    // Mark as rescued so it doesn't give extra points/settlements
+    jokerTile.isRescued = true;
+
     // Put Joker into hand
     hand.push(jokerTile);
 
@@ -938,9 +944,13 @@ class GameState {
     const totalFeis = {};
     const allHands = {};
     this.players.forEach(p => {
-      const exposedFeis = this.flowers[p.id].filter(f => f.type === 'fly').length;
-      const hiddenFeis = this.hands[p.id].filter(t => t.type === 'fly').length;
-      totalFeis[p.id] = exposedFeis + hiddenFeis;
+      const flowerFeis = this.flowers[p.id].filter(f => f.type === 'fly').length;
+      const handFeis = this.hands[p.id].filter(t => t.type === 'fly' && !t.isRescued).length;
+      const publicFeis = (this.exposed[p.id] || []).reduce((count, meld) => {
+        return count + meld.tiles.filter(t => t.type === 'fly' && !t.isRescued).length;
+      }, 0);
+      
+      totalFeis[p.id] = flowerFeis + handFeis + publicFeis;
       allHands[p.id] = p.id === winnerId ? finalHand : [...this.hands[p.id]];
     });
 
@@ -1001,9 +1011,13 @@ class GameState {
     const totalFeis = {};
     const allHands = {};
     this.players.forEach(p => {
-      const exposedFeis = this.flowers[p.id].filter(f => f.type === 'fly').length;
-      const hiddenFeis = this.hands[p.id].filter(t => t.type === 'fly').length;
-      totalFeis[p.id] = exposedFeis + hiddenFeis;
+      const flowerFeis = this.flowers[p.id].filter(f => f.type === 'fly').length;
+      const handFeis = this.hands[p.id].filter(t => t.type === 'fly' && !t.isRescued).length;
+      const publicFeis = (this.exposed[p.id] || []).reduce((count, meld) => {
+        return count + meld.tiles.filter(t => t.type === 'fly' && !t.isRescued).length;
+      }, 0);
+      
+      totalFeis[p.id] = flowerFeis + handFeis + publicFeis;
       allHands[p.id] = [...this.hands[p.id]];
     });
 
@@ -1144,6 +1158,10 @@ io.on('connection', (socket) => {
     if (idx !== -1) {
       const discardedTile = hand[idx];
       if (discardedTile.type === TILE_TYPES.FLY) {
+        if (discardedTile.isRescued) {
+          socket.emit('errorMsg', 'Cannot expose a rescued Joker (不能炖补回来的飞).');
+          return;
+        }
         // Expose the flyer (炖飞) instead of normal discard!
         hand.splice(idx, 1);
         room.flowers[playerId].push(discardedTile);

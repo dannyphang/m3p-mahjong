@@ -28,6 +28,7 @@
     @if (gameState()) {
       <div class="room-info">
         Table: <strong>{{ gameState()?.roomId }}</strong> | 
+        Round: <strong>{{ gameState()?.roundNumber || 0 }}</strong> |
         Dealer: <strong>{{ gameState()?.players?.[gameState()?.dealerIndex || 0]?.name }}</strong> 
         @if (gameState()?.consecutiveDealerWins) {
           <span style="color: #ffd700; margin-left: 8px;">(Lian Zhuang x{{ gameState()?.consecutiveDealerWins }})</span>
