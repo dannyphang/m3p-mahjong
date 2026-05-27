@@ -46,6 +46,7 @@ interface GameState {
   roomId: string;
   players: Player[];
   status: string; // WAITING, PLAYING, GAME_OVER
+  roundNumber: number;
   currentTurn: number;
   dealerIndex: number;
   consecutiveDealerWins: number;
