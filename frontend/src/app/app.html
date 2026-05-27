@@ -404,9 +404,9 @@
                 </div>
 
                 <!-- Breakdown checklist -->
-                <div style="margin-bottom: 20px; flex: 1; min-height: 0; display: flex; flex-direction: column;">
-                  <h4 style="color: var(--gold-primary); margin-bottom: 8px; font-size: 14px; flex-shrink: 0;">Fan Breakdown:</h4>
-                  <div class="scrollable-breakdown">
+                <div style="margin-bottom: 20px;">
+                  <h4 style="color: var(--gold-primary); margin-bottom: 8px; font-size: 14px;">Fan Breakdown:</h4>
+                  <div>
                     @for (item of details.scoreResult?.breakdown; track $index) {
                       <div class="score-row">
                         <span>{{ item.name }}</span>
@@ -414,7 +414,7 @@
                       </div>
                     }
                   </div>
-                  <div class="score-row total" style="flex-shrink: 0; margin-top: 8px;">
+                  <div class="score-row total" style="margin-top: 8px;">
                     <span>Total Fan</span>
                     <span>{{ details.scoreResult?.totalFan }} 番</span>
                   </div>

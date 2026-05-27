@@ -463,7 +463,7 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
             else if (w === '北') pts = 1;
             if (pts > 0) {
               fan += pts;
-              bd.push({ name: `${w}风番极`, fan: pts });
+              bd.push({ name: `3x ${w} (Wind)`, fan: pts });
             }
           }
         });
@@ -484,7 +484,7 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
         ['中', '发', '白'].forEach(d => {
           if (currentConfig[d] === 3) {
             fan += 1;
-            bd.push({ name: `番子 (${d})`, fan: 1 });
+            bd.push({ name: `3x ${d} (Dragon)`, fan: 1 });
           }
         });
       }
