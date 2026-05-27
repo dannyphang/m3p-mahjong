@@ -1,0 +1,1104 @@
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const { 
+  createDeck, 
+  shuffleDeck, 
+  compensateFlowers, 
+  canPong, 
+  canKong, 
+  canChow,
+  isWinningHand, 
+  calculateFan,
+  calculateFlowerPoints,
+  calculatePublicPoints,
+  TILE_TYPES
+} = require('./engine');
+
+const app = express();
+app.use(cors());
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Port configuration
+const PORT = process.env.PORT || 3000;
+
+// Game rooms in memory
+const rooms = {};
+
+// Bot names
+const BOT_NAMES = ['Mahjong Master', 'Uncle Lim', 'Auntie Tan', 'M3P Legend', 'Kopi Kia'];
+
+class GameState {
+  constructor(roomId) {
+    this.roomId = roomId;
+    this.players = []; // { id, name, socketId, isBot: false, isReady: false }
+    this.deck = [];
+    this.discardedFlowers = []; // Global discarded flowers history
+    this.currentTurn = 0; // index of players (0, 1, 2)
+    this.dealerIndex = 0; // index of dealer
+    this.consecutiveDealerWins = 0;
+    this.status = 'WAITING'; // WAITING, COMPENSATING, PLAYING, GAME_OVER
+    this.lastDiscard = null; // { tile, playerId }
+    this.lastDrawnTile = null; // { playerId, tile }
+    
+    // Player hands & exposed blocks
+    this.hands = {}; // playerId -> array of tiles
+    this.exposed = {}; // playerId -> array of melds { type: 'pong'|'kong', tiles: [...] }
+    this.flowers = {}; // playerId -> array of flower/animal tiles
+    this.discards = {}; // playerId -> array of discarded tiles
+    
+    // Claim tracking during a discard
+    this.pendingClaims = {}; // playerId -> claimType ('pong'|'kong'|'hu')
+    this.claimTimer = null;
+    
+    // Game logs
+    this.logs = [];
+    this.accumulatedPoints = {}; // playerId -> net points across rounds
+    
+    // Win conditions
+    this.isHuaShang = false;
+    this.isGangShang = false;
+    this.currentDrawIsHuaShang = false;
+    this.currentDrawIsGangShang = false;
+    
+    // Room settings
+    this.settings = {
+      enableTimer: false
+    };
+  }
+
+  addLog(msg) {
+    this.logs.push(msg);
+    if (this.logs.length > 50) this.logs.shift();
+  }
+
+  getPlayerWind(playerId) {
+    const idx = this.players.findIndex(p => p.id === playerId);
+    if (idx === -1) return '东';
+    if (idx === this.dealerIndex) return '东';
+    if (idx === (this.dealerIndex + 1) % 3) return '南';
+    return '西';
+  }
+
+  processImmediatePayout(playerId, amount, reason, targetId = null) {
+    let received = 0;
+    this.players.forEach(p => {
+      if (p.id !== playerId) {
+        if (!targetId || p.id === targetId) {
+          this.accumulatedPoints[p.id] -= amount;
+          received += amount;
+        }
+      }
+    });
+    this.accumulatedPoints[playerId] += received;
+    
+    const player = this.players.find(p => p.id === playerId);
+    if (player) {
+      if (targetId) {
+        const target = this.players.find(p => p.id === targetId);
+        this.addLog(`${player.name} instantly received +${received} Coins from ${target ? target.name : 'player'} for ${reason}!`);
+      } else {
+        this.addLog(`${player.name} instantly received +${received} Coins from other players for ${reason}!`);
+      }
+    }
+  }
+
+  broadcastState() {
+    this.players.forEach(p => {
+      if (p.isBot) return;
+      io.to(p.socketId).emit('gameState', this.getSanitizedState(p.id));
+    });
+  }
+
+  getSanitizedState(playerId) {
+    // Hide other players' hands for security
+    const sanitizedHands = {};
+    Object.keys(this.hands).forEach(pid => {
+      if (pid === playerId) {
+        sanitizedHands[pid] = this.hands[pid];
+      } else {
+        sanitizedHands[pid] = this.hands[pid].map(() => ({ type: 'back' }));
+      }
+    });
+
+    const flowerPoints = {};
+    const publicPoints = {};
+    const playerWinds = {};
+    this.players.forEach(p => {
+      const wind = this.getPlayerWind(p.id);
+      playerWinds[p.id] = wind;
+      flowerPoints[p.id] = calculateFlowerPoints(this.flowers[p.id] || [], wind);
+      publicPoints[p.id] = calculatePublicPoints(this.flowers[p.id] || [], this.exposed[p.id] || [], wind);
+    });
+
+    return {
+      roomId: this.roomId,
+      players: this.players,
+      status: this.status,
+      currentTurn: this.currentTurn,
+      dealerIndex: this.dealerIndex,
+      consecutiveDealerWins: this.consecutiveDealerWins,
+      hands: sanitizedHands,
+      exposed: this.exposed,
+      flowers: this.flowers,
+      flowerPoints: flowerPoints,
+      publicPoints: publicPoints,
+      playerWinds: playerWinds,
+      discards: this.discards,
+      lastDiscard: this.lastDiscard,
+      lastDrawnTile: this.lastDrawnTile,
+      deckRemaining: this.deck.length,
+      logs: this.logs,
+      accumulatedPoints: this.accumulatedPoints,
+      settings: this.settings
+    };
+  }
+
+  addPlayer(name, socketId, isBot = false) {
+    if (this.players.length >= 3) return null;
+    const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
+    const player = { id, name, socketId, isBot, isReady: isBot };
+    this.players.push(player);
+    
+    this.hands[id] = [];
+    this.exposed[id] = [];
+    this.flowers[id] = [];
+    this.discards[id] = [];
+    this.accumulatedPoints[id] = 100; // Start with 100 coins
+
+    this.addLog(`${name} joined the room.`);
+    return player;
+  }
+
+  removePlayer(socketId) {
+    const idx = this.players.findIndex(p => p.socketId === socketId);
+    if (idx !== -1) {
+      const p = this.players[idx];
+      this.players.splice(idx, 1);
+      delete this.hands[p.id];
+      delete this.exposed[p.id];
+      delete this.flowers[p.id];
+      delete this.discards[p.id];
+      this.addLog(`${p.name} left the room.`);
+      
+      // If no human players left, clean room
+      const humans = this.players.filter(pl => !pl.isBot);
+      if (humans.length === 0) {
+        delete rooms[this.roomId];
+      } else {
+        this.status = 'WAITING';
+        this.broadcastState();
+      }
+    }
+  }
+
+  startGame() {
+    this.status = 'PLAYING';
+    this.deck = shuffleDeck(createDeck());
+    this.addLog('Game started! Dealing cards...');
+
+    // Deal cards: Dealer gets 14, others 13
+    const dealerId = this.players[this.dealerIndex].id;
+    for (let i = 0; i < this.players.length; i++) {
+      const pid = this.players[i].id;
+      const cardsToDeal = pid === dealerId ? 14 : 13;
+      this.hands[pid] = this.deck.splice(0, cardsToDeal);
+    }
+
+    // Flower Compensation (补花)
+    this.players.forEach(p => {
+      compensateFlowers(this.hands[p.id], this.deck, this.flowers[p.id]);
+    });
+
+    this.currentTurn = this.dealerIndex;
+    this.addLog(`Dealer ${this.players[this.dealerIndex].name}'s turn.`);
+    this.broadcastState();
+
+    // Check if dealer already has 4 flyers or self-draw win!
+    this.checkTurnActions();
+  }
+
+  // Draw card for the current player
+  drawCard() {
+    if (this.deck.length === 0) {
+      this.declareDraw();
+      return;
+    }
+
+    const currentIsGangShang = this.isGangShang;
+    let currentIsHuaShang = this.isHuaShang;
+
+    this.isGangShang = false;
+    this.isHuaShang = false;
+
+    const player = this.players[this.currentTurn];
+    const tile = this.deck.shift();
+    this.hands[player.id].push(tile);
+    this.addLog(`${player.name} draws a card.`);
+
+    // Check if flower / animal
+    if (tile.type === TILE_TYPES.FLOWER || tile.type === TILE_TYPES.ANIMAL) {
+      currentIsHuaShang = true;
+      this.addLog(`${player.name} got flower/animal ${tile.display}! Compensating...`);
+      this.hands[player.id].pop(); // remove from hand
+      this.flowers[player.id].push(tile);
+      
+      // Draw first replacement from the tail end of the deck
+      if (this.deck.length > 0) {
+        const replacement = this.deck.pop();
+        this.hands[player.id].push(replacement);
+      }
+      
+      // Recursively compensate any other flowers in hand
+      compensateFlowers(this.hands[player.id], this.deck, this.flowers[player.id]);
+    }
+    
+    // Save the final drawn tile (post-compensation)
+    this.lastDrawnTile = { playerId: player.id, tile: this.hands[player.id][this.hands[player.id].length - 1] };
+    this.currentDrawIsHuaShang = currentIsHuaShang;
+    this.currentDrawIsGangShang = currentIsGangShang;
+ 
+    this.broadcastState();
+    this.checkTurnActions();
+  }
+
+  checkTurnActions() {
+    const player = this.players[this.currentTurn];
+    
+    // Check if player has Hu (Hu on self draw)
+    let wins = false;
+    let huFan = 0;
+    
+    // Only evaluate Self-Hu if the player just drew a tile
+    if (this.lastDrawnTile && this.lastDrawnTile.playerId === player.id) {
+      wins = isWinningHand(this.hands[player.id]);
+      if (wins) {
+        const fanEval = calculateFan(this.hands[player.id], this.exposed[player.id], this.flowers[player.id], this.lastDrawnTile.tile, true, player.id === this.players[this.dealerIndex].id, 0, this.getPlayerWind(player.id), this.currentDrawIsHuaShang, this.currentDrawIsGangShang);
+        huFan = fanEval.totalFan;
+      }
+    }
+    
+    // Check if player can Kong (in hand)
+    // Find if player has 4 of same or matching exposed Pong
+    const canSelfKong = this.getSelfKongOptions(player.id);
+    
+    // Check if player can Replace Joker in exposed melds
+    const canReplaceJoker = this.getReplaceJokerOptions(player.id);
+
+    if (player.isBot) {
+      // Bot auto acts
+      setTimeout(() => {
+        if (wins && huFan >= 5) { // Bot only wins if valid minimum 5 fan
+          this.executeHu(player.id, null, true);
+        } else if (canReplaceJoker.length > 0) {
+          const opt = canReplaceJoker[0];
+          this.executeReplaceJoker(player.id, opt.meldIndex, opt.tileIndex, opt.handIndex);
+        } else if (canSelfKong.length > 0) {
+          this.executeSelfKong(player.id, canSelfKong[0]);
+        } else {
+          this.botDiscard(player.id);
+        }
+      }, 1500);
+    } else {
+      // Send turn options to human player
+      if (wins || canSelfKong.length > 0 || canReplaceJoker.length > 0) {
+        io.to(player.socketId).emit('turnOptions', {
+          canHu: wins,
+          huFan: huFan,
+          canSelfKong: canSelfKong.length > 0 ? canSelfKong : null,
+          canReplaceJoker: canReplaceJoker.length > 0 ? canReplaceJoker : null
+        });
+      } else {
+        io.to(player.socketId).emit('turnOptions', null);
+      }
+    }
+  }
+
+  getSelfKongOptions(playerId) {
+    const hand = this.hands[playerId];
+    const exposed = this.exposed[playerId];
+    const options = [];
+
+    // Group hand tiles
+    const counts = {};
+    hand.forEach(t => {
+      if (t.type !== TILE_TYPES.FLY) {
+        const key = `${t.type}_${t.value}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+
+    // 1. 4 of same in hand
+    Object.keys(counts).forEach(k => {
+      if (counts[k] === 4) {
+        const [type, value] = k.split('_');
+        options.push({ type, value: isNaN(value) ? value : parseInt(value) });
+      }
+    });
+
+    // 2. Pong already exposed, and drawing the 4th matching card
+    exposed.forEach(meld => {
+      if (meld.type === 'pong') {
+        const matchingTile = hand.find(t => t.type === meld.tiles[0].type && t.value === meld.tiles[0].value);
+        if (matchingTile) {
+          options.push({ type: matchingTile.type, value: matchingTile.value });
+        }
+      }
+    });
+
+    return options;
+  }
+
+  getReplaceJokerOptions(playerId) {
+    const hand = this.hands[playerId];
+    const exposed = this.exposed[playerId];
+    const options = [];
+
+    if (!exposed || exposed.length === 0) return options;
+
+    exposed.forEach((meld, meldIndex) => {
+      meld.tiles.forEach((t, tileIndex) => {
+        if (t.type === TILE_TYPES.FLY && t.substitutedFor) {
+          // Joker found, look for real tile in hand
+          const matchIdx = hand.findIndex(ht => 
+            ht.type === (t.substitutedType || TILE_TYPES.CIRCLE) && 
+            String(ht.value) === String(t.substitutedFor)
+          );
+          if (matchIdx !== -1) {
+            options.push({
+              meldIndex,
+              tileIndex,
+              handIndex: matchIdx,
+              tile: hand[matchIdx]
+            });
+          }
+        }
+      });
+    });
+
+    return options;
+  }
+
+  botDiscard(playerId) {
+    const hand = this.hands[playerId];
+    if (hand.length === 0) return;
+
+    // Smart bot discard:
+    // Identify single Circle tiles or non-matching honors
+    const counts = {};
+    hand.forEach(t => {
+      if (t.type !== TILE_TYPES.FLY) {
+        const key = `${t.type}_${t.value}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+
+    // Find tiles with count of 1
+    let bestDiscardIndex = -1;
+    let lowestScore = 999;
+
+    for (let i = 0; i < hand.length; i++) {
+      const tile = hand[i];
+      if (tile.type === TILE_TYPES.FLY) continue; // Keep fly card!
+
+      const key = `${tile.type}_${tile.value}`;
+      const count = counts[key] || 0;
+      let score = count * 10; // lower count is discarded first
+
+      // Circles preferred to discard over Honors (since Honors are valuable for big hands)
+      if (tile.type === TILE_TYPES.CIRCLE) {
+        score -= 2;
+      }
+
+      if (score < lowestScore) {
+        lowestScore = score;
+        bestDiscardIndex = i;
+      }
+    }
+
+    // Fallback if only Flies are left (rare)
+    if (bestDiscardIndex === -1) {
+      bestDiscardIndex = 0;
+    }
+
+    const discardedTile = hand.splice(bestDiscardIndex, 1)[0];
+    this.executeDiscard(playerId, discardedTile);
+  }
+
+  executeDiscard(playerId, tile) {
+    this.lastDrawnTile = null; // Clear last drawn card indicator when someone discards
+    this.lastDiscard = { tile, playerId };
+    this.discards[playerId].push(tile);
+    const p = this.players.find(pl => pl.id === playerId);
+    this.addLog(`${p.name} discards ${tile.display}.`);
+    this.broadcastState();
+
+    // Check if other players can claim (Pong, Kong, Hu)
+    this.checkClaims(playerId, tile);
+  }
+
+  checkClaims(discarderId, tile) {
+    this.pendingClaims = {};
+    this.activeClaimers = []; // Track exactly who has claim options
+
+    this.players.forEach(p => {
+      if (p.id === discarderId) return;
+
+      const hand = this.hands[p.id];
+      // Check if they can Hu on this discard (Minimum 5 fan logic for bot, show all for human with huFan)
+      const testHand = [...hand, tile];
+      const wins = isWinningHand(testHand);
+      let canClaimHu = false;
+      let huFan = 0;
+      if (wins) {
+        const fanEval = calculateFan(testHand, this.exposed[p.id], this.flowers[p.id], tile, false, p.id === this.players[this.dealerIndex].id, 0, this.getPlayerWind(p.id));
+        huFan = fanEval.totalFan;
+        canClaimHu = true;
+      }
+
+      const canClaimPong = canPong(hand, tile);
+      const canClaimKong = canKong(hand, tile);
+
+      // Check if eligible to Chow (only from的上家, meaning p is the next player in order)
+      const discarderIdx = this.players.findIndex(pl => pl.id === discarderId);
+      const isNextPlayer = p.id === this.players[(discarderIdx + 1) % 3].id;
+      let canClaimChow = false;
+      let chowOptions = null;
+      if (isNextPlayer) {
+        chowOptions = canChow(hand, tile);
+        if (chowOptions) {
+          canClaimChow = true;
+        }
+      }
+
+      if (canClaimHu || canClaimPong || canClaimKong || canClaimChow) {
+        this.activeClaimers.push(p.id);
+        if (p.isBot) {
+          // Bots auto claim after short delay
+          setTimeout(() => {
+            if (canClaimHu && huFan >= 5) {
+              this.registerClaim(p.id, 'hu');
+            } else if (canClaimKong) {
+              this.registerClaim(p.id, 'kong');
+            } else if (canClaimPong) {
+              this.registerClaim(p.id, 'pong');
+            } else if (canClaimChow) {
+              this.registerClaim(p.id, 'pass'); // Bots prefer pass to keep it simple
+            }
+          }, 1000);
+        } else {
+          io.to(p.socketId).emit('claimOptions', {
+            tile,
+            canHu: canClaimHu,
+            huFan: huFan,
+            canPong: canClaimPong,
+            canKong: canClaimKong,
+            canChow: chowOptions
+          });
+        }
+      }
+    });
+
+    if (this.activeClaimers.length === 0) {
+      // Move to next player's turn immediately since no one has claim options
+      this.moveToNextPlayer();
+    } else {
+      // Start a 10s timer for human players to decide ONLY if enabled
+      if (this.settings.enableTimer) {
+        this.claimTimer = setTimeout(() => {
+          // Auto-pass anyone who hasn't responded
+          this.activeClaimers.forEach(pid => {
+            if (this.pendingClaims[pid] === undefined) {
+              this.registerClaim(pid, 'pass');
+              // Notify frontend to clear options
+              const p = this.players.find(pl => pl.id === pid);
+              if (p && !p.isBot) {
+                io.to(p.socketId).emit('claimOptions', null);
+              }
+            }
+          });
+        }, 10000); // 10 seconds wait
+      }
+    }
+  }
+
+  registerClaim(playerId, claimType) {
+    this.pendingClaims[playerId] = claimType;
+
+    // Check if all players with active options have responded
+    const allResponded = this.activeClaimers.every(pid => this.pendingClaims[pid] !== undefined);
+
+    if (allResponded) {
+      if (this.claimTimer) clearTimeout(this.claimTimer);
+      this.resolveClaims();
+    }
+  }
+
+  resolveClaims() {
+    if (this.claimTimer) clearTimeout(this.claimTimer);
+
+    // Order of claims: Hu (胡) > Kong (杠) = Pong (碰)
+    let bestClaim = null;
+    let claimerId = null;
+
+    this.players.forEach(p => {
+      const claim = this.pendingClaims[p.id];
+      if (!claim || claim === 'pass') return;
+
+      if (!bestClaim) {
+        bestClaim = claim;
+        claimerId = p.id;
+      } else if (claim === 'hu') {
+        bestClaim = 'hu';
+        claimerId = p.id;
+      } else if (claim === 'kong' && bestClaim !== 'hu') {
+        bestClaim = 'kong';
+        claimerId = p.id;
+      } else if (claim === 'pong' && bestClaim !== 'hu' && bestClaim !== 'kong') {
+        bestClaim = 'pong';
+        claimerId = p.id;
+      } else if (claim.startsWith('chow_') && !['hu', 'pong', 'kong'].includes(bestClaim)) {
+        bestClaim = claim;
+        claimerId = p.id;
+      }
+    } );
+
+    if (bestClaim) {
+      const claimer = this.players.find(p => p.id === claimerId);
+      const discarder = this.players.find(p => p.id === this.lastDiscard.playerId);
+      
+      // Mark tile in discarder's discards as claimed
+      const discarderDiscards = this.discards[discarder.id];
+      if (discarderDiscards.length > 0) {
+        discarderDiscards[discarderDiscards.length - 1].claimed = true;
+      }
+      const claimedTile = this.lastDiscard.tile;
+
+      if (bestClaim === 'hu') {
+        this.executeHu(claimerId, claimedTile, false);
+      } else if (bestClaim === 'pong') {
+        this.executePong(claimerId, claimedTile);
+      } else if (bestClaim === 'kong') {
+        this.executeKong(claimerId, claimedTile);
+      } else if (bestClaim.startsWith('chow_')) {
+        this.executeChow(claimerId, claimedTile, bestClaim);
+      }
+      
+      this.lastDiscard = null;
+    } else {
+      // No claims
+      this.moveToNextPlayer();
+    }
+
+    this.pendingClaims = {};
+  }
+
+  executePong(claimerId, tile) {
+    const hand = this.hands[claimerId];
+    const claimer = this.players.find(p => p.id === claimerId);
+    
+    let t1 = null, t2 = null;
+    for (let i = hand.length - 1; i >= 0; i--) {
+      if (hand[i].type === tile.type && hand[i].value === tile.value) {
+        if (!t1) t1 = hand.splice(i, 1)[0];
+        else if (!t2) t2 = hand.splice(i, 1)[0];
+      }
+    }
+    while (!t1 || !t2) {
+      const jokerIdx = hand.findIndex(t => t.type === TILE_TYPES.FLY);
+      if (jokerIdx !== -1) {
+        const joker = hand.splice(jokerIdx, 1)[0];
+        joker.substitutedFor = tile.value;
+        joker.substitutedType = tile.type;
+        if (!t1) t1 = joker;
+        else t2 = joker;
+      } else break;
+    }
+
+    // Add Pong meld to exposed
+    this.exposed[claimerId].push({
+      type: 'pong',
+      tiles: [tile, t1, t2]
+    });
+
+    this.addLog(`${claimer.name} Pongs ${tile.display}!`);
+    this.currentTurn = this.players.findIndex(p => p.id === claimerId);
+    this.broadcastState();
+
+    // Player needs to discard now
+    this.checkTurnActions();
+  }
+
+  executeChow(claimerId, tile, claimString) {
+    const hand = this.hands[claimerId];
+    const claimer = this.players.find(p => p.id === claimerId);
+    
+    // Parse values to remove from hand, e.g. chow_1_2 -> remove Circle 1 and 2
+    const parts = claimString.split('_');
+    const v1 = parseInt(parts[1], 10);
+    const v2 = parseInt(parts[2], 10);
+
+    let t1 = null, t2 = null;
+
+    for (let i = hand.length - 1; i >= 0; i--) {
+      const t = hand[i];
+      if (t.type === TILE_TYPES.CIRCLE) {
+        if (!t1 && parseInt(t.value, 10) === v1) {
+          t1 = hand.splice(i, 1)[0];
+        } else if (!t2 && parseInt(t.value, 10) === v2) {
+          t2 = hand.splice(i, 1)[0];
+        }
+      }
+    }
+    
+    if (!t1) {
+      const jokerIdx = hand.findIndex(t => t.type === TILE_TYPES.FLY);
+      if (jokerIdx !== -1) {
+        t1 = hand.splice(jokerIdx, 1)[0];
+        t1.substitutedFor = v1;
+        t1.substitutedType = TILE_TYPES.CIRCLE;
+      }
+    }
+    if (!t2) {
+      const jokerIdx = hand.findIndex(t => t.type === TILE_TYPES.FLY);
+      if (jokerIdx !== -1) {
+        t2 = hand.splice(jokerIdx, 1)[0];
+        t2.substitutedFor = v2;
+        t2.substitutedType = TILE_TYPES.CIRCLE;
+      }
+    }
+
+    const meldTiles = [t1, t2, tile].sort((a, b) => {
+      const valA = a.type === TILE_TYPES.FLY ? a.substitutedFor : parseInt(a.value, 10);
+      const valB = b.type === TILE_TYPES.FLY ? b.substitutedFor : parseInt(b.value, 10);
+      return valA - valB;
+    });
+
+    this.exposed[claimerId].push({
+      type: 'chow',
+      tiles: meldTiles
+    });
+
+    this.addLog(`${claimer.name} Chows to form sequence [${meldTiles.map(t => t.display).join(', ')}]!`);
+    this.currentTurn = this.players.findIndex(p => p.id === claimerId);
+    this.broadcastState();
+
+    // Player needs to discard now
+    this.checkTurnActions();
+  }
+
+  executeKong(claimerId, tile) {
+    const hand = this.hands[claimerId];
+    const claimer = this.players.find(p => p.id === claimerId);
+    
+    // First try to remove matching tiles
+    let removed = 0;
+    for (let i = hand.length - 1; i >= 0; i--) {
+      if (hand[i].type === tile.type && hand[i].value === tile.value) {
+        hand.splice(i, 1);
+        removed++;
+        if (removed === 3) break;
+      }
+    }
+    // Remove Jokers if needed
+    while (removed < 3) {
+      const jokerIdx = hand.findIndex(t => t.type === TILE_TYPES.FLY);
+      if (jokerIdx !== -1) {
+        hand.splice(jokerIdx, 1);
+        removed++;
+      } else {
+        break;
+      }
+    }
+
+    this.exposed[claimerId].push({
+      type: 'kong',
+      tiles: [tile, { ...tile }, { ...tile }, { ...tile }]
+    });
+
+    this.addLog(`${claimer.name} declares Kong with ${tile.display}!`);
+    const discarderId = this.lastDiscard ? this.lastDiscard.playerId : null;
+    this.processImmediatePayout(claimerId, 2, '明杠 (Exposed Kong)', discarderId);
+    this.currentTurn = this.players.findIndex(p => p.id === claimerId);
+    this.broadcastState();
+    
+    // Draw compensation tile from the back of the deck (Kongs require compensation)
+    this.isGangShang = true;
+    this.drawCard();
+  }
+
+  executeReplaceJoker(playerId, meldIndex, tileIndex, handIndex) {
+    const player = this.players.find(p => p.id === playerId);
+    const hand = this.hands[playerId];
+    const exposed = this.exposed[playerId];
+
+    if (!hand || !exposed || !exposed[meldIndex] || !exposed[meldIndex].tiles[tileIndex] || !hand[handIndex]) return;
+
+    // Swap the tile from hand with the Joker in the meld
+    const realTile = hand.splice(handIndex, 1)[0];
+    const jokerTile = exposed[meldIndex].tiles.splice(tileIndex, 1, realTile)[0];
+
+    // Clear substitute properties
+    delete jokerTile.substitutedFor;
+    delete jokerTile.substitutedType;
+
+    // Put Joker into hand
+    hand.push(jokerTile);
+
+    this.addLog(`${player.name} rescued a 飞 (Joker) by substituting a ${realTile.display}!`);
+    this.broadcastState();
+
+    // Re-check turn actions (the player might now be able to self-kong, Hu, or replace another)
+    this.checkTurnActions();
+  }
+
+  executeSelfKong(playerId, option) {
+    const hand = this.hands[playerId];
+    const exposed = this.exposed[playerId];
+    const player = this.players.find(p => p.id === playerId);
+
+    // Find if it is a hand Kong (4 identical tiles) or exposed Kong (Pong already exposed, drawing the 4th)
+    const exposedPong = exposed.find(meld => meld.type === 'pong' && meld.tiles[0].type === option.type && meld.tiles[0].value === option.value);
+
+    if (exposedPong) {
+      // 1. Upgrade exposed Pong to Kong
+      const idx = hand.findIndex(t => t.type === option.type && t.value === option.value);
+      const matchingTile = hand.splice(idx, 1)[0];
+      
+      exposedPong.type = 'kong';
+      exposedPong.tiles.push(matchingTile);
+      this.addLog(`${player.name} upgrades Pong to Kong with ${matchingTile.display}!`);
+      this.processImmediatePayout(playerId, 1, '加杠 (Add Kong)');
+    } else {
+      // 2. Clear Kong from hand
+      let removedTiles = [];
+      for (let i = hand.length - 1; i >= 0; i--) {
+        if (hand[i].type === option.type && hand[i].value === option.value) {
+          removedTiles.push(hand.splice(i, 1)[0]);
+        }
+      }
+
+      this.exposed[playerId].push({
+        type: 'kong',
+        tiles: removedTiles
+      });
+      this.addLog(`${player.name} declares Dark Kong with ${option.value}${option.type === TILE_TYPES.CIRCLE ? '筒' : ''}!`);
+      this.processImmediatePayout(playerId, 2, '暗杠 (Dark Kong)');
+    }
+
+    this.broadcastState();
+    // Kong compensation draw
+    this.isGangShang = true;
+    this.drawCard();
+  }
+
+  executeDunFei(playerId) {
+    const hand = this.hands[playerId];
+    const player = this.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    // Find a Fly Joker (飞) in hand
+    const flyIdx = hand.findIndex(t => t.type === TILE_TYPES.FLY);
+    if (flyIdx !== -1) {
+      const flyTile = hand.splice(flyIdx, 1)[0];
+      this.flowers[playerId].push(flyTile);
+      this.addLog(`${player.name} exposes Joker (炖飞)!`);
+      this.processImmediatePayout(playerId, 1, '炖飞 (Exposing Joker)');
+      
+      this.broadcastState();
+      // Draw compensation card
+      this.drawCard();
+    }
+  }
+
+  executeHu(winnerId, tile, isSelfDraw) {
+    const winner = this.players.find(p => p.id === winnerId);
+    let finalHand = [...this.hands[winnerId]];
+    if (tile && !isSelfDraw) {
+      finalHand.push(tile);
+    }
+
+    // Calculate score
+    const isDealer = winnerId === this.players[this.dealerIndex].id;
+    const scoreResult = calculateFan(
+      finalHand, 
+      this.exposed[winnerId], 
+      this.flowers[winnerId], 
+      tile, 
+      isSelfDraw, 
+      isDealer,
+      this.consecutiveDealerWins,
+      this.getPlayerWind(winnerId),
+      isSelfDraw ? this.currentDrawIsHuaShang : false,
+      isSelfDraw ? this.currentDrawIsGangShang : false
+    );
+
+    this.status = 'GAME_OVER';
+    this.addLog(`${winner.name} HU! wins with ${scoreResult.totalFan} Fan!`);
+
+    // Calculate coin adjustments
+    // Base rate: 1 Fan = 1 coin, up to 9 Fan = 9 coins. 10 Fan (limit) = 12 coins.
+    let baseCoins = scoreResult.totalFan;
+    if (baseCoins >= 10) baseCoins = 12;
+    
+    const settlements = {};
+
+    this.players.forEach(p => {
+      settlements[p.id] = 0;
+    });
+
+    if (isSelfDraw) {
+      // Self draw: All other players pay winner.
+      // Dealer pays / receives double
+      this.players.forEach(p => {
+        if (p.id === winnerId) return;
+
+        let multiplier = 1;
+        if (winnerId === this.players[this.dealerIndex].id || p.id === this.players[this.dealerIndex].id) {
+          multiplier = 2; // Dealer wins or dealer pays is doubled
+        }
+
+        const payout = baseCoins * multiplier;
+        settlements[p.id] -= payout;
+        settlements[winnerId] += payout;
+      });
+    } else {
+      // Win on discard: Discarder pays winner double. Third player pays nothing.
+      // Or standard M3P: Discarder pays, and if dealer is involved, doubled.
+      const discarderId = this.lastDiscard ? this.lastDiscard.playerId : this.players[this.currentTurn].id;
+
+      let multiplier = 1;
+      if (winnerId === this.players[this.dealerIndex].id || discarderId === this.players[this.dealerIndex].id) {
+        multiplier = 2;
+      }
+
+      const payout = baseCoins * multiplier;
+      settlements[discarderId] -= payout;
+      settlements[winnerId] += payout;
+    }
+
+    // Apply settlements to accumulated points
+    this.players.forEach(p => {
+      this.accumulatedPoints[p.id] += settlements[p.id];
+    });
+
+    // Calculate next dealer index for the next round (don't apply it to current state yet)
+    if (winnerId === this.players[this.dealerIndex].id) {
+      this.nextConsecutiveDealerWins = this.consecutiveDealerWins + 1;
+      this.nextDealerIndex = this.dealerIndex;
+    } else {
+      this.nextDealerIndex = (this.dealerIndex + 1) % 3;
+      this.nextConsecutiveDealerWins = 0;
+    }
+
+    // Broadcast winner details
+    io.to(this.roomId).emit('gameOver', {
+      winner: winner.name,
+      hand: finalHand,
+      exposed: this.exposed[winnerId],
+      flowers: this.flowers[winnerId],
+      scoreResult,
+      settlements,
+      isSelfDraw
+    });
+
+    this.broadcastState();
+  }
+
+  declareDraw() {
+    this.status = 'GAME_OVER';
+    this.addLog('Deck empty. Game is a Draw (流局)!');
+    this.nextConsecutiveDealerWins = this.consecutiveDealerWins + 1; // Dealer連庄
+    this.nextDealerIndex = this.dealerIndex;
+
+    io.to(this.roomId).emit('gameOver', {
+      draw: true,
+      settlements: this.players.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
+    });
+    this.broadcastState();
+  }
+
+  moveToNextPlayer() {
+    this.currentTurn = (this.currentTurn + 1) % 3;
+    this.broadcastState();
+    this.drawCard();
+  }
+}
+
+// Socket IO Lobby events
+io.on('connection', (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+
+  // Create or Join Room
+  socket.on('joinRoom', ({ name, roomId }) => {
+    let room = rooms[roomId];
+    if (!room) {
+      room = new GameState(roomId);
+      rooms[roomId] = room;
+    }
+
+    if (room.players.length >= 3) {
+      socket.emit('errorMsg', 'Room is already full.');
+      return;
+    }
+
+    socket.join(roomId);
+    const addedPlayer = room.addPlayer(name, socket.id, false);
+    
+    if (addedPlayer) {
+      socket.emit('joined', { playerId: addedPlayer.id });
+      room.broadcastState();
+    }
+  });
+
+  // Toggle Ready
+  socket.on('toggleReady', ({ roomId, playerId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const p = room.players.find(pl => pl.id === playerId);
+    if (p) {
+      p.isReady = !p.isReady;
+      room.addLog(`${p.name} is ${p.isReady ? 'READY' : 'NOT READY'}.`);
+      
+      // Auto-start if all 3 players are ready
+      const allReady = room.players.length === 3 && room.players.every(pl => pl.isReady);
+      if (allReady) {
+        room.startGame();
+      } else {
+        room.broadcastState();
+      }
+    }
+  });
+
+  // Add a Bot
+  socket.on('addBot', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (room && room.status === 'WAITING') {
+      const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+      room.addPlayer(`${botName} (Bot)`, null, true);
+      
+      // Auto-start if filled and all human players are ready
+      const allReady = room.players.length === 3 && room.players.every(pl => pl.isReady);
+      if (allReady) {
+        room.startGame();
+      } else {
+        room.broadcastState();
+      }
+    }
+  });
+
+  socket.on('toggleTimer', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (room && room.status === 'WAITING') {
+      room.settings.enableTimer = !room.settings.enableTimer;
+      room.broadcastState();
+    }
+  });
+
+  // Discard action
+  socket.on('discard', ({ roomId, playerId, tile }) => {
+    const room = rooms[roomId];
+    if (!room || room.status !== 'PLAYING') return;
+
+    const hand = room.hands[playerId];
+    const idx = hand.findIndex(t => t.type === tile.type && String(t.value) === String(tile.value));
+    if (idx !== -1) {
+      const discardedTile = hand[idx];
+      if (discardedTile.type === TILE_TYPES.FLY) {
+        // Expose the flyer (炖飞) instead of normal discard!
+        hand.splice(idx, 1);
+        room.flowers[playerId].push(discardedTile);
+        room.addLog(`${room.players.find(p => p.id === playerId)?.name} exposes Joker (炖飞)!`);
+        room.broadcastState();
+        // Draw compensation card
+        room.isHuaShang = true;
+        room.drawCard();
+      } else {
+        // Normal discard
+        hand.splice(idx, 1);
+        room.executeDiscard(playerId, discardedTile);
+      }
+    }
+  });
+
+  // Human player claim response
+  socket.on('claimResponse', ({ roomId, playerId, claimType }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+    room.registerClaim(playerId, claimType);
+  });
+
+  // Human player turn choice
+  socket.on('declareSelfKong', ({ roomId, playerId, option }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+    room.executeSelfKong(playerId, option);
+  });
+
+  socket.on('declareSelfHu', ({ roomId, playerId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+    room.executeHu(playerId, null, true);
+  });
+
+  socket.on('declareDunFei', ({ roomId, playerId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+    room.executeDunFei(playerId);
+  });
+
+  socket.on('replaceJoker', ({ roomId, playerId, opt }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+    room.executeReplaceJoker(playerId, opt.meldIndex, opt.tileIndex, opt.handIndex);
+  });
+
+  // Reset/Restart Game
+  socket.on('restartGame', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    // Apply the pending dealer updates now that the next round is starting
+    if (room.nextDealerIndex !== undefined) {
+      room.dealerIndex = room.nextDealerIndex;
+      room.consecutiveDealerWins = room.nextConsecutiveDealerWins;
+      room.nextDealerIndex = undefined;
+      room.nextConsecutiveDealerWins = undefined;
+    }
+
+    room.status = 'WAITING';
+    room.lastDiscard = null;
+    room.logs = [];
+    room.players.forEach(p => {
+      p.isReady = p.isBot; // bots stay ready
+      room.hands[p.id] = [];
+      room.exposed[p.id] = [];
+      room.flowers[p.id] = [];
+      room.discards[p.id] = [];
+    });
+    room.addLog('Room reset. Waiting for players to get ready.');
+    room.broadcastState();
+  });
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+    Object.keys(rooms).forEach(roomId => {
+      const room = rooms[roomId];
+      room.removePlayer(socket.id);
+    });
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
