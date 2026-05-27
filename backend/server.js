@@ -556,31 +556,71 @@ class GameState {
   resolveClaims() {
     if (this.claimTimer) clearTimeout(this.claimTimer);
 
-    // Order of claims: Hu (胡) > Kong (杠) = Pong (碰)
     let bestClaim = null;
     let claimerId = null;
+    let bestClaimQuality = -1;
+    let bestClaimerDistance = 4;
 
-    this.players.forEach(p => {
+    const claimedTile = this.lastDiscard ? this.lastDiscard.tile : null;
+    const discarderIdx = this.lastDiscard ? this.players.findIndex(p => p.id === this.lastDiscard.playerId) : -1;
+
+    this.players.forEach((p, idx) => {
       const claim = this.pendingClaims[p.id];
       if (!claim || claim === 'pass') return;
 
-      if (!bestClaim) {
-        bestClaim = claim;
-        claimerId = p.id;
-      } else if (claim === 'hu') {
-        bestClaim = 'hu';
-        claimerId = p.id;
-      } else if (claim === 'kong' && bestClaim !== 'hu') {
-        bestClaim = 'kong';
-        claimerId = p.id;
-      } else if (claim === 'pong' && bestClaim !== 'hu' && bestClaim !== 'kong') {
-        bestClaim = 'pong';
-        claimerId = p.id;
-      } else if (claim.startsWith('chow_') && !['hu', 'pong', 'kong'].includes(bestClaim)) {
-        bestClaim = claim;
-        claimerId = p.id;
+      let claimPriority = 0;
+      let claimQuality = 0;
+      
+      if (claim === 'hu') claimPriority = 4;
+      else if (claim === 'kong') claimPriority = 3;
+      else if (claim === 'pong') {
+        claimPriority = 2;
+        if (claimedTile) {
+          const realCount = this.hands[p.id].filter(t => t.type === claimedTile.type && String(t.value) === String(claimedTile.value)).length;
+          claimQuality = realCount >= 2 ? 2 : 1; // 2 for Real, 1 for Joker
+        }
       }
-    } );
+      else if (claim.startsWith('chow_')) claimPriority = 1;
+
+      // Distance from discarder (1 for next player, 2 for opposite)
+      let distance = (idx - discarderIdx + 3) % 3;
+      if (distance === 0) distance = 3;
+
+      let replace = false;
+      if (!bestClaim) {
+        replace = true;
+      } else {
+        const currentBestPriority = 
+          bestClaim === 'hu' ? 4 : 
+          bestClaim === 'kong' ? 3 : 
+          bestClaim === 'pong' ? 2 : 1;
+        
+        if (claimPriority > currentBestPriority) {
+          replace = true;
+        } else if (claimPriority === currentBestPriority) {
+          if (claimPriority === 2) { // Pong tie
+            if (claimQuality > bestClaimQuality) {
+              replace = true; // Real pong beats Joker pong
+            } else if (claimQuality === bestClaimQuality) {
+              if (distance < bestClaimerDistance) {
+                replace = true; // Closest player wins tie
+              }
+            }
+          } else {
+            if (distance < bestClaimerDistance) {
+              replace = true; // Closest player wins tie
+            }
+          }
+        }
+      }
+
+      if (replace) {
+        bestClaim = claim;
+        claimerId = p.id;
+        bestClaimQuality = claimQuality;
+        bestClaimerDistance = distance;
+      }
+    });
 
     if (bestClaim) {
       const claimer = this.players.find(p => p.id === claimerId);
