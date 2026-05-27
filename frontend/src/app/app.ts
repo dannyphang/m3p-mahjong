@@ -76,7 +76,7 @@ interface GameState {
 export class App implements OnDestroy, AfterViewChecked {
   // Lobby State Signals
   playerName = signal('');
-  roomId = signal('room-888');
+  roomId = signal('room-' + Math.floor(1000 + Math.random() * 9000));
   isJoined = signal(false);
   myPlayerId = signal('');
   
@@ -102,6 +102,10 @@ export class App implements OnDestroy, AfterViewChecked {
   // Drag & Drop State tracking
   draggedIndex = signal<number | null>(null);
   dragOverIndex = signal<number | null>(null);
+
+  // UI State Signals
+  showNarrator = signal(true);
+  hoveredTile = signal<Tile | null>(null);
 
   @ViewChild('logsContainer') private logsContainer!: ElementRef;
 
@@ -203,6 +207,16 @@ export class App implements OnDestroy, AfterViewChecked {
 
     this.socket.on('gameOver', (details) => {
       this.hideGameOverModal.set(false);
+      if (details && details.hand) {
+        if (details.winningTile) {
+          const wIdx = details.hand.findIndex((t: Tile) => t.type === details.winningTile.type && t.value === details.winningTile.value);
+          if (wIdx !== -1) {
+            details.hand.splice(wIdx, 1);
+          }
+        }
+        const honorOrder = ['东', '南', '西', '北', '中', '发', '白'];
+        regularHandSort(details.hand, honorOrder);
+      }
       this.gameOverDetails.set(details);
     });
 

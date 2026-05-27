@@ -821,6 +821,11 @@ class GameState {
 
   executeHu(winnerId, tile, isSelfDraw) {
     const winner = this.players.find(p => p.id === winnerId);
+    let winningTile = tile;
+    if (isSelfDraw) {
+      winningTile = this.lastDrawnTile ? this.lastDrawnTile.tile : this.hands[winnerId][this.hands[winnerId].length - 1];
+    }
+    
     let finalHand = [...this.hands[winnerId]];
     if (tile && !isSelfDraw) {
       finalHand.push(tile);
@@ -832,7 +837,7 @@ class GameState {
       finalHand, 
       this.exposed[winnerId], 
       this.flowers[winnerId], 
-      tile, 
+      winningTile, 
       isSelfDraw, 
       isDealer,
       this.consecutiveDealerWins,
@@ -893,6 +898,7 @@ class GameState {
     io.to(this.roomId).emit('gameOver', {
       winner: winner.name,
       hand: finalHand,
+      winningTile,
       exposed: this.exposed[winnerId],
       flowers: this.flowers[winnerId],
       scoreResult,

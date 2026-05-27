@@ -33,6 +33,7 @@
           <span style="color: #ffd700; margin-left: 8px;">(Lian Zhuang x{{ gameState()?.consecutiveDealerWins }})</span>
         } | 
         Wall Tiles: <strong>{{ gameState()?.deckRemaining }}</strong>
+        | <button (click)="showNarrator.set(!showNarrator())" style="background:transparent; border:none; color:var(--gold-primary); cursor:pointer; font-weight:bold; margin-left:8px; font-size:14px; text-transform:uppercase;">🎙️ {{ showNarrator() ? 'Hide' : 'Show' }} Narrator</button>
       </div>
     }
   </header>
@@ -42,12 +43,14 @@
     @if (gameState()) {
       
       <!-- LOGS PANEL -->
-      <div class="logs-panel" #logsContainer>
-        <div class="logs-title">Game Narrator</div>
-        @for (log of gameState()?.logs; track $index) {
-          <div class="log-item">{{ log }}</div>
-        }
-      </div>
+      @if (showNarrator()) {
+        <div class="logs-panel" #logsContainer>
+          <div class="logs-title">Game Narrator</div>
+          @for (log of gameState()?.logs; track $index) {
+            <div class="log-item">{{ log }}</div>
+          }
+        </div>
+      }
 
       <!-- WAITING ROOM HUD -->
       @if (gameState()?.status === 'WAITING') {
@@ -115,7 +118,7 @@
           <!-- Flowers Zone -->
           <div style="display: flex; gap: 4px; margin-bottom: 8px; align-items: center;">
             @for (fl of getOpponentFlowers(2); track $index) {
-              <div class="mj-tile-small"><img [src]="getTileImageUrl(fl)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
+              <div class="mj-tile-small" [class.highlight-match]="hoveredTile() && fl.type === hoveredTile()?.type && fl.value == hoveredTile()?.value"><img [src]="getTileImageUrl(fl)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
             }
             <span style="font-size: 11px; color: var(--gold-primary); font-weight: 700; margin-left: 4px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">Public: {{ gameState()?.publicPoints?.[opp1.id] || 0 }} pts (Flowers: {{ gameState()?.flowerPoints?.[opp1.id] || 0 }} pts)</span>
           </div>
@@ -125,7 +128,7 @@
             @for (meld of getOpponentExposed(2); track $index) {
               <div style="display: flex; gap: 2px;">
                 @for (t of meld.tiles; track $index) {
-                  <div class="mj-tile-small"><img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
+                  <div class="mj-tile-small" [class.highlight-match]="hoveredTile() && t.type === hoveredTile()?.type && t.value == hoveredTile()?.value"><img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
                 }
               </div>
             }
@@ -162,7 +165,7 @@
           <!-- Flowers Zone -->
           <div style="display: flex; gap: 4px; margin-bottom: 8px; align-items: center;">
             @for (fl of getOpponentFlowers(1); track $index) {
-              <div class="mj-tile-small"><img [src]="getTileImageUrl(fl)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
+              <div class="mj-tile-small" [class.highlight-match]="hoveredTile() && fl.type === hoveredTile()?.type && fl.value == hoveredTile()?.value"><img [src]="getTileImageUrl(fl)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
             }
             <span style="font-size: 11px; color: var(--gold-primary); font-weight: 700; margin-left: 4px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">Public: {{ gameState()?.publicPoints?.[opp2.id] || 0 }} pts (Flowers: {{ gameState()?.flowerPoints?.[opp2.id] || 0 }} pts)</span>
           </div>
@@ -172,7 +175,7 @@
             @for (meld of getOpponentExposed(1); track $index) {
               <div style="display: flex; gap: 2px;">
                 @for (t of meld.tiles; track $index) {
-                  <div class="mj-tile-small"><img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
+                  <div class="mj-tile-small" [class.highlight-match]="hoveredTile() && t.type === hoveredTile()?.type && t.value == hoveredTile()?.value"><img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
                 }
               </div>
             }
@@ -193,7 +196,7 @@
         <div style="position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; background: rgba(14, 9, 6, 0.95); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--wood-light); min-width: 100px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
           @if (gameState()?.lastDiscard; as ld) {
             <div style="font-size: 9px; color: #80808a; margin-bottom: 3px; text-transform: uppercase;">Last Discard</div>
-            <div class="mj-tile" style="margin: 0 auto; width: 38px; height: 50px; cursor: default; border-bottom-width: 4px; border-right-width: 2px;">
+            <div class="mj-tile" style="margin: 0 auto; width: 38px; height: 50px; cursor: default; border-bottom-width: 4px; border-right-width: 2px;" [class.highlight-match]="hoveredTile() && ld.tile.type === hoveredTile()?.type && ld.tile.value == hoveredTile()?.value">
               <img [src]="getTileImageUrl(ld.tile)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
             </div>
           } @else {
@@ -205,7 +208,7 @@
         <div style="position: absolute; left: 12px; top: 12px; bottom: 12px; width: 140px; border-right: 1px dashed rgba(255,255,255,0.08); padding-right: 6px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; overflow-y: auto; align-content: flex-start; justify-content: flex-start;">
           <div style="font-size: 9px; color: #80808a; text-align: center; width: 100%; margin-bottom: 2px; text-transform: uppercase; font-weight: 600;">上家 Discards</div>
           @for (td of getOpponentDiscards(2); track $index) {
-            <div class="mj-tile-small" style="font-size: 11px; width: 22px; height: 30px;" [style.opacity]="td.claimed ? '0.2' : '1'"><img [src]="getTileImageUrl(td)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
+            <div class="mj-tile-small" style="font-size: 11px; width: 22px; height: 30px;" [style.opacity]="td.claimed ? '0.2' : '1'" [class.highlight-match]="hoveredTile() && td.type === hoveredTile()?.type && td.value == hoveredTile()?.value"><img [src]="getTileImageUrl(td)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
           }
         </div>
 
@@ -213,7 +216,7 @@
         <div style="position: absolute; right: 12px; top: 12px; bottom: 12px; width: 140px; border-left: 1px dashed rgba(255,255,255,0.08); padding-left: 6px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; overflow-y: auto; align-content: flex-start; justify-content: flex-end;">
           <div style="font-size: 9px; color: #80808a; text-align: center; width: 100%; margin-bottom: 2px; text-transform: uppercase; font-weight: 600;">下家 Discards</div>
           @for (td of getOpponentDiscards(1); track $index) {
-            <div class="mj-tile-small" style="font-size: 11px; width: 22px; height: 30px;" [style.opacity]="td.claimed ? '0.2' : '1'"><img [src]="getTileImageUrl(td)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
+            <div class="mj-tile-small" style="font-size: 11px; width: 22px; height: 30px;" [style.opacity]="td.claimed ? '0.2' : '1'" [class.highlight-match]="hoveredTile() && td.type === hoveredTile()?.type && td.value == hoveredTile()?.value"><img [src]="getTileImageUrl(td)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
           }
         </div>
 
@@ -221,7 +224,7 @@
         <div style="position: absolute; bottom: 12px; left: 160px; right: 160px; height: 160px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 6px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; align-content: flex-start; justify-content: center; overflow-y: auto;">
           <div style="font-size: 9px; color: #80808a; text-align: center; width: 100%; height: 12px; margin-bottom: 2px; text-transform: uppercase; font-weight: 600;">自家 Discards</div>
           @for (td of gameState()?.discards?.[myPlayerId()]; track $index) {
-            <div class="mj-tile-small" style="font-size: 11px; width: 22px; height: 30px;" [style.opacity]="td.claimed ? '0.2' : '1'"><img [src]="getTileImageUrl(td)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
+            <div class="mj-tile-small" style="font-size: 11px; width: 22px; height: 30px;" [style.opacity]="td.claimed ? '0.2' : '1'" [class.highlight-match]="hoveredTile() && td.type === hoveredTile()?.type && td.value == hoveredTile()?.value"><img [src]="getTileImageUrl(td)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
           }
         </div>
       </div>
@@ -252,7 +255,7 @@
             @for (meld of gameState()?.exposed?.[myPlayerId()]; track $index) {
               <div style="display: flex; gap: 4px; padding: 4px; background: rgba(0,0,0,0.2); border-radius: 8px;">
                 @for (t of meld.tiles; track $index) {
-                  <div class="mj-tile" style="width: 44px; height: 60px; cursor: default;">
+                  <div class="mj-tile" style="width: 44px; height: 60px; cursor: default;" [class.highlight-match]="hoveredTile() && t.type === hoveredTile()?.type && t.value == hoveredTile()?.value">
                     <img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
                   </div>
                 }
@@ -265,7 +268,7 @@
             <div style="font-size: 11px; color: var(--gold-primary); font-weight: 700; text-transform: uppercase; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px;">Public Points: {{ gameState()?.publicPoints?.[myPlayerId()] || 0 }} pts (Flower: {{ gameState()?.flowerPoints?.[myPlayerId()] || 0 }} pts)</div>
             <div style="display: flex; gap: 6px;">
               @for (fl of gameState()?.flowers?.[myPlayerId()]; track $index) {
-                <div class="mj-tile" style="width: 44px; height: 60px; background: #ffe0b2; cursor: default; border-color: #f57c00;">
+                <div class="mj-tile" style="width: 44px; height: 60px; background: #ffe0b2; cursor: default; border-color: #f57c00;" [class.highlight-match]="hoveredTile() && fl.type === hoveredTile()?.type && fl.value == hoveredTile()?.value">
                   <img [src]="getTileImageUrl(fl)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
                 </div>
               }
@@ -287,7 +290,9 @@
                  (dragstart)="onDragStart($event, $index)"
                  (dragover)="onDragOver($event, $index)"
                  (dragend)="onDragEnd()"
-                 (drop)="onDrop($event, $index)">
+                 (drop)="onDrop($event, $index)"
+                 (mouseenter)="hoveredTile.set(tile)"
+                 (mouseleave)="hoveredTile.set(null)">
               <img [src]="getTileImageUrl(tile)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
             </div>
           }
@@ -381,10 +386,19 @@
                 </p>
 
                 <!-- Show Winner Hand -->
-                <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
-                  @for (t of details.hand; track $index) {
-                    <div class="mj-tile" style="width: 38px; height: 50px; cursor: default;">
-                      <img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
+                <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                  <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;">
+                    @for (t of details.hand; track $index) {
+                      <div class="mj-tile" style="width: 38px; height: 50px; cursor: default;">
+                        <img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
+                      </div>
+                    }
+                  </div>
+                  @if (details.winningTile) {
+                    <div style="margin-left: 12px; display: flex; align-items: center;">
+                      <div class="mj-tile" style="width: 38px; height: 50px; cursor: default; border-color: var(--gold-primary); box-shadow: var(--gold-glow);">
+                        <img [src]="getTileImageUrl(details.winningTile)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
+                      </div>
                     </div>
                   }
                 </div>
