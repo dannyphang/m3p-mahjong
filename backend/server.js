@@ -19,6 +19,10 @@ const {
 const app = express();
 app.use(cors());
 
+// Health check routes to prevent Render inactivity
+app.get('/', (req, res) => res.send('M3P Mahjong Backend is alive!'));
+app.get('/ping', (req, res) => res.send('pong'));
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -281,7 +285,8 @@ class GameState {
     if (this.lastDrawnTile && this.lastDrawnTile.playerId === player.id) {
       wins = isWinningHand(this.hands[player.id]);
       if (wins) {
-        const fanEval = calculateFan(this.hands[player.id], this.exposed[player.id], this.flowers[player.id], this.lastDrawnTile.tile, true, player.id === this.players[this.dealerIndex].id, 0, this.getPlayerWind(player.id), this.currentDrawIsHuaShang, this.currentDrawIsGangShang);
+        const { isTianHu, isDiHu } = this.getTianDiHu(player.id);
+        const fanEval = calculateFan(this.hands[player.id], this.exposed[player.id], this.flowers[player.id], this.lastDrawnTile.tile, true, player.id === this.players[this.dealerIndex].id, 0, this.getPlayerWind(player.id), this.currentDrawIsHuaShang, this.currentDrawIsGangShang, isTianHu, isDiHu);
         huFan = fanEval.totalFan;
       }
     }
@@ -459,7 +464,8 @@ class GameState {
       let canClaimHu = false;
       let huFan = 0;
       if (wins) {
-        const fanEval = calculateFan(testHand, this.exposed[p.id], this.flowers[p.id], tile, false, p.id === this.players[this.dealerIndex].id, 0, this.getPlayerWind(p.id));
+        const { isTianHu, isDiHu } = this.getTianDiHu(p.id);
+        const fanEval = calculateFan(testHand, this.exposed[p.id], this.flowers[p.id], tile, false, p.id === this.players[this.dealerIndex].id, 0, this.getPlayerWind(p.id), false, false, isTianHu, isDiHu);
         huFan = fanEval.totalFan;
         canClaimHu = true;
       }
@@ -831,6 +837,8 @@ class GameState {
       finalHand.push(tile);
     }
 
+    const { isTianHu, isDiHu } = this.getTianDiHu(winnerId);
+
     // Calculate score
     const isDealer = winnerId === this.players[this.dealerIndex].id;
     const scoreResult = calculateFan(
@@ -843,7 +851,9 @@ class GameState {
       this.consecutiveDealerWins,
       this.getPlayerWind(winnerId),
       isSelfDraw ? this.currentDrawIsHuaShang : false,
-      isSelfDraw ? this.currentDrawIsGangShang : false
+      isSelfDraw ? this.currentDrawIsGangShang : false,
+      isTianHu,
+      isDiHu
     );
 
     this.status = 'GAME_OVER';
@@ -860,8 +870,8 @@ class GameState {
       settlements[p.id] = 0;
     });
 
-    if (isSelfDraw) {
-      // Self draw: All other players pay winner x1
+    if (isSelfDraw || isTianHu || isDiHu) {
+      // Self draw or Tian/Di Hu: All other players pay winner x1
       this.players.forEach(p => {
         if (p.id === winnerId) return;
 
@@ -903,7 +913,9 @@ class GameState {
       flowers: this.flowers[winnerId],
       scoreResult,
       settlements,
-      isSelfDraw
+      isSelfDraw,
+      isTianHu,
+      isDiHu
     });
 
     this.broadcastState();
@@ -926,6 +938,22 @@ class GameState {
     this.currentTurn = (this.currentTurn + 1) % 3;
     this.broadcastState();
     this.drawCard();
+  }
+
+  getTianDiHu(playerId) {
+    let totalDiscards = 0;
+    this.players.forEach(p => {
+      totalDiscards += (this.discards[p.id] ? this.discards[p.id].length : 0);
+    });
+
+    const isDealer = playerId === this.players[this.dealerIndex].id;
+    const isTianHu = totalDiscards === 0 && isDealer;
+    
+    // Di Hu: Non-dealer wins before they have discarded anything.
+    // AND it must be within the first round (total discards <= 2).
+    const isDiHu = !isDealer && this.discards[playerId].length === 0 && totalDiscards <= 2;
+
+    return { isTianHu, isDiHu };
   }
 }
 

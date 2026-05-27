@@ -307,7 +307,7 @@ function isWinningHand(handTiles, allowSequences = true) {
  * M3P Fan Scoring Calculator
  * Hand is verified, now calculate the total fan value.
  */
-function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, consecutiveDealerWins = 0, playerWind = '东', isHuaShang = false, isGangShang = false) {
+function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, consecutiveDealerWins = 0, playerWind = '东', isHuaShang = false, isGangShang = false, isTianHu = false, isDiHu = false) {
   const breakdown = [];
   let totalFan = 0;
 
@@ -316,8 +316,18 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
   const flyCountInMelds = melds.flatMap(m => m.tiles).filter(t => t.type === TILE_TYPES.FLY).length;
   const flyCount = flyCountInHand + flyCountInMelds;
   if (flyCount >= 4) {
+    if (isTianHu) breakdown.push({ name: '天胡 (Heavenly Hand)', fan: 10 });
+    if (isDiHu) breakdown.push({ name: '地胡 (Earthly Hand)', fan: 10 });
     breakdown.push({ name: '四飞 (Four Jokers)', fan: 10 });
     return { totalFan: 10, breakdown };
+  }
+
+  if (isTianHu) {
+    totalFan += 10;
+    breakdown.push({ name: '天胡 (Heavenly Hand)', fan: 10 });
+  } else if (isDiHu) {
+    totalFan += 10;
+    breakdown.push({ name: '地胡 (Earthly Hand)', fan: 10 });
   }
 
   // 2. Flowers, Animals, Jokers, and Wind points calculation based on spreadsheet point system
