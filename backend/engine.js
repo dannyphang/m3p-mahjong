@@ -541,7 +541,7 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
 
   if (isCirclesOnly) {
     totalFan += 2;
-    breakdown.push({ name: '清一色 (Pure Suit)', fan: 2 });
+    breakdown.push({ name: '全筒子 (All Circle)', fan: 2 });
   } else if (isHonorsOnly) {
     totalFan += 10;
     breakdown.push({ name: '字一色 (All Honors)', fan: 10 });
@@ -578,6 +578,22 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
     breakdown.push({ name: '碰碰胡 (Pong-Pong Hand)', fan: 2 });
   }
 
+  // Ping Hu (平胡)
+  // All melds are Chows, all tiles are Circles, and hand can be formed by only sequences + 1 pair.
+  let isPingHu = false;
+  if (isCirclesOnly) {
+    if (!melds || melds.every(m => m.type === 'chow')) {
+      if (isPingHuHand(handTiles)) {
+        isPingHu = true;
+      }
+    }
+  }
+
+  if (isPingHu) {
+    totalFan += 1;
+    breakdown.push({ name: '平胡 (Ping Hu)', fan: 1 });
+  }
+
   // Eighteen Arhats (十八罗汉) - 4 Kongs
   const kongsCount = melds.filter(m => m.type === 'kong').length;
   if (kongsCount === 4) {
@@ -597,6 +613,80 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
   }
 
   return { totalFan, breakdown };
+}
+
+/**
+ * Checks if a hand consists strictly of Sequences and exactly 1 Pair.
+ * Used for Ping Hu (平胡).
+ */
+function isPingHuHand(handTiles) {
+  const flyCount = handTiles.filter(t => t.type === TILE_TYPES.FLY).length;
+  const normalTiles = handTiles.filter(t => t.type !== TILE_TYPES.FLY);
+  
+  const circles = new Array(10).fill(0);
+  for (const t of normalTiles) {
+    if (t.type === TILE_TYPES.CIRCLE) {
+      circles[t.value]++;
+    } else {
+      return false; // Ping Hu must be all circles
+    }
+  }
+
+  function solve(jokersLeft, pairFormed) {
+    let sum = 0;
+    for (let i = 1; i <= 9; i++) sum += circles[i];
+    if (sum === 0) {
+       if (!pairFormed && jokersLeft >= 2) {
+           jokersLeft -= 2;
+           pairFormed = true;
+       }
+       return pairFormed && (jokersLeft % 3 === 0);
+    }
+    
+    for (let i = 1; i <= 9; i++) {
+        if (circles[i] > 0) {
+            // Try pair
+            if (!pairFormed) {
+                const costPair = Math.max(0, 2 - circles[i]);
+                if (jokersLeft >= costPair) {
+                    circles[i] -= (2 - costPair);
+                    if (solve(jokersLeft - costPair, true)) {
+                        circles[i] += (2 - costPair);
+                        return true;
+                    }
+                    circles[i] += (2 - costPair);
+                }
+            }
+            
+            // Try sequence
+            if (i <= 7) {
+                const cost = (circles[i+1] > 0 ? 0 : 1) + (circles[i+2] > 0 ? 0 : 1);
+                if (jokersLeft >= cost) {
+                    circles[i] -= 1;
+                    const used1 = circles[i+1] > 0 ? 1 : 0;
+                    const used2 = circles[i+2] > 0 ? 1 : 0;
+                    if (used1) circles[i+1] -= 1;
+                    if (used2) circles[i+2] -= 1;
+                    
+                    if (solve(jokersLeft - cost, pairFormed)) {
+                        circles[i] += 1;
+                        if (used1) circles[i+1] += 1;
+                        if (used2) circles[i+2] += 1;
+                        return true;
+                    }
+                    
+                    circles[i] += 1;
+                    if (used1) circles[i+1] += 1;
+                    if (used2) circles[i+2] += 1;
+                }
+            }
+            return false; // MUST consume this tile!
+        }
+    }
+    return pairFormed && (jokersLeft % 3 === 0);
+  }
+  
+  return solve(flyCount, false);
 }
 
 function calculateFlowerPoints(flowers, playerWind) {
