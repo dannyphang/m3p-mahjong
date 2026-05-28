@@ -150,7 +150,7 @@ class GameState {
       publicPoints[p.id] = calculatePublicPoints(this.flowers[p.id] || [], this.exposed[p.id] || [], pWind);
       playerWinds[p.id] = pWind;
       
-      tingPaiState[p.id] = this.hands[p.id].length === 13 ? isTingPai(this.hands[p.id]) : false;
+      tingPaiState[p.id] = this.hands[p.id].length % 3 === 1 ? isTingPai(this.hands[p.id]) : false;
     });
 
     return {
