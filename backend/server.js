@@ -142,11 +142,14 @@ class GameState {
     const flowerPoints = {};
     const publicPoints = {};
     const playerWinds = {};
+    const tingPaiState = {};
     this.players.forEach(p => {
-      const wind = this.getPlayerWind(p.id);
-      playerWinds[p.id] = wind;
-      flowerPoints[p.id] = calculateFlowerPoints(this.flowers[p.id] || [], wind);
-      publicPoints[p.id] = calculatePublicPoints(this.flowers[p.id] || [], this.exposed[p.id] || [], wind);
+      const pWind = this.getPlayerWind(p.id);
+      flowerPoints[p.id] = calculateFlowerPoints(this.flowers[p.id] || [], pWind);
+      publicPoints[p.id] = calculatePublicPoints(this.flowers[p.id] || [], this.exposed[p.id] || [], pWind);
+      playerWinds[p.id] = pWind;
+      
+      tingPaiState[p.id] = this.hands[p.id].length === 13 ? isTingPai(this.hands[p.id]) : false;
     });
 
     return {
@@ -163,6 +166,7 @@ class GameState {
       flowerPoints: flowerPoints,
       publicPoints: publicPoints,
       playerWinds: playerWinds,
+      tingPaiState: tingPaiState,
       discards: this.discards,
       lastDiscard: this.lastDiscard,
       lastDrawnTile: this.lastDrawnTile,
@@ -527,8 +531,8 @@ class GameState {
     });
 
     if (this.activeClaimers.length === 0) {
-      // Move to next player's turn immediately since no one has claim options
-      this.moveToNextPlayer();
+      // Resolve claims immediately (handles pendingRobbingKong success or moves to next player)
+      this.resolveClaims();
     } else {
       // Start a 10s timer for human players to decide ONLY if enabled
       if (this.settings.enableTimer) {

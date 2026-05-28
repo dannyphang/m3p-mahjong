@@ -693,5 +693,26 @@ module.exports = {
   isWinningHand,
   calculateFan,
   calculateFlowerPoints,
-  calculatePublicPoints
+  calculatePublicPoints,
+  isTingPai
 };
+
+function isTingPai(handTiles) {
+  // Check if hand length is valid for Ting Pai (usually 3M + 1, e.g., 1, 4, 7, 10, 13 tiles)
+  // In our engine, we can just test adding all possible tiles.
+  const possibleTiles = [];
+  for (let i = 1; i <= 9; i++) {
+    possibleTiles.push({ type: TILE_TYPES.CIRCLE, value: i.toString() });
+  }
+  const honors = ['东', '南', '西', '北', '中', '发', '白'];
+  honors.forEach(h => {
+    possibleTiles.push({ type: TILE_TYPES.HONOR, value: h });
+  });
+
+  for (const pt of possibleTiles) {
+    if (isWinningHand([...handTiles, pt], true)) {
+      return true;
+    }
+  }
+  return false;
+}

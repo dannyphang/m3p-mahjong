@@ -56,6 +56,7 @@ interface GameState {
   flowerPoints: { [key: string]: number };
   publicPoints: { [key: string]: number };
   playerWinds: { [key: string]: string };
+  tingPaiState: { [key: string]: boolean };
   discards: { [key: string]: Tile[] };
   lastDiscard: { tile: Tile; playerId: string } | null;
   lastDrawnTile: { playerId: string; tile: Tile } | null;

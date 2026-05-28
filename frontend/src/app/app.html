@@ -245,6 +245,9 @@
             @if (gameState()?.playerWinds) {
               <span style="font-size: 10px; color: #f44336; border: 1px solid #f44336; padding: 1px 6px; border-radius: 4px; font-weight: 700;">{{ gameState()?.playerWinds?.[myPlayerId()] }}风</span>
             }
+            @if (gameState()?.tingPaiState?.[myPlayerId()]) {
+              <span style="font-size: 11px; color: #1e130c; background: var(--gold-primary); padding: 2px 8px; border-radius: 4px; font-weight: 800; animation: pulse 2s infinite; letter-spacing: 1px;">听牌 (Waiting)</span>
+            }
           </div>
         </div>
 
