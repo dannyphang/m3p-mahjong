@@ -1032,7 +1032,8 @@ class GameState {
       this.nextConsecutiveDealerWins = this.consecutiveDealerWins + 1;
       this.nextDealerIndex = this.dealerIndex;
     } else {
-      this.nextDealerIndex = (this.dealerIndex + 1) % 3;
+      // Winner Takes Dealer (赢家做庄)
+      this.nextDealerIndex = this.players.findIndex(p => p.id === winnerId);
       this.nextConsecutiveDealerWins = 0;
     }
 

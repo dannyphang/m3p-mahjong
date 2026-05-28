@@ -184,6 +184,23 @@ function isWinningHand(handTiles, allowSequences = true) {
   // Edge case: 4 flying cards (四飞) is an automatic win regardless of hand!
   if (flyCount >= 4) return true;
 
+  // Check for Seven Pairs (七星对子/呖咕呖咕)
+  if (handTiles.length === 14 && flyCount === 0) {
+    const counts = {};
+    for (const t of handTiles) {
+      const key = `${t.type}_${t.value}`;
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    let isSevenPairs = true;
+    for (const key in counts) {
+      if (counts[key] % 2 !== 0) {
+        isSevenPairs = false;
+        break;
+      }
+    }
+    if (isSevenPairs) return true;
+  }
+
   // Group tiles
   // circles: index 1-9 for easy sequential checking
   const circles = new Array(10).fill(0);
@@ -610,6 +627,31 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
   if (isPongPong) {
     totalFan += 2;
     breakdown.push({ name: '碰碰胡 (Pong-Pong Hand)', fan: 2 });
+  }
+
+  // Seven Pairs Check (七星对子 / 呖咕呖咕)
+  let isSevenPairs = false;
+  if (handTiles.length === 14 && melds.length === 0) {
+    const flyCount = handTiles.filter(t => t.type === TILE_TYPES.FLY).length;
+    if (flyCount === 0) {
+      const counts = {};
+      for (const t of handTiles) {
+        const key = `${t.type}_${t.value}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+      isSevenPairs = true;
+      for (const key in counts) {
+        if (counts[key] % 2 !== 0) {
+          isSevenPairs = false;
+          break;
+        }
+      }
+    }
+  }
+
+  if (isSevenPairs) {
+    totalFan += 10;
+    breakdown.push({ name: '七星对子 (Seven Pairs)', fan: 10 });
   }
 
   // Ping Hu (平胡)
