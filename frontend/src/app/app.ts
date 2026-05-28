@@ -56,7 +56,7 @@ interface GameState {
   flowerPoints: { [key: string]: number };
   publicPoints: { [key: string]: number };
   playerWinds: { [key: string]: string };
-  tingPaiState: { [key: string]: boolean };
+  tingPaiState: { [key: string]: boolean | Tile[] };
   discards: { [key: string]: Tile[] };
   lastDiscard: { tile: Tile; playerId: string } | null;
   lastDrawnTile: { playerId: string; tile: Tile } | null;
@@ -484,6 +484,26 @@ export class App implements OnDestroy, AfterViewChecked {
     return state.players[targetIdx] || null;
   }
 
+  getOpponentDiscards(offsetIndex: number): Tile[] {
+    const s = this.gameState();
+    if (!s || !s.players) return [];
+    
+    const myIndex = s.players.findIndex(p => p.id === this.myPlayerId());
+    if (myIndex === -1) return [];
+    
+    const oppIndex = (myIndex + offsetIndex) % 3;
+    const oppId = s.players[oppIndex].id;
+    return s.discards[oppId] || [];
+  }
+
+  isArray(val: any): boolean {
+    return Array.isArray(val);
+  }
+
+  asArray(val: any): any[] {
+    return val as any[];
+  }
+
   getOpponentHand(offset: number): Tile[] {
     const opp = this.getRemainingPlayerPosition(offset);
     if (!opp) return [];
@@ -502,11 +522,7 @@ export class App implements OnDestroy, AfterViewChecked {
     return this.gameState()?.flowers[opp.id] || [];
   }
 
-  getOpponentDiscards(offset: number): Tile[] {
-    const opp = this.getRemainingPlayerPosition(offset);
-    if (!opp) return [];
-    return this.gameState()?.discards[opp.id] || [];
-  }
+
 
   isMyTurn(): boolean {
     const state = this.gameState();

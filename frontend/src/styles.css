@@ -103,6 +103,10 @@ body {
   margin-bottom: 24px;
 }
 
+.ting-pai-container:hover .ting-pai-tooltip {
+  display: block !important;
+}
+
 .form-group {
   margin-bottom: 20px;
   text-align: left;

@@ -709,10 +709,12 @@ function isTingPai(handTiles) {
     possibleTiles.push({ type: TILE_TYPES.HONOR, value: h });
   });
 
+  const winningTiles = [];
   for (const pt of possibleTiles) {
     if (isWinningHand([...handTiles, pt], true)) {
-      return true;
+      winningTiles.push(pt);
     }
   }
-  return false;
+  
+  return winningTiles.length > 0 ? winningTiles : false;
 }

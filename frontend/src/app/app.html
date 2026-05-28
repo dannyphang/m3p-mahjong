@@ -246,7 +246,22 @@
               <span style="font-size: 10px; color: #f44336; border: 1px solid #f44336; padding: 1px 6px; border-radius: 4px; font-weight: 700;">{{ gameState()?.playerWinds?.[myPlayerId()] }}风</span>
             }
             @if (gameState()?.tingPaiState?.[myPlayerId()]) {
-              <span style="font-size: 11px; color: #1e130c; background: var(--gold-primary); padding: 2px 8px; border-radius: 4px; font-weight: 800; animation: pulse 2s infinite; letter-spacing: 1px;">听牌 (Waiting)</span>
+              <div class="ting-pai-container" style="position: relative; display: inline-block;">
+                <span class="ting-pai-badge" style="font-size: 11px; color: #1e130c; background: var(--gold-primary); padding: 2px 8px; border-radius: 4px; font-weight: 800; animation: pulse 2s infinite; letter-spacing: 1px; cursor: help; display: inline-block;">听牌 (Waiting)</span>
+                <!-- Tooltip -->
+                <div class="ting-pai-tooltip" style="position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px; background: rgba(0,0,0,0.9); border: 1px solid var(--gold-primary); padding: 8px; border-radius: 8px; display: none; z-index: 100; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                  <div style="font-size: 10px; color: #a0a0ab; text-transform: uppercase; margin-bottom: 4px; text-align: center;">Waiting For:</div>
+                  <div style="display: flex; gap: 4px; justify-content: center;">
+                    @if (isArray(gameState()?.tingPaiState?.[myPlayerId()])) {
+                      @for (t of asArray(gameState()?.tingPaiState?.[myPlayerId()]); track $index) {
+                        <div class="mj-tile-small" style="width: 22px; height: 30px;"><img [src]="getTileImageUrl(t)" style="width: 100%; height: 100%; object-fit: contain;" /></div>
+                      }
+                    } @else {
+                      <div style="color: #fff; font-size: 12px;">Waiting...</div>
+                    }
+                  </div>
+                </div>
+              </div>
             }
           </div>
         </div>
