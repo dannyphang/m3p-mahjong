@@ -810,6 +810,13 @@ class GameState {
     // Put Joker into hand
     hand.push(jokerTile);
 
+    // Update lastDrawnTile to the rescued Joker so that if they Hu, it shows winning with Fei
+    this.lastDrawnTile = { playerId: player.id, tile: jokerTile };
+    
+    // Clear replacement bonuses because rescuing a Fei breaks the "winning on replacement" chain
+    this.currentDrawIsHuaShang = false;
+    this.currentDrawIsGangShang = false;
+
     this.addLog(`${player.name} rescued a 飞 (Joker) by substituting a ${realTile.display}!`);
     this.broadcastState();
 
