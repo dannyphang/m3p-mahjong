@@ -263,7 +263,7 @@ function isWinningHand(handTiles, allowSequences = true) {
           circles[i] += (3 - costPong);
         }
 
-        // Try Sequence (Chow)
+        // Try Sequence (Chow) where i is the 1st tile (i, i+1, i+2)
         if (allowSequences && i <= 7) {
           let c1 = circles[i] > 0 ? 1 : 0;
           let c2 = circles[i + 1] > 0 ? 1 : 0;
@@ -283,6 +283,40 @@ function isWinningHand(handTiles, allowSequences = true) {
             circles[i] += c1;
             circles[i + 1] += c2;
             circles[i + 2] += c3;
+          }
+        }
+
+        // Try Sequence (Chow) where i is the 2nd tile (i-1, i, i+1)
+        if (allowSequences && i >= 2 && i <= 8) {
+          let c2 = circles[i] > 0 ? 1 : 0;
+          let c3 = circles[i + 1] > 0 ? 1 : 0;
+          let costSeq = 1 + (1 - c2) + (1 - c3); // 1 joker for i-1
+          
+          if (jokersLeft >= costSeq) {
+            circles[i] -= c2;
+            circles[i + 1] -= c3;
+            if (solve(honorsIdx, jokersLeft - costSeq, pairFormed)) {
+              circles[i] += c2;
+              circles[i + 1] += c3;
+              return true;
+            }
+            circles[i] += c2;
+            circles[i + 1] += c3;
+          }
+        }
+
+        // Try Sequence (Chow) where i is the 3rd tile (i-2, i-1, i)
+        if (allowSequences && i >= 3 && i <= 9) {
+          let c3 = circles[i] > 0 ? 1 : 0;
+          let costSeq = 2 + (1 - c3); // 2 jokers for i-2 and i-1
+          
+          if (jokersLeft >= costSeq) {
+            circles[i] -= c3;
+            if (solve(honorsIdx, jokersLeft - costSeq, pairFormed)) {
+              circles[i] += c3;
+              return true;
+            }
+            circles[i] += c3;
           }
         }
         
@@ -658,7 +692,7 @@ function isPingHuHand(handTiles) {
                 }
             }
             
-            // Try sequence
+            // Try sequence where i is the 1st tile
             if (i <= 7) {
                 const cost = (circles[i+1] > 0 ? 0 : 1) + (circles[i+2] > 0 ? 0 : 1);
                 if (jokersLeft >= cost) {
@@ -678,6 +712,38 @@ function isPingHuHand(handTiles) {
                     circles[i] += 1;
                     if (used1) circles[i+1] += 1;
                     if (used2) circles[i+2] += 1;
+                }
+            }
+
+            // Try sequence where i is the 2nd tile
+            if (i >= 2 && i <= 8) {
+                const cost = 1 + (circles[i+1] > 0 ? 0 : 1); // 1 joker for i-1
+                if (jokersLeft >= cost) {
+                    circles[i] -= 1;
+                    const used2 = circles[i+1] > 0 ? 1 : 0;
+                    if (used2) circles[i+1] -= 1;
+                    
+                    if (solve(jokersLeft - cost, pairFormed)) {
+                        circles[i] += 1;
+                        if (used2) circles[i+1] += 1;
+                        return true;
+                    }
+                    
+                    circles[i] += 1;
+                    if (used2) circles[i+1] += 1;
+                }
+            }
+
+            // Try sequence where i is the 3rd tile
+            if (i >= 3 && i <= 9) {
+                const cost = 2; // 2 jokers for i-2 and i-1
+                if (jokersLeft >= cost) {
+                    circles[i] -= 1;
+                    if (solve(jokersLeft - cost, pairFormed)) {
+                        circles[i] += 1;
+                        return true;
+                    }
+                    circles[i] += 1;
                 }
             }
             return false; // MUST consume this tile!

@@ -89,7 +89,7 @@ export class App implements OnDestroy, AfterViewChecked {
   claimOptions = signal<{ tile: Tile; canHu: boolean; huFan: number; canPong: boolean; canKong: boolean; canChow?: any[] | null } | null>(null);
   
   // Self turn options
-  turnOptions = signal<{ canHu: boolean; huFan: number; canSelfKong: Tile[] | null; canReplaceJoker?: any[] | null } | null>(null);
+  turnOptions = signal<{ canHu: boolean; huFan: number; canSelfKong: (Tile & { isUpgrade?: boolean })[] | null; canReplaceJoker?: any[] | null } | null>(null);
   
   // Pending Claim State
   pendingClaim = signal(false);

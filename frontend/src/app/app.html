@@ -360,7 +360,7 @@
               }
               @if (opts.canSelfKong) {
                 @for (opt of opts.canSelfKong; track $index) {
-                  <button (click)="declareSelfKong(opt)" class="action-btn">暗杠 {{ opt.value }}</button>
+                  <button (click)="declareSelfKong(opt)" class="action-btn">{{ opt.isUpgrade ? '加杠' : '暗杠' }} {{ opt.value }}</button>
                 }
               }
               @if (opts.canReplaceJoker) {

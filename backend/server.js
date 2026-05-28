@@ -363,16 +363,20 @@ class GameState {
     Object.keys(counts).forEach(k => {
       if (counts[k] === 4) {
         const [type, value] = k.split('_');
-        options.push({ type, value: isNaN(value) ? value : parseInt(value) });
+        options.push({ type, value: isNaN(value) ? value : parseInt(value), isUpgrade: false });
       }
     });
 
     // 2. Pong already exposed, and drawing the 4th matching card
     exposed.forEach(meld => {
       if (meld.type === 'pong') {
-        const matchingTile = hand.find(t => t.type === meld.tiles[0].type && t.value === meld.tiles[0].value);
-        if (matchingTile) {
-          options.push({ type: matchingTile.type, value: matchingTile.value });
+        // Cannot upgrade a Pong to a Kong if the Pong contains a Joker!
+        const hasFei = meld.tiles.some(t => t.type === TILE_TYPES.FLY);
+        if (!hasFei) {
+          const matchingTile = hand.find(t => t.type === meld.tiles[0].type && t.value === meld.tiles[0].value);
+          if (matchingTile) {
+            options.push({ type: matchingTile.type, value: matchingTile.value, isUpgrade: true });
+          }
         }
       }
     });
