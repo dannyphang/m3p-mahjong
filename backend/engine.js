@@ -307,9 +307,14 @@ function isWinningHand(handTiles, allowSequences = true) {
  * M3P Fan Scoring Calculator
  * Hand is verified, now calculate the total fan value.
  */
-function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, consecutiveDealerWins = 0, playerWind = '东', isHuaShang = false, isGangShang = false, isTianHu = false, isDiHu = false) {
+function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, consecutiveDealerWins = 0, playerWind = '东', isHuaShang = false, isGangShang = false, isTianHu = false, isDiHu = false, isRobbingKong = false) {
   const breakdown = [];
   let totalFan = 0;
+
+  if (isRobbingKong) {
+    totalFan += 1;
+    breakdown.push({ name: '抢杠 (Robbing the Kong)', fan: 1 });
+  }
 
   // 1. Check for 4 Flyers (四飞) - Instant 10 Fan
   const flyCountInHand = handTiles.filter(t => t.type === TILE_TYPES.FLY).length;

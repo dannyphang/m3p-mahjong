@@ -299,8 +299,8 @@
           }
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px; padding: 0 10px;">
-          <div style="color: #a0a0ab; font-size: 13px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px; padding: 0 10px; min-height: 32px;">
+          <div style="color: #a0a0ab; font-size: 13px; text-align: left; flex: 1;">
             @if (isMyTurn()) {
               <span style="color: var(--gold-primary); font-weight: 700; animation: pulse 1.5s infinite;">
                 ★ Your Turn! Select a card to discard (Double click to discard)
@@ -309,61 +309,60 @@
               <span>Waiting for other players...</span>
             }
           </div>
-          <button (click)="sortHand()" class="hud-btn" 
-                  style="background: var(--gold-primary); color: #1e130c; padding: 6px 16px; font-size: 14px; border-radius: 8px; margin: 0; box-shadow: none; border-width: 1px; transition: all 0.2s;">
-            Sort Hand 🗃️
-          </button>
+
+          <!-- ACTION BUTTONS CENTERED -->
+          <div style="display: flex; gap: 8px; justify-content: center; flex: 2;">
+            @if (claimOptions(); as opts) {
+              @if (opts.canHu) {
+                <button [disabled]="opts.huFan < 5" (click)="claimAction('hu')" class="action-btn" [style.border-color]="opts.huFan < 5 ? '#555' : '#f44336'" [style.color]="opts.huFan < 5 ? '#888' : '#f44336'">胡 (Win){{ opts.huFan < 5 ? ' - Not Enough Points' : '' }}</button>
+              }
+              @if (opts.canKong) {
+                <button (click)="claimAction('kong')" class="action-btn">杠 (Kong)</button>
+              }
+              @if (opts.canPong) {
+                <button (click)="claimAction('pong')" class="action-btn">碰 (Pong)</button>
+              }
+              @if (opts.canChow) {
+                @for (opt of opts.canChow; track $index) {
+                  <button (click)="claimAction('chow_' + opt.v1 + '_' + opt.v2)" class="action-btn" style="border-color: #4caf50; color: #4caf50;">吃 (Chow: {{ opt.display }})</button>
+                }
+              }
+              <button (click)="claimAction('pass')" class="action-btn" style="border-color: #888; color: #ccc;">过 (Pass)</button>
+            }
+
+            @if (pendingClaim()) {
+              <span style="color: var(--gold-primary); font-size: 13px; padding: 6px 12px; animation: pulse 1s infinite; background: rgba(0,0,0,0.6); border-radius: 8px; border: 1px solid var(--gold-primary);">
+                ⏳ Waiting for others...
+              </span>
+            }
+
+            @if (turnOptions(); as opts) {
+              @if (opts.canHu) {
+                <button [disabled]="opts.huFan < 5" (click)="declareSelfHu()" class="action-btn" [style.border-color]="opts.huFan < 5 ? '#555' : '#f44336'" [style.color]="opts.huFan < 5 ? '#888' : '#f44336'">自摸 (Self Win){{ opts.huFan < 5 ? ' - Not Enough Points' : '' }}</button>
+              }
+              @if (opts.canSelfKong) {
+                @for (opt of opts.canSelfKong; track $index) {
+                  <button (click)="declareSelfKong(opt)" class="action-btn">暗杠 {{ opt.value }}</button>
+                }
+              }
+              @if (opts.canReplaceJoker) {
+                @for (opt of opts.canReplaceJoker; track $index) {
+                  <button (click)="replaceJoker(opt)" class="action-btn" style="border-color: #fdd835; color: #fdd835;">补飞 (Replace {{ opt.tile.display }})</button>
+                }
+              }
+              <button (click)="cancelSelfAction()" class="action-btn" style="border-color: #888; color: #ccc;">取消 (Cancel)</button>
+            }
+          </div>
+
+          <div style="flex: 1; text-align: right;">
+            <button (click)="sortHand()" class="action-btn" style="background: var(--gold-primary); color: #1e130c;">
+              Sort Hand 🗃️
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- HUD CLAIM OVERLAYS -->
-      @if (claimOptions(); as opts) {
-        <div class="hud-actions">
-          @if (opts.canHu) {
-            <button [disabled]="opts.huFan < 5" (click)="claimAction('hu')" class="hud-btn" [style.border-color]="opts.huFan < 5 ? '#555' : '#f44336'" [style.color]="opts.huFan < 5 ? '#888' : '#f44336'">胡 (Win){{ opts.huFan < 5 ? ' - Not Enough Points' : '' }}</button>
-          }
-          @if (opts.canKong) {
-            <button (click)="claimAction('kong')" class="hud-btn">杠 (Kong)</button>
-          }
-          @if (opts.canPong) {
-            <button (click)="claimAction('pong')" class="hud-btn">碰 (Pong)</button>
-          }
-          @if (opts.canChow) {
-            @for (opt of opts.canChow; track $index) {
-              <button (click)="claimAction('chow_' + opt.v1 + '_' + opt.v2)" class="hud-btn" style="border-color: #2e7d32; color: #2e7d32;">吃 (Chow: {{ opt.display }})</button>
-            }
-          }
-          <button (click)="claimAction('pass')" class="hud-btn" style="border-color: #888; color: #ccc;">过 (Pass)</button>
-        </div>
-      }
-      
-      @if (pendingClaim()) {
-        <div class="hud-actions" style="background: rgba(0,0,0,0.85); border: 1px solid var(--gold-primary); pointer-events: none;">
-          <span style="color: var(--gold-primary); font-size: 16px; padding: 8px 16px; animation: pulse 1s infinite;">
-            ⏳ Waiting for other players to perform action...
-          </span>
-        </div>
-      }
-
-      <!-- HUD SELF ACTION OVERLAYS -->
-      @if (turnOptions(); as opts) {
-        <div class="hud-actions">
-          @if (opts.canHu) {
-            <button [disabled]="opts.huFan < 5" (click)="declareSelfHu()" class="hud-btn" [style.border-color]="opts.huFan < 5 ? '#555' : '#f44336'" [style.color]="opts.huFan < 5 ? '#888' : '#f44336'">自摸 (Self Win){{ opts.huFan < 5 ? ' - Not Enough Points' : '' }}</button>
-          }
-          @if (opts.canSelfKong) {
-            @for (opt of opts.canSelfKong; track $index) {
-              <button (click)="declareSelfKong(opt)" class="hud-btn">暗杠 {{ opt.value }}</button>
-            }
-          }
-          @if (opts.canReplaceJoker) {
-            @for (opt of opts.canReplaceJoker; track $index) {
-              <button (click)="replaceJoker(opt)" class="hud-btn" style="border-color: #fdd835; color: #fdd835;">补飞 (Replace {{ opt.tile.display }})</button>
-            }
-          }
-          <button (click)="cancelSelfAction()" class="hud-btn" style="border-color: #888; color: #ccc;">取消 (Cancel)</button>
-        </div>
-      }
+      <!-- Actions now integrated into the bottom bar -->
 
       <!-- GAME OVER SUMMARY LEDGER -->
       @if (gameOverDetails(); as details) {

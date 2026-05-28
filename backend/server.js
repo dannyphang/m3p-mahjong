@@ -458,7 +458,7 @@ class GameState {
     this.checkClaims(playerId, tile);
   }
 
-  checkClaims(discarderId, tile) {
+  checkClaims(discarderId, tile, isRobbingKong = false) {
     this.pendingClaims = {};
     this.activeClaimers = []; // Track exactly who has claim options
 
@@ -473,23 +473,28 @@ class GameState {
       let huFan = 0;
       if (wins) {
         const { isTianHu, isDiHu } = this.getTianDiHu(p.id);
-        const fanEval = calculateFan(testHand, this.exposed[p.id], this.flowers[p.id], tile, false, p.id === this.players[this.dealerIndex].id, 0, this.getPlayerWind(p.id), false, false, isTianHu, isDiHu);
+        const fanEval = calculateFan(testHand, this.exposed[p.id], this.flowers[p.id], tile, false, p.id === this.players[this.dealerIndex].id, 0, this.getPlayerWind(p.id), false, false, isTianHu, isDiHu, isRobbingKong);
         huFan = fanEval.totalFan;
         canClaimHu = true;
       }
 
-      const canClaimPong = canPong(hand, tile);
-      const canClaimKong = canKong(hand, tile);
-
-      // Check if eligible to Chow (only from的上家, meaning p is the next player in order)
-      const discarderIdx = this.players.findIndex(pl => pl.id === discarderId);
-      const isNextPlayer = p.id === this.players[(discarderIdx + 1) % 3].id;
+      let canClaimPong = false;
+      let canClaimKong = false;
       let canClaimChow = false;
       let chowOptions = null;
-      if (isNextPlayer) {
-        chowOptions = canChow(hand, tile);
-        if (chowOptions) {
-          canClaimChow = true;
+
+      if (!isRobbingKong) {
+        canClaimPong = canPong(hand, tile);
+        canClaimKong = canKong(hand, tile);
+
+        // Check if eligible to Chow (only from的上家, meaning p is the next player in order)
+        const discarderIdx = this.players.findIndex(pl => pl.id === discarderId);
+        const isNextPlayer = p.id === this.players[(discarderIdx + 1) % 3].id;
+        if (isNextPlayer) {
+          chowOptions = canChow(hand, tile);
+          if (chowOptions) {
+            canClaimChow = true;
+          }
         }
       }
 
@@ -637,7 +642,8 @@ class GameState {
       const claimedTile = this.lastDiscard.tile;
 
       if (bestClaim === 'hu') {
-        this.executeHu(claimerId, claimedTile, false);
+        this.executeHu(claimerId, claimedTile, false, this.pendingRobbingKong != null);
+        this.pendingRobbingKong = null; // Kong failed
       } else if (bestClaim === 'pong') {
         this.executePong(claimerId, claimedTile);
       } else if (bestClaim === 'kong') {
@@ -649,7 +655,24 @@ class GameState {
       this.lastDiscard = null;
     } else {
       // No claims
-      this.moveToNextPlayer();
+      if (this.pendingRobbingKong) {
+        // Robbing Kong failed, so the Kong succeeds!
+        const { playerId, exposedPong, matchingTile } = this.pendingRobbingKong;
+        const player = this.players.find(p => p.id === playerId);
+        
+        exposedPong.type = 'kong';
+        exposedPong.tiles.push(matchingTile);
+        this.addLog(`${player.name} successfully upgrades Pong to Kong with ${matchingTile.display}!`);
+        this.processImmediatePayout(playerId, 1, '加杠 (Add Kong)');
+        
+        this.pendingRobbingKong = null;
+        this.broadcastState();
+        
+        this.isGangShang = true;
+        this.drawCard();
+      } else {
+        this.moveToNextPlayer();
+      }
     }
 
     this.pendingClaims = {};
@@ -833,16 +856,25 @@ class GameState {
     const exposedPong = exposed.find(meld => meld.type === 'pong' && meld.tiles[0].type === option.type && meld.tiles[0].value === option.value);
 
     if (exposedPong) {
-      // 1. Upgrade exposed Pong to Kong
+      // 1. Upgrade exposed Pong to Kong (Ming Gang) - Robbing Kong check
       const idx = hand.findIndex(t => t.type === option.type && t.value === option.value);
       const matchingTile = hand.splice(idx, 1)[0];
       
-      exposedPong.type = 'kong';
-      exposedPong.tiles.push(matchingTile);
-      this.addLog(`${player.name} upgrades Pong to Kong with ${matchingTile.display}!`);
-      this.processImmediatePayout(playerId, 1, '加杠 (Add Kong)');
+      this.pendingRobbingKong = {
+        playerId,
+        matchingTile,
+        exposedPong
+      };
+
+      this.lastDrawnTile = null;
+      this.lastDiscard = { tile: matchingTile, playerId }; // Pretend it's a discard for claims
+      this.addLog(`${player.name} attempts to upgrade Pong to Kong with ${matchingTile.display}...`);
+      this.broadcastState();
+
+      // Trigger claims for Robbing Kong (only Hu is allowed)
+      this.checkClaims(playerId, matchingTile, true);
     } else {
-      // 2. Clear Kong from hand
+      // 2. Clear Kong from hand (Dark Kong - Cannot be robbed)
       let removedTiles = [];
       for (let i = hand.length - 1; i >= 0; i--) {
         if (hand[i].type === option.type && hand[i].value === option.value) {
@@ -856,12 +888,12 @@ class GameState {
       });
       this.addLog(`${player.name} declares Dark Kong with ${option.value}${option.type === TILE_TYPES.CIRCLE ? '筒' : ''}!`);
       this.processImmediatePayout(playerId, 2, '暗杠 (Dark Kong)');
+      this.broadcastState();
+      
+      // Kong compensation draw
+      this.isGangShang = true;
+      this.drawCard();
     }
-
-    this.broadcastState();
-    // Kong compensation draw
-    this.isGangShang = true;
-    this.drawCard();
   }
 
   executeDunFei(playerId) {
@@ -882,7 +914,7 @@ class GameState {
     }
   }
 
-  executeHu(winnerId, tile, isSelfDraw) {
+  executeHu(winnerId, tile, isSelfDraw, isRobbingKong = false) {
     const winner = this.players.find(p => p.id === winnerId);
     let winningTile = tile;
     if (isSelfDraw) {
@@ -910,7 +942,8 @@ class GameState {
       isSelfDraw ? this.currentDrawIsHuaShang : false,
       isSelfDraw ? this.currentDrawIsGangShang : false,
       isTianHu,
-      isDiHu
+      isDiHu,
+      isRobbingKong
     );
 
     this.status = 'GAME_OVER';
