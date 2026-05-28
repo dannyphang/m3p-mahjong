@@ -13,6 +13,7 @@ const {
   calculateFan,
   calculateFlowerPoints,
   calculatePublicPoints,
+  isTingPai,
   TILE_TYPES
 } = require('./engine');
 
