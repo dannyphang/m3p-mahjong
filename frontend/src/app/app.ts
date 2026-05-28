@@ -492,8 +492,10 @@ export class App implements OnDestroy, AfterViewChecked {
     if (myIndex === -1) return [];
     
     const oppIndex = (myIndex + offsetIndex) % 3;
-    const oppId = s.players[oppIndex].id;
-    return s.discards[oppId] || [];
+    const oppPlayer = s.players[oppIndex];
+    if (!oppPlayer) return [];
+    
+    return s.discards[oppPlayer.id] || [];
   }
 
   isArray(val: any): boolean {
