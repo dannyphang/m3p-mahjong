@@ -369,7 +369,7 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
 
   // 1. Check for 4 Flyers (四飞) - Instant 10 Fan
   const flyCountInHand = handTiles.filter(t => t.type === TILE_TYPES.FLY).length;
-  const flyCountInMelds = melds.flatMap(m => m.tiles).filter(t => t.type === TILE_TYPES.FLY).length;
+  const flyCountInMelds = (melds || []).flatMap(m => m.tiles).filter(t => t.type === TILE_TYPES.FLY).length;
   const flyCount = flyCountInHand + flyCountInMelds;
   if (flyCount >= 4) {
     if (isTianHu) breakdown.push({ name: '天胡 (Heavenly Hand)', fan: 10 });
@@ -465,7 +465,7 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
     let tempHand = [...handTiles];
     
     for (const [val, reqCount] of Object.entries(targetCounts)) {
-      const meldCount = melds.flatMap(m => m.tiles).filter(t => t.value === val || t.substitutedFor === val).length;
+      const meldCount = (melds || []).flatMap(m => m.tiles).filter(t => t.value === val || t.substitutedFor === val).length;
       let neededInHand = Math.max(0, reqCount - meldCount);
       
       for (let i = 0; i < neededInHand; i++) {
@@ -580,7 +580,7 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
   const allTilesInHand = [...handTiles];
 
   // Group by suit/type
-  const allTilesCombined = [...handTiles, ...melds.flatMap(m => m.tiles)];
+  const allTilesCombined = [...handTiles, ...(melds || []).flatMap(m => m.tiles)];
   const circles = allTilesCombined.filter(t => t.type === TILE_TYPES.CIRCLE);
   const honors = allTilesCombined.filter(t => t.type === TILE_TYPES.HONOR);
   const flies = allTilesCombined.filter(t => t.type === TILE_TYPES.FLY);
@@ -625,13 +625,18 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
   }
 
   if (isPongPong) {
-    totalFan += 2;
-    breakdown.push({ name: '碰碰胡 (Pong-Pong Hand)', fan: 2 });
+    if (isSelfDraw && (!melds || melds.length === 0)) {
+      totalFan += 10;
+      breakdown.push({ name: '坎坎胡 (Hidden Treasure)', fan: 10 });
+    } else {
+      totalFan += 2;
+      breakdown.push({ name: '碰碰胡 (Pong-Pong Hand)', fan: 2 });
+    }
   }
 
   // Seven Pairs Check (七星对子 / 呖咕呖咕)
   let isSevenPairs = false;
-  if (handTiles.length === 14 && melds.length === 0) {
+  if (handTiles.length === 14 && (!melds || melds.length === 0)) {
     const flyCount = handTiles.filter(t => t.type === TILE_TYPES.FLY).length;
     if (flyCount === 0) {
       const counts = {};
@@ -671,7 +676,7 @@ function calculateFan(handTiles, melds, flowers, winTile, isSelfDraw, isDealer, 
   }
 
   // Eighteen Arhats (十八罗汉) - 4 Kongs
-  const kongsCount = melds.filter(m => m.type === 'kong').length;
+  const kongsCount = (melds || []).filter(m => m.type === 'kong').length;
   if (kongsCount === 4) {
     totalFan += 10;
     breakdown.push({ name: '十八罗汉 (Eighteen Arhats)', fan: 10 });

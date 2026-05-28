@@ -114,6 +114,7 @@
             @if (gameState()?.currentTurn === (gameState()?.players?.indexOf(opp1)) ) {
               <span style="color: var(--gold-primary); font-size: 14px; animation: pulse 1s infinite;">● Thinking</span>
             }
+            <span style="font-size: 9px; color: var(--gold-primary); font-weight: 700; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; white-space: nowrap;">Public: {{ gameState()?.publicPoints?.[opp1.id] || 0 }} pts (Flw: {{ gameState()?.flowerPoints?.[opp1.id] || 0 }})</span>
           </div>
           
           <!-- Flowers Zone -->
@@ -121,7 +122,6 @@
             @for (fl of getOpponentFlowers(2); track $index) {
               <div class="mj-tile-small" [class.highlight-match]="hoveredTile() && fl.type === hoveredTile()?.type && fl.value == hoveredTile()?.value"><img [src]="getTileImageUrl(fl)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
             }
-            <span style="font-size: 11px; color: var(--gold-primary); font-weight: 700; margin-left: 4px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">Public: {{ gameState()?.publicPoints?.[opp1.id] || 0 }} pts (Flowers: {{ gameState()?.flowerPoints?.[opp1.id] || 0 }} pts)</span>
           </div>
 
           <!-- Exposed Melds -->
@@ -161,6 +161,7 @@
             @if (gameState()?.currentTurn === (gameState()?.players?.indexOf(opp2)) ) {
               <span style="color: var(--gold-primary); font-size: 14px; animation: pulse 1s infinite;">● Thinking</span>
             }
+            <span style="font-size: 9px; color: var(--gold-primary); font-weight: 700; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; white-space: nowrap;">Public: {{ gameState()?.publicPoints?.[opp2.id] || 0 }} pts (Flw: {{ gameState()?.flowerPoints?.[opp2.id] || 0 }})</span>
           </div>
 
           <!-- Flowers Zone -->
@@ -168,7 +169,6 @@
             @for (fl of getOpponentFlowers(1); track $index) {
               <div class="mj-tile-small" [class.highlight-match]="hoveredTile() && fl.type === hoveredTile()?.type && fl.value == hoveredTile()?.value"><img [src]="getTileImageUrl(fl)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
             }
-            <span style="font-size: 11px; color: var(--gold-primary); font-weight: 700; margin-left: 4px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">Public: {{ gameState()?.publicPoints?.[opp2.id] || 0 }} pts (Flowers: {{ gameState()?.flowerPoints?.[opp2.id] || 0 }} pts)</span>
           </div>
 
           <!-- Exposed Melds -->
@@ -192,7 +192,7 @@
       }
 
       <!-- CENTRAL BOARD (Discards & Turn State) -->
-      <div class="center-board" style="top: 45%;">
+      <div class="center-board" style="top: 30%;">
         <!-- Central status indicator / Last Discard -->
         <div style="position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; background: rgba(14, 9, 6, 0.95); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--wood-light); min-width: 100px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
           @if (gameState()?.lastDiscard; as ld) {
@@ -222,7 +222,7 @@
         </div>
 
         <!-- BOTTOM ROW (Me / 自家 Discards) -->
-        <div style="position: absolute; bottom: 12px; left: 160px; right: 160px; height: 160px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 6px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; align-content: flex-start; justify-content: center; overflow-y: auto;">
+        <div style="position: absolute; bottom: 12px; left: 160px; right: 160px; height: 110px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 6px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; align-content: flex-start; justify-content: center; overflow-y: auto;">
           <div style="font-size: 9px; color: #80808a; text-align: center; width: 100%; height: 12px; margin-bottom: 2px; text-transform: uppercase; font-weight: 600;">自家 Discards</div>
           @for (td of gameState()?.discards?.[myPlayerId()]; track $index) {
             <div class="mj-tile-small" style="font-size: 11px; width: 22px; height: 30px;" [style.opacity]="td.claimed ? '0.2' : '1'" [class.highlight-match]="hoveredTile() && td.type === hoveredTile()?.type && td.value == hoveredTile()?.value"><img [src]="getTileImageUrl(td)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" /></div>
@@ -233,9 +233,9 @@
       <!-- BOTTOM PLAYER (Active User Panel) -->
       <div class="player-zone player-bottom">
         <!-- Player Identity Tag -->
-        <div style="font-size: 13px; color: #a0a0ab; margin-bottom: 6px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <div style="font-size: 13px; color: #a0a0ab; margin-bottom: 2px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
           @if (isMyTurn()) {
-            <div style="color: #fff; background: #4caf50; font-size: 14px; padding: 4px 12px; border-radius: 20px; font-weight: 900; box-shadow: 0 0 15px #4caf50, 0 0 25px #4caf50; animation: pulse 1.5s infinite; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">● YOUR TURN!</div>
+            <div style="color: #fff; background: #4caf50; font-size: 14px; padding: 4px 12px; border-radius: 20px; font-weight: 900; box-shadow: 0 0 15px #4caf50, 0 0 25px #4caf50; animation: pulse 1.5s infinite; text-transform: uppercase; letter-spacing: 1px;">● YOUR TURN!</div>
           }
           <div style="display: flex; align-items: center; gap: 8px;">
             <strong style="color: #fff;">自家 (Me) <span style="color: #4caf50; margin-left: 6px; font-weight: normal;">Coins: {{ gameState()?.accumulatedPoints?.[myPlayerId()] || 0 }}</span></strong>
@@ -267,7 +267,7 @@
         </div>
 
         <!-- Flowers Area & Exposed -->
-        <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 12px; align-items: center;">
+        <div style="display: flex; justify-content: center; gap: 40px; width: auto; margin-bottom: 12px; align-items: flex-end;">
           
           <!-- Exposed Melds -->
           <div style="display: flex; gap: 12px;">
@@ -285,7 +285,7 @@
           <!-- Flowers / Animals Area -->
           <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
             <div style="font-size: 11px; color: var(--gold-primary); font-weight: 700; text-transform: uppercase; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px;">Public Points: {{ gameState()?.publicPoints?.[myPlayerId()] || 0 }} pts (Flower: {{ gameState()?.flowerPoints?.[myPlayerId()] || 0 }} pts)</div>
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; gap: 6px; margin-bottom: 4px;">
               @for (fl of gameState()?.flowers?.[myPlayerId()]; track $index) {
                 <div class="mj-tile" style="width: 44px; height: 60px; background: #ffe0b2; cursor: default; border-color: #f57c00;" [class.highlight-match]="hoveredTile() && fl.type === hoveredTile()?.type && fl.value == hoveredTile()?.value">
                   <img [src]="getTileImageUrl(fl)" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
