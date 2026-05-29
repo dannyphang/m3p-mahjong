@@ -108,6 +108,7 @@ export class App implements OnDestroy, AfterViewChecked {
   // UI State Signals
   showNarrator = signal(true);
   hoveredTile = signal<Tile | null>(null);
+  currentAnimation = signal<{type: string, playerId: string, tile?: Tile} | null>(null);
 
   @ViewChild('logsContainer') private logsContainer!: ElementRef;
 
@@ -151,85 +152,131 @@ export class App implements OnDestroy, AfterViewChecked {
       this.isJoined.set(true);
     });
 
-    this.socket.on('gameState', (state: GameState) => {
-      // If auto-sorting is active, sort player's hand instantly upon new state arrival
-      const myId = this.myPlayerId();
-      if (myId && state.hands && state.hands[myId]) {
-        const oldState = this.gameState();
-        if (oldState && oldState.hands && oldState.hands[myId]) {
-          const oldHand = oldState.hands[myId];
-          const newHand = state.hands[myId];
-          const newHandCopy = [...newHand];
-          const orderedNewHand = [];
+    let eventQueue: any[] = [];
+    let isProcessingQueue = false;
 
-          // 1. Preserve existing manual sort order
-          for (const oldTile of oldHand) {
-            const idx = newHandCopy.findIndex(t => t.key === oldTile.key);
-            if (idx !== -1) {
-              orderedNewHand.push(newHandCopy.splice(idx, 1)[0]);
+    const processQueue = () => {
+      if (isProcessingQueue || eventQueue.length === 0) return;
+      isProcessingQueue = true;
+      
+      const event = eventQueue.shift();
+      
+      if (event.type === 'actionAnim') {
+        this.currentAnimation.set(event.data);
+        setTimeout(() => {
+          this.currentAnimation.set(null);
+          setTimeout(() => {
+            isProcessingQueue = false;
+            processQueue();
+          }, 50);
+        }, 1500);
+      } else if (event.type === 'gameState') {
+        const state = event.data;
+        const applyState = () => {
+          // If auto-sorting is active, sort player's hand instantly upon new state arrival
+          const myId = this.myPlayerId();
+          if (myId && state.hands && state.hands[myId]) {
+            const oldState = this.gameState();
+            if (oldState && oldState.hands && oldState.hands[myId]) {
+              const oldHand = oldState.hands[myId];
+              const newHand = state.hands[myId];
+              const newHandCopy = [...newHand];
+              const orderedNewHand = [];
+
+              for (const oldTile of oldHand) {
+                const idx = newHandCopy.findIndex((t: any) => t.key === oldTile.key);
+                if (idx !== -1) {
+                  orderedNewHand.push(newHandCopy.splice(idx, 1)[0]);
+                }
+              }
+
+              orderedNewHand.push(...newHandCopy);
+              state.hands[myId] = orderedNewHand;
+            } else {
+              const honorOrder = ['东', '南', '西', '北', '中', '发', '白'];
+              regularHandSort(state.hands[myId], honorOrder);
             }
           }
 
-          // 2. Append any new cards to the end
-          orderedNewHand.push(...newHandCopy);
-          state.hands[myId] = orderedNewHand;
-        } else {
-          // If first time receiving hand, sort it once
-          const honorOrder = ['东', '南', '西', '北', '中', '发', '白'];
-          regularHandSort(state.hands[myId], honorOrder);
-        }
-      }
+          this.gameState.set(state);
+          this.pendingClaim.set(false);
+          setTimeout(() => this.scrollToBottom(), 50);
+          
+          const myTurnIdx = state.players.findIndex((p: any) => p.id === this.myPlayerId());
+          if (state.currentTurn !== myTurnIdx) {
+            this.turnOptions.set(null);
+          }
 
-      this.gameState.set(state);
-      this.pendingClaim.set(false); // Reset pending claim on new game state
-      setTimeout(() => this.scrollToBottom(), 50);
-      
-      // Auto-clear options if turn changed
-      const myTurnIdx = state.players.findIndex(p => p.id === this.myPlayerId());
-      if (state.currentTurn !== myTurnIdx) {
-        this.turnOptions.set(null);
-      }
-
-      // Auto-clear claim options if the last discard has been resolved or changed
-      const currentClaim = this.claimOptions();
-      if (currentClaim) {
-        if (!state.lastDiscard || state.lastDiscard.tile.key !== currentClaim.tile.key) {
-          this.claimOptions.set(null);
+          const currentClaim = this.claimOptions();
+          if (currentClaim) {
+            if (!state.lastDiscard || state.lastDiscard.tile.key !== currentClaim.tile.key) {
+              this.claimOptions.set(null);
+            }
+          }
+          isProcessingQueue = false;
+          processQueue();
+        };
+        applyState();
+      } else if (event.type === 'turnOptions') {
+        this.turnOptions.set(event.data);
+        isProcessingQueue = false;
+        processQueue();
+      } else if (event.type === 'claimOptions') {
+        this.claimOptions.set(event.data);
+        isProcessingQueue = false;
+        processQueue();
+      } else if (event.type === 'gameOver') {
+        const details = event.data;
+        this.hideGameOverModal.set(false);
+        const honorOrder = ['东', '南', '西', '北', '中', '发', '白'];
+        
+        if (details && details.hand) {
+          if (details.winningTile) {
+            const wIdx = details.hand.findIndex((t: Tile) => t.type === details.winningTile.type && t.value === details.winningTile.value);
+            if (wIdx !== -1) {
+              details.hand.splice(wIdx, 1);
+            }
+          }
+          regularHandSort(details.hand, honorOrder);
         }
+        
+        if (details && details.allHands) {
+          Object.values(details.allHands).forEach((handArray: any) => {
+            if (Array.isArray(handArray)) {
+              regularHandSort(handArray, honorOrder);
+            }
+          });
+        }
+        
+        this.gameOverDetails.set(details);
+        isProcessingQueue = false;
+        processQueue();
       }
+    };
+
+    this.socket.on('actionAnim', (animData: {type: string, playerId: string, tile?: Tile}) => {
+      eventQueue.push({ type: 'actionAnim', data: animData });
+      processQueue();
+    });
+
+    this.socket.on('gameState', (state: GameState) => {
+      eventQueue.push({ type: 'gameState', data: state });
+      processQueue();
     });
 
     this.socket.on('turnOptions', (options) => {
-      this.turnOptions.set(options);
+      eventQueue.push({ type: 'turnOptions', data: options });
+      processQueue();
     });
 
     this.socket.on('claimOptions', (options) => {
-      this.claimOptions.set(options);
+      eventQueue.push({ type: 'claimOptions', data: options });
+      processQueue();
     });
 
     this.socket.on('gameOver', (details) => {
-      this.hideGameOverModal.set(false);
-      const honorOrder = ['东', '南', '西', '北', '中', '发', '白'];
-      
-      if (details && details.hand) {
-        if (details.winningTile) {
-          const wIdx = details.hand.findIndex((t: Tile) => t.type === details.winningTile.type && t.value === details.winningTile.value);
-          if (wIdx !== -1) {
-            details.hand.splice(wIdx, 1);
-          }
-        }
-        regularHandSort(details.hand, honorOrder);
-      }
-      
-      if (details && details.allHands) {
-        Object.values(details.allHands).forEach((handArray: any) => {
-          if (Array.isArray(handArray)) {
-            regularHandSort(handArray, honorOrder);
-          }
-        });
-      }
-      
-      this.gameOverDetails.set(details);
+      eventQueue.push({ type: 'gameOver', data: details });
+      processQueue();
     });
 
     this.socket.on('errorMsg', (msg: string) => {

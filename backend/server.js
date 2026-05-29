@@ -122,6 +122,18 @@ class GameState {
     }
   }
 
+  broadcastAnimation(animData) {
+    this.players.forEach(p => {
+      if (!p.isBot) {
+        let dataToSend = { ...animData };
+        if (dataToSend.type === 'draw' && dataToSend.playerId !== p.id) {
+          dataToSend.tile = { type: 'back' };
+        }
+        io.to(p.socketId).emit('actionAnim', dataToSend);
+      }
+    });
+  }
+
   broadcastState() {
     this.players.forEach(p => {
       if (p.isBot) return;
@@ -288,6 +300,12 @@ class GameState {
     this.currentDrawIsHuaShang = currentIsHuaShang;
     this.currentDrawIsGangShang = currentIsGangShang;
  
+    if (currentIsHuaShang) {
+      this.broadcastAnimation({ type: 'buhua', playerId: player.id });
+    } else {
+      this.broadcastAnimation({ type: 'draw', playerId: player.id, tile: this.lastDrawnTile.tile });
+    }
+
     this.broadcastState();
     this.checkTurnActions();
   }
@@ -466,6 +484,7 @@ class GameState {
     this.discards[playerId].push(tile);
     const p = this.players.find(pl => pl.id === playerId);
     this.addLog(`${p.name} discards ${tile.display}.`);
+    this.broadcastAnimation({ type: 'discard', playerId, tile });
     this.broadcastState();
 
     // Check if other players can claim (Pong, Kong, Hu)
@@ -722,6 +741,7 @@ class GameState {
 
     this.addLog(`${claimer.name} Pongs ${tile.display}!`);
     this.currentTurn = this.players.findIndex(p => p.id === claimerId);
+    this.broadcastAnimation({ type: 'pong', playerId: claimerId, tile });
     this.broadcastState();
 
     // Player needs to discard now
@@ -780,6 +800,7 @@ class GameState {
 
     this.addLog(`${claimer.name} Chows to form sequence [${meldTiles.map(t => t.display).join(', ')}]!`);
     this.currentTurn = this.players.findIndex(p => p.id === claimerId);
+    this.broadcastAnimation({ type: 'chow', playerId: claimerId, tile });
     this.broadcastState();
 
     // Player needs to discard now
@@ -819,6 +840,7 @@ class GameState {
     const discarderId = this.lastDiscard ? this.lastDiscard.playerId : null;
     this.processImmediatePayout(claimerId, 2, '明杠 (Exposed Kong)', discarderId);
     this.currentTurn = this.players.findIndex(p => p.id === claimerId);
+    this.broadcastAnimation({ type: 'kong', playerId: claimerId, tile });
     this.broadcastState();
     
     // Draw compensation tile from the back of the deck (Kongs require compensation)
@@ -883,6 +905,7 @@ class GameState {
       this.lastDrawnTile = null;
       this.lastDiscard = { tile: matchingTile, playerId }; // Pretend it's a discard for claims
       this.addLog(`${player.name} attempts to upgrade Pong to Kong with ${matchingTile.display}...`);
+      this.broadcastAnimation({ type: 'kong', playerId, tile: matchingTile });
       this.broadcastState();
 
       // Trigger claims for Robbing Kong (only Hu is allowed)
@@ -902,6 +925,7 @@ class GameState {
       });
       this.addLog(`${player.name} declares Dark Kong with ${option.value}${option.type === TILE_TYPES.CIRCLE ? '筒' : ''}!`);
       this.processImmediatePayout(playerId, 2, '暗杠 (Dark Kong)');
+      this.broadcastAnimation({ type: 'kong', playerId });
       this.broadcastState();
       
       // Kong compensation draw
@@ -1038,6 +1062,8 @@ class GameState {
     }
 
     // Broadcast winner details
+    this.broadcastAnimation({ type: 'hu', playerId: winnerId, tile: winningTile });
+
     io.to(this.roomId).emit('gameOver', {
       winner: winner.name,
       hand: finalHand,

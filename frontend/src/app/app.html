@@ -41,6 +41,28 @@
 
   <!-- Interactive Game Area -->
   <div class="game-table-area">
+    @if (currentAnimation(); as anim) {
+      <div class="action-animation-overlay"
+           [class.pos-bottom]="anim.playerId === myPlayerId()"
+           [class.pos-left]="anim.playerId === getRemainingPlayerPosition(2)?.id"
+           [class.pos-right]="anim.playerId === getRemainingPlayerPosition(1)?.id">
+        <div class="action-animation-text" [ngClass]="anim.type">
+          {{ anim.type === 'pong' ? '碰 PONG!' : 
+             anim.type === 'kong' ? '杠 KONG!' : 
+             anim.type === 'chow' ? '吃 CHOW!' : 
+             anim.type === 'buhua' ? '补花 BU HUA!' : 
+             anim.type === 'draw' ? '摸牌 DRAW!' : 
+             anim.type === 'hu' ? '胡 HU!' : 
+             anim.type === 'discard' ? '打牌 DISCARD!' : '' }}
+        </div>
+        @if (anim.tile) {
+          <div class="action-animation-tile">
+            <img [src]="getTileImageUrl(anim.tile)" />
+          </div>
+        }
+      </div>
+    }
+
     @if (gameState()) {
       
       <!-- LOGS PANEL -->
