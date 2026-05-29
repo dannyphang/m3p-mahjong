@@ -65,6 +65,7 @@ interface GameState {
   accumulatedPoints: { [key: string]: number };
   settings: {
     enableTimer: boolean;
+    timerDuration?: number;
   };
 }
 
@@ -298,9 +299,23 @@ export class App implements OnDestroy, AfterViewChecked {
     });
   }
 
-  toggleTimer() {
-    this.socket?.emit('toggleTimer', {
-      roomId: this.roomId()
+  toggleTimerStatus(event: any) {
+    const isChecked = event.target.checked;
+    const duration = this.gameState()?.settings?.timerDuration || 10;
+    this.socket?.emit('updateTimer', {
+      roomId: this.roomId(),
+      enableTimer: isChecked,
+      timerDuration: duration
+    });
+  }
+
+  updateTimerDuration(event: any) {
+    const duration = event.target.value;
+    const isEnabled = this.gameState()?.settings?.enableTimer || false;
+    this.socket?.emit('updateTimer', {
+      roomId: this.roomId(),
+      enableTimer: isEnabled,
+      timerDuration: duration
     });
   }
 

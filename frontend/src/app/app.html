@@ -78,7 +78,7 @@
       <!-- WAITING ROOM HUD -->
       @if (gameState()?.status === 'WAITING') {
         <div class="lobby-overlay" style="background: rgba(12, 9, 7, 0.7);">
-          <div class="glass-card" style="max-width: 500px;">
+          <div class="glass-card" style="max-width: 600px; width: 100%;">
             <h2 class="lobby-title" style="font-size: 24px;">Waiting Lobby</h2>
             <p class="lobby-desc">Need 3 players to start. Real players or Bots can join.</p>
             
@@ -99,10 +99,16 @@
             </div>
 
             <div style="margin-top: 10px; margin-bottom: 24px; text-align: left;">
-              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" [checked]="gameState()?.settings?.enableTimer" (change)="toggleTimer()" style="width: 16px; height: 16px; cursor: pointer;">
-                <span style="font-size: 14px; color: #a0a0ab;">Enable 10s Turn Timer (For human players)</span>
-              </label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" [checked]="gameState()?.settings?.enableTimer" (change)="toggleTimerStatus($event)" style="width: 16px; height: 16px; cursor: pointer;">
+                  <span style="font-size: 14px; color: #a0a0ab; white-space: nowrap;">Enable Turn Timer (For human players)</span>
+                </label>
+                @if (gameState()?.settings?.enableTimer) {
+                  <span style="font-size: 14px; color: #a0a0ab;"> - Duration (s):</span>
+                  <input type="number" [value]="gameState()?.settings?.timerDuration || 10" (change)="updateTimerDuration($event)" min="3" max="60" style="width: 60px; padding: 4px; border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid var(--glass-border);">
+                }
+              </div>
             </div>
 
             <div style="display: flex; gap: 12px;">

@@ -77,7 +77,9 @@ class GameState {
     
     // Room settings
     this.settings = {
-      enableTimer: false
+      minimumFan: 5,
+      enableTimer: false,
+      timerDuration: 10
     };
   }
 
@@ -563,8 +565,9 @@ class GameState {
       // Resolve claims immediately (handles pendingRobbingKong success or moves to next player)
       this.resolveClaims();
     } else {
-      // Start a 10s timer for human players to decide ONLY if enabled
+      // Start a timer for human players to decide ONLY if enabled
       if (this.settings.enableTimer) {
+        const duration = (this.settings.timerDuration || 10) * 1000;
         this.claimTimer = setTimeout(() => {
           // Auto-pass anyone who hasn't responded
           this.activeClaimers.forEach(pid => {
@@ -577,7 +580,7 @@ class GameState {
               }
             }
           });
-        }, 10000); // 10 seconds wait
+        }, duration);
       }
     }
   }
@@ -1221,10 +1224,11 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('toggleTimer', ({ roomId }) => {
+  socket.on('updateTimer', ({ roomId, enableTimer, timerDuration }) => {
     const room = rooms[roomId];
     if (room && room.status === 'WAITING') {
-      room.settings.enableTimer = !room.settings.enableTimer;
+      room.settings.enableTimer = !!enableTimer;
+      room.settings.timerDuration = parseInt(timerDuration, 10) || 10;
       room.broadcastState();
     }
   });
