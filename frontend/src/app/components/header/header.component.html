@@ -1,0 +1,67 @@
+<header class="game-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative; z-index: 1000;">
+  <div class="brand" style="flex: 1; text-align: left; margin: 0;">🀄 {{ t('lobby.title') }}</div>
+  
+  <div style="flex: 2; text-align: center; display: flex; justify-content: center;">
+    @if (gameState) {
+      <div class="room-info" style="margin: 0;">
+        {{ t('header.table') }} <strong>{{ gameState.roomId }}</strong> | {{ t('header.round') }}
+        <strong>{{ gameState.roundNumber || 0 }}</strong> | {{ t('header.dealer') }}
+        <strong>{{ gameState.players[gameState.dealerIndex || 0]?.name }}</strong>
+        @if (gameState.consecutiveDealerWins) {
+          <span style="color: #ffd700; margin-left: 8px"
+            >{{ t('header.lianZhuang') }}{{ gameState.consecutiveDealerWins }})</span
+          >
+        }
+      </div>
+    }
+  </div>
+
+  <div class="global-actions" style="flex: 1; text-align: right; display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
+    @if (!gameState) {
+      <button
+        (click)="togglePlayground()"
+        class="btn-primary"
+        style="padding: 4px 12px; font-size: 14px; margin-right: 8px;"
+      >
+        {{ isPlayground ? 'Back to Lobby' : 'Playground' }}
+      </button>
+    }
+    <button
+      (click)="toggleLanguage()"
+      [title]="currentLanguage === 'zh' ? 'Switch to English' : '切换到中文'"
+      style="background: transparent; border: 1px solid var(--gold-secondary); border-radius: 4px; color: var(--gold-primary); cursor: pointer; font-weight: bold; padding: 2px 6px; font-size: 16px;"
+    >
+      🌐
+    </button>
+    <button
+      (click)="showScoringGuide = true"
+      title="Scoring Guide"
+      style="background: transparent; border: 1px solid var(--gold-secondary); border-radius: 4px; color: var(--gold-primary); cursor: pointer; font-weight: bold; padding: 2px 6px; font-size: 16px;"
+    >
+      📖
+    </button>
+    <button
+      (click)="toggleNarrator()"
+      [title]="showNarrator ? 'Turn Narrator Off' : 'Turn Narrator On'"
+      style="background: transparent; border: 1px solid var(--gold-secondary); border-radius: 4px; color: var(--gold-primary); cursor: pointer; font-weight: bold; padding: 2px 6px; font-size: 16px; opacity: {{ showNarrator ? 1 : 0.5 }}"
+    >
+      🎙️
+    </button>
+    <div style="display: flex; align-items: center; gap: 4px">
+      <div style="width: 12px; height: 12px; border-radius: 50%; background: #2196f3"></div>
+      <select
+        [ngModel]="tileBackStyle"
+        (change)="onTileBackChange($event)"
+        style="background: transparent; color: var(--gold-primary); border: 1px solid var(--gold-secondary); border-radius: 4px; padding: 2px 4px; font-size: 12px; cursor: pointer"
+      >
+        <option value="back_1.png" style="background: #1a1a24">Blue</option>
+        <option value="back_2.png" style="background: #1a1a24">Yellow</option>
+        <option value="back_3.png" style="background: #1a1a24">Green</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+@if (showScoringGuide) {
+  <app-scoring-guide [lang]="currentLanguage" (close)="showScoringGuide = false"></app-scoring-guide>
+}

@@ -1,0 +1,1182 @@
+<div class="game-table-area" style="position: relative; width: 100%; height: 100%">
+  @if (currentAnimation; as anim) {
+    <div
+      class="action-animation-overlay"
+      [class.pos-bottom]="anim.playerId === myPlayerId"
+      [class.pos-left]="anim.playerId === getRemainingPlayerPosition(2)?.id"
+      [class.pos-right]="anim.playerId === getRemainingPlayerPosition(1)?.id"
+    >
+      <div class="action-animation-text" [ngClass]="anim.type">
+        {{
+          anim.type === 'pong'
+            ? '碰 PONG!'
+            : anim.type === 'kong'
+              ? '杠 KONG!'
+              : anim.type === 'chow'
+                ? '吃 CHOW!'
+                : anim.type === 'buhua'
+                  ? '补花 BU HUA!'
+                  : anim.type === 'draw'
+                    ? '摸牌 DRAW!'
+                    : anim.type === 'hu'
+                      ? '胡 HU!'
+                      : anim.type === 'discard'
+                        ? '打牌 DISCARD!'
+                        : ''
+        }}
+      </div>
+      @if (anim.tile) {
+        <div
+          class="action-animation-tile"
+          [class.back]="anim.tile.type === 'back'"
+          [style.background]="
+            anim.tile.type === 'back' ? 'var(--tile-bg-back)' : 'var(--tile-bg-front)'
+          "
+        >
+          @if (anim.tile.type !== 'back') {
+            <img [src]="getTileImageUrl(anim.tile)" />
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- LOGS PANEL -->
+  @if (showNarrator) {
+    <div class="logs-panel" #logsContainer>
+      <div class="logs-title">{{ t('header.narratorTitle') }}</div>
+      @for (log of gameState?.logs; track $index) {
+        <div class="log-item">{{ formatLog(log) }}</div>
+      }
+    </div>
+  }
+
+  <!-- WAITING ROOM HUD -->
+  @if (gameState?.status === 'WAITING') {
+    <div class="lobby-overlay" style="background: rgba(12, 9, 7, 0.7)">
+      <div class="glass-card" style="max-width: 600px; width: 100%">
+        <h2 class="lobby-title" style="font-size: 24px">{{ t('lobby.waitingTitle') }}</h2>
+        <p class="lobby-desc">{{ t('lobby.needPlayers') }}</p>
+
+        <div style="margin-bottom: 24px; text-align: left">
+          <h3
+            style="font-size: 14px; text-transform: uppercase; color: #80808a; margin-bottom: 10px"
+          >
+            {{ t('lobby.playersList') }}
+          </h3>
+          @for (p of gameState?.players; track p.id) {
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 10px;
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.05);
+                margin-bottom: 8px;
+                align-items: center;
+              "
+            >
+              <span>
+                {{ p.name }}
+                @if (p.id === myPlayerId) {
+                  <strong style="color: #ffd700">{{ t('lobby.you') }}</strong>
+                }
+                @if (p.isBot) {
+                  <small style="color: #a0a0ab">{{ t('game.bot') }}</small>
+                }
+              </span>
+              <span [style.color]="p.isReady ? '#4caf50' : '#f44336'" style="font-weight: 700">
+                {{ p.isReady ? t('lobby.ready') : t('lobby.notReady') }}
+              </span>
+            </div>
+          }
+        </div>
+
+        <div style="margin-top: 10px; margin-bottom: 24px; text-align: left">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer">
+              <input
+                type="checkbox"
+                [checked]="gameState?.settings?.enableTimer"
+                (change)="toggleTimerStatus($event)"
+                style="width: 16px; height: 16px; cursor: pointer"
+              />
+              <span style="font-size: 14px; color: #a0a0ab; white-space: nowrap">{{
+                t('lobby.enableTimer')
+              }}</span>
+            </label>
+            @if (gameState?.settings?.enableTimer) {
+              <span style="font-size: 14px; color: #a0a0ab">{{ t('lobby.timerDuration') }}</span>
+              <input
+                type="number"
+                [value]="gameState?.settings?.timerDuration || 10"
+                (change)="updateTimerDuration($event)"
+                min="3"
+                max="60"
+                style="
+                  width: 60px;
+                  padding: 4px;
+                  border-radius: 4px;
+                  background: rgba(0, 0, 0, 0.5);
+                  color: #fff;
+                  border: 1px solid var(--glass-border);
+                "
+              />
+            }
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px">
+          <button (click)="toggleReady()" class="btn-primary">
+            {{
+              gameState?.players?.find((p) => p.id === myPlayerId)?.isReady
+                ? t('lobby.notReady')
+                : t('lobby.getReady')
+            }}
+          </button>
+          @if ((gameState?.players?.length || 0) < 3) {
+            <button (click)="addBot()" class="btn-secondary" style="margin-top: 0">
+              {{ t('lobby.addBot') }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+  <!-- PLAYING / IN-GAME TABLE LAYOUT -->
+
+  <!-- LEFT PLAYER (Opponent 1 - 上家 / Prev) -->
+  @if (getRemainingPlayerPosition(2); as opp1) {
+    <div class="player-zone player-left">
+      <div
+        style="
+          color: #a0a0ab;
+          font-size: 12px;
+          margin-bottom: 6px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          width: 120px;
+        "
+      >
+        <span style="font-weight: 700; color: #fff; text-align: center"
+          >{{ opp1.name }}
+          <span style="font-weight: normal">{{ opp1.isBot ? t('game.bot') : '' }}</span
+          ><br /><span style="color: #4caf50; font-size: 10px"
+            >{{ t('game.coins') }} {{ gameState?.accumulatedPoints?.[opp1.id] || 0 }}</span
+          ></span
+        >
+        <span
+          style="
+            font-size: 10px;
+            color: var(--gold-primary);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+          "
+        >
+          {{ t('game.prev') }}
+          @if (gameState?.dealerIndex === gameState?.players?.indexOf(opp1)) {
+            <strong style="color: #f44336; margin-left: 4px">[{{ t('game.dealer') }}]</strong>
+          }
+          @if (gameState?.playerWinds) {
+            <strong style="color: #f44336; margin-left: 4px"
+              >[{{ t('wind.' + gameState?.playerWinds?.[opp1.id]) }}]</strong
+            >
+          }
+        </span>
+        @if (gameState?.currentTurn === gameState?.players?.indexOf(opp1)) {
+          <span style="color: var(--gold-primary); font-size: 14px; animation: pulse 1s infinite"
+            >● {{ t('game.thinking') }}</span
+          >
+        }
+      </div>
+
+      <!-- Flowers Zone -->
+      <div class="public-zone-small" style="display: flex; gap: 4px; margin-bottom: 8px; align-items: center">
+        @for (fl of getOpponentFlowers(2); track $index) {
+          <div
+            class="mj-tile-small"
+            [class.highlight-match]="
+              hoveredTile() && fl.type === hoveredTile()?.type && fl.value == hoveredTile()?.value
+            "
+          >
+            <img
+              [src]="getTileImageUrl(fl)"
+              style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+            />
+          </div>
+        }
+        <div style="font-size: 14px; font-weight: 900; color: #ffd700; background: rgba(0,0,0,0.6); padding: 0 6px; border-radius: 4px; border: 1px solid #b8860b;">
+          {{ gameState?.publicPoints?.[opp1.id] || 0 }}
+        </div>
+      </div>
+
+      <!-- Exposed Melds -->
+      <div class="public-zone-small" style="display: flex; gap: 8px; margin-bottom: 8px">
+        @for (meld of getOpponentExposed(2); track $index) {
+          <div style="display: flex; gap: 2px">
+            @for (t of meld.tiles; track $index) {
+              <div
+                class="mj-tile-small"
+                [class.highlight-match]="
+                  hoveredTile() && t.type === hoveredTile()?.type && t.value == hoveredTile()?.value
+                "
+              >
+                <img
+                  [src]="getTileImageUrl(t)"
+                  style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+                />
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Hidden Hand backs -->
+      <div style="display: flex; gap: 4px">
+        @for (t of getOpponentHand(2); track $index) {
+          <div class="mj-tile-small back" style="background: var(--tile-bg-back)"></div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- RIGHT PLAYER (Opponent 2 - 下家 / Next) -->
+  @if (getRemainingPlayerPosition(1); as opp2) {
+    <div class="player-zone player-right">
+      <div
+        style="
+          color: #a0a0ab;
+          font-size: 12px;
+          margin-bottom: 6px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          width: 120px;
+        "
+      >
+        <span style="font-weight: 700; color: #fff; text-align: center"
+          >{{ opp2.name }}
+          <span style="font-weight: normal">{{ opp2.isBot ? t('game.bot') : '' }}</span
+          ><br /><span style="color: #4caf50; font-size: 10px"
+            >{{ t('game.coins') }} {{ gameState?.accumulatedPoints?.[opp2.id] || 0 }}</span
+          ></span
+        >
+        <span
+          style="
+            font-size: 10px;
+            color: var(--gold-primary);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+          "
+        >
+          {{ t('game.next') }}
+          @if (gameState?.dealerIndex === gameState?.players?.indexOf(opp2)) {
+            <strong style="color: #f44336; margin-left: 4px">[{{ t('game.dealer') }}]</strong>
+          }
+          @if (gameState?.playerWinds) {
+            <strong style="color: #f44336; margin-left: 4px"
+              >[{{ t('wind.' + gameState?.playerWinds?.[opp2.id]) }}]</strong
+            >
+          }
+        </span>
+        @if (gameState?.currentTurn === gameState?.players?.indexOf(opp2)) {
+          <span style="color: var(--gold-primary); font-size: 14px; animation: pulse 1s infinite"
+            >● {{ t('game.thinking') }}</span
+          >
+        }
+      </div>
+
+      <!-- Flowers Zone -->
+      <div class="public-zone-small" style="display: flex; gap: 4px; margin-bottom: 8px; align-items: center">
+        @for (fl of getOpponentFlowers(1); track $index) {
+          <div
+            class="mj-tile-small"
+            [class.highlight-match]="
+              hoveredTile() && fl.type === hoveredTile()?.type && fl.value == hoveredTile()?.value
+            "
+          >
+            <img
+              [src]="getTileImageUrl(fl)"
+              style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+            />
+          </div>
+        }
+        <div style="font-size: 14px; font-weight: 900; color: #ffd700; background: rgba(0,0,0,0.6); padding: 0 6px; border-radius: 4px; border: 1px solid #b8860b;">
+          {{ gameState?.publicPoints?.[opp2.id] || 0 }}
+        </div>
+      </div>
+
+      <!-- Exposed Melds -->
+      <div class="public-zone-small" style="display: flex; gap: 8px; margin-bottom: 8px">
+        @for (meld of getOpponentExposed(1); track $index) {
+          <div style="display: flex; gap: 2px">
+            @for (t of meld.tiles; track $index) {
+              <div
+                class="mj-tile-small"
+                [class.highlight-match]="
+                  hoveredTile() && t.type === hoveredTile()?.type && t.value == hoveredTile()?.value
+                "
+              >
+                <img
+                  [src]="getTileImageUrl(t)"
+                  style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+                />
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Hidden Hand backs -->
+      <div style="display: flex; gap: 4px">
+        @for (t of getOpponentHand(1); track $index) {
+          <div class="mj-tile-small back" style="background: var(--tile-bg-back)"></div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- CENTRAL BOARD (Discards & Turn State) -->
+  <div
+    class="center-board"
+    style="top: 30%"
+    id="discard-board"
+    cdkDropList
+    (cdkDropListDropped)="onDiscardDrop($event)"
+  >
+    <!-- Central status indicator / Last Discard -->
+    <div
+      style="
+        position: absolute;
+        top: 38%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        z-index: 10;
+        background: rgba(14, 9, 6, 0.95);
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--wood-light);
+        min-width: 100px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      "
+    >
+      @if (gameState?.lastDiscard; as ld) {
+        <div style="font-size: 9px; color: #80808a; margin-bottom: 3px; text-transform: uppercase">
+          {{ t('game.lastDiscard') }}
+        </div>
+        <div
+          class="mj-tile"
+          style="
+            margin: 0 auto;
+            width: 38px;
+            height: 50px;
+            cursor: default;
+            border-bottom-width: 4px;
+            border-right-width: 2px;
+          "
+          [class.highlight-match]="
+            hoveredTile() &&
+            ld.tile.type === hoveredTile()?.type &&
+            ld.tile.value == hoveredTile()?.value
+          "
+        >
+          <img
+            [src]="getTileImageUrl(ld.tile)"
+            style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+          />
+        </div>
+      } @else {
+        <div
+          style="
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gold-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          "
+        >
+          {{ t('game.playing') }}
+        </div>
+      }
+      <div
+        style="
+          margin-top: 8px;
+          font-size: 11px;
+          color: #a0a0ab;
+          font-weight: bold;
+          padding-top: 6px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+        "
+      >
+        {{ t('header.wallTiles') }}
+        <strong style="color: #fff">{{ gameState?.deckRemaining }}</strong>
+      </div>
+    </div>
+
+    <!-- LEFT SIDE (上家 / Left side player) Discards -->
+    <div
+      style="
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        bottom: 12px;
+        width: 140px;
+        border-right: 1px dashed rgba(255, 255, 255, 0.08);
+        padding-right: 6px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+        overflow-y: auto;
+        align-content: flex-start;
+        justify-content: flex-start;
+      "
+    >
+      <div
+        style="
+          font-size: 9px;
+          color: #80808a;
+          text-align: center;
+          width: 100%;
+          margin-bottom: 2px;
+          text-transform: uppercase;
+          font-weight: 600;
+        "
+      >
+        {{ t('game.prev') }} {{ t('game.discards') }}
+      </div>
+      @for (td of getOpponentDiscards(2); track $index) {
+        <div
+          class="mj-tile-small"
+          style="font-size: 11px; width: 22px; height: 30px"
+          [style.opacity]="td.claimed ? '0.2' : '1'"
+          [class.highlight-match]="
+            hoveredTile() && td.type === hoveredTile()?.type && td.value == hoveredTile()?.value
+          "
+        >
+          <img
+            [src]="getTileImageUrl(td)"
+            style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+          />
+        </div>
+      }
+    </div>
+
+    <!-- RIGHT SIDE (下家 / Right side player) Discards -->
+    <div
+      style="
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        bottom: 12px;
+        width: 140px;
+        border-left: 1px dashed rgba(255, 255, 255, 0.08);
+        padding-left: 6px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+        overflow-y: auto;
+        align-content: flex-start;
+        justify-content: flex-end;
+      "
+    >
+      <div
+        style="
+          font-size: 9px;
+          color: #80808a;
+          text-align: center;
+          width: 100%;
+          margin-bottom: 2px;
+          text-transform: uppercase;
+          font-weight: 600;
+        "
+      >
+        {{ t('game.next') }} {{ t('game.discards') }}
+      </div>
+      @for (td of getOpponentDiscards(1); track $index) {
+        <div
+          class="mj-tile-small"
+          style="font-size: 11px; width: 22px; height: 30px"
+          [style.opacity]="td.claimed ? '0.2' : '1'"
+          [class.highlight-match]="
+            hoveredTile() && td.type === hoveredTile()?.type && td.value == hoveredTile()?.value
+          "
+        >
+          <img
+            [src]="getTileImageUrl(td)"
+            style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+          />
+        </div>
+      }
+    </div>
+
+    <!-- BOTTOM ROW (Me / 自家 Discards) -->
+    <div
+      style="
+        position: absolute;
+        bottom: 12px;
+        left: 160px;
+        right: 160px;
+        height: 110px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.08);
+        padding-top: 6px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-content: flex-start;
+        justify-content: center;
+        overflow-y: auto;
+      "
+    >
+      <div
+        style="
+          font-size: 9px;
+          color: #80808a;
+          text-align: center;
+          width: 100%;
+          height: 12px;
+          margin-bottom: 2px;
+          text-transform: uppercase;
+          font-weight: 600;
+        "
+      >
+        {{ t('game.me') }} {{ t('game.discards') }}
+      </div>
+      @for (td of gameState?.discards?.[myPlayerId]; track $index) {
+        <div
+          class="mj-tile-small"
+          style="font-size: 11px; width: 22px; height: 30px"
+          [style.opacity]="td.claimed ? '0.2' : '1'"
+          [class.highlight-match]="
+            hoveredTile() && td.type === hoveredTile()?.type && td.value == hoveredTile()?.value
+          "
+        >
+          <img
+            [src]="getTileImageUrl(td)"
+            style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+          />
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- BOTTOM PLAYER (Active User Panel) -->
+  <div class="player-zone player-bottom">
+    <!-- Player Identity Tag -->
+    <div
+      style="
+        font-size: 13px;
+        color: #a0a0ab;
+        margin-bottom: 2px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      "
+    >
+      @if (isMyTurn()) {
+        <div
+          style="
+            color: #fff;
+            background: #4caf50;
+            font-size: 14px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 900;
+            box-shadow:
+              0 0 15px #4caf50,
+              0 0 25px #4caf50;
+            animation: pulse 1.5s infinite;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          "
+        >
+          ● {{ t('game.yourTurn') }}
+        </div>
+      }
+      <div style="display: flex; align-items: center; gap: 8px">
+        <strong style="color: #fff"
+          >{{ t('game.me') }}
+          <span style="color: #4caf50; margin-left: 6px; font-weight: normal"
+            >{{ t('game.coins') }} {{ gameState?.accumulatedPoints?.[myPlayerId] || 0 }}</span
+          ></strong
+        >
+        @if (gameState?.dealerIndex === gameState?.players?.findIndex((p) => p.id === myPlayerId)) {
+          <span
+            style="
+              font-size: 10px;
+              color: #fff;
+              background: #f44336;
+              padding: 1px 6px;
+              border-radius: 4px;
+              font-weight: 700;
+            "
+            >{{ t('game.dealer') }}</span
+          >
+        }
+        @if (gameState?.playerWinds) {
+          <span
+            style="
+              font-size: 10px;
+              color: #f44336;
+              border: 1px solid #f44336;
+              padding: 1px 6px;
+              border-radius: 4px;
+              font-weight: 700;
+            "
+            >{{ t('wind.' + gameState?.playerWinds?.[myPlayerId]) }}</span
+          >
+        }
+        @if (gameState?.tingPaiState?.[myPlayerId]) {
+          <div class="ting-pai-container" style="position: relative; display: inline-block">
+            <span
+              class="ting-pai-badge"
+              style="
+                font-size: 11px;
+                color: #1e130c;
+                background: var(--gold-primary);
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-weight: 800;
+                animation: pulse 2s infinite;
+                letter-spacing: 1px;
+                cursor: help;
+                display: inline-block;
+              "
+              >{{ t('game.tingPai') }}</span
+            >
+            <!-- Tooltip -->
+            <div
+              class="ting-pai-tooltip"
+              style="
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                margin-bottom: 8px;
+                background: rgba(0, 0, 0, 0.9);
+                border: 1px solid var(--gold-primary);
+                padding: 8px;
+                border-radius: 8px;
+                display: none;
+                z-index: 100;
+                white-space: nowrap;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+              "
+            >
+              <div
+                style="
+                  font-size: 10px;
+                  color: #a0a0ab;
+                  text-transform: uppercase;
+                  margin-bottom: 4px;
+                  text-align: center;
+                "
+              >
+                {{ t('game.waitingFor') }}
+              </div>
+              <div style="display: flex; gap: 4px; justify-content: center">
+                @if (isArray(gameState?.tingPaiState?.[myPlayerId])) {
+                  @for (t of asArray(gameState?.tingPaiState?.[myPlayerId]); track $index) {
+                    <div class="mj-tile-small" style="width: 22px; height: 30px">
+                      <img
+                        [src]="getTileImageUrl(t)"
+                        style="width: 100%; height: 100%; object-fit: contain"
+                      />
+                    </div>
+                  }
+                } @else {
+                  <div style="color: #fff; font-size: 12px">{{ t('game.waiting') }}</div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div
+      style="
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 0 20px;
+      "
+    >
+      <!-- Interactive Tiles Hand -->
+      <div
+        cdkDropList
+        id="hand-board"
+        [cdkDropListConnectedTo]="['discard-board']"
+        cdkDropListOrientation="horizontal"
+        (cdkDropListDropped)="onCdkDrop($event)"
+        style="
+          display: flex;
+          gap: 6px;
+          justify-content: flex-start;
+          align-items: flex-end;
+          flex-wrap: nowrap;
+        "
+      >
+        @for (tile of gameState?.hands?.[myPlayerId]; track tile.key; let idx = $index) {
+          <div
+            class="mj-tile"
+            cdkDrag
+            [class.selected]="selectedTileIndex === idx"
+            [class.new-drawn-tile]="
+              tile.key === gameState?.lastDrawnTile?.tile?.key &&
+              gameState?.lastDrawnTile?.playerId === myPlayerId
+            "
+            [style.margin-left]="
+              tile.key === gameState?.lastDrawnTile?.tile?.key &&
+              gameState?.lastDrawnTile?.playerId === myPlayerId
+                ? '20px'
+                : '0px'
+            "
+            (click)="selectTile(idx)"
+            (mouseenter)="hoveredTile.set(tile)"
+            (mouseleave)="hoveredTile.set(null)"
+          >
+            <img
+              [src]="getTileImageUrl(tile)"
+              style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+            />
+          </div>
+        }
+      </div>
+
+      <!-- Flowers Area & Exposed -->
+      <div style="display: flex; gap: 40px; align-items: flex-end">
+        <!-- Exposed Melds -->
+        <div class="public-zone-large" style="display: flex; gap: 12px">
+          @for (meld of gameState?.exposed?.[myPlayerId]; track $index) {
+            <div
+              style="
+                display: flex;
+                gap: 4px;
+                padding: 4px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 8px;
+              "
+            >
+              @for (t of meld.tiles; track $index) {
+                <div
+                  class="mj-tile"
+                  style="width: 44px; height: 60px; cursor: default"
+                  [class.highlight-match]="
+                    hoveredTile() &&
+                    t.type === hoveredTile()?.type &&
+                    t.value == hoveredTile()?.value
+                  "
+                >
+                  <img
+                    [src]="getTileImageUrl(t)"
+                    style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+                  />
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Flowers / Animals Area -->
+        <div class="public-zone-large" style="display: flex; flex-direction: row; align-items: center; gap: 8px; margin-bottom: 4px">
+          <div style="display: flex; gap: 6px;">
+            @for (fl of gameState?.flowers?.[myPlayerId]; track $index) {
+              <div
+                class="mj-tile"
+                style="width: 44px; height: 60px; cursor: default"
+                [class.highlight-match]="
+                  hoveredTile() &&
+                  fl.type === hoveredTile()?.type &&
+                  fl.value == hoveredTile()?.value
+                "
+              >
+                <img
+                  [src]="getTileImageUrl(fl)"
+                  style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+                />
+              </div>
+            }
+          </div>
+          <div
+            style="
+              font-size: 20px;
+              font-weight: 900;
+              color: #ffd700;
+              background: rgba(0, 0, 0, 0.6);
+              border: 1px solid #b8860b;
+              border-radius: 6px;
+              padding: 2px 8px;
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            "
+          >
+            {{ gameState?.publicPoints?.[myPlayerId] || 0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+        padding: 0 10px;
+        min-height: 32px;
+      "
+    >
+      <div style="color: #a0a0ab; font-size: 13px; text-align: left; flex: 1">
+        @if (isMyTurn()) {
+          <span
+            style="color: var(--gold-primary); font-weight: 700; animation: pulse 1.5s infinite"
+          >
+            ★ {{ t('game.selectDiscard') }}
+          </span>
+        } @else {
+          <span>{{ t('lobby.waitingForOthers') }}</span>
+        }
+      </div>
+
+      <!-- ACTION BUTTONS CENTERED -->
+      <div style="display: flex; gap: 8px; justify-content: center; flex: 2">
+        @if (claimOptions; as opts) {
+          @if (opts.canHu) {
+            <button
+              [disabled]="opts.huFan < 5"
+              (click)="claimAction('hu')"
+              class="action-btn"
+              [style.border-color]="opts.huFan < 5 ? '#555' : '#f44336'"
+              [style.color]="opts.huFan < 5 ? '#888' : '#f44336'"
+            >
+              {{ t('action.hu') }} {{ t('game.win')
+              }}{{ opts.huFan < 5 ? t('game.notEnoughPoints') : '' }}
+            </button>
+          }
+          @if (opts.canKong) {
+            <button (click)="claimAction('kong')" class="action-btn">{{ t('action.kong') }}</button>
+          }
+          @if (opts.canPong) {
+            <button (click)="claimAction('pong')" class="action-btn">{{ t('action.pong') }}</button>
+          }
+          @if (opts.canChow) {
+            @for (opt of opts.canChow; track $index) {
+              <button
+                (click)="claimAction('chow_' + opt.v1 + '_' + opt.v2)"
+                class="action-btn"
+                style="border-color: #4caf50; color: #4caf50"
+              >
+                {{ t('action.chow') }}: {{ opt.display }}
+              </button>
+            }
+          }
+          <button
+            (click)="claimAction('pass')"
+            class="action-btn"
+            style="border-color: #888; color: #ccc"
+          >
+            {{ t('action.pass') }}
+          </button>
+        }
+
+        @if (pendingClaim) {
+          <span
+            style="
+              color: var(--gold-primary);
+              font-size: 13px;
+              padding: 6px 12px;
+              animation: pulse 1s infinite;
+              background: rgba(0, 0, 0, 0.6);
+              border-radius: 8px;
+              border: 1px solid var(--gold-primary);
+            "
+          >
+            ⏳ {{ t('lobby.waitingForOthers') }}
+          </span>
+        }
+
+        @if (turnOptions; as opts) {
+          @if (opts.canHu) {
+            <button
+              [disabled]="opts.huFan < 5"
+              (click)="declareSelfHu()"
+              class="action-btn"
+              [style.border-color]="opts.huFan < 5 ? '#555' : '#f44336'"
+              [style.color]="opts.huFan < 5 ? '#888' : '#f44336'"
+            >
+              {{ t('action.hu') }} {{ t('game.selfWin')
+              }}{{ opts.huFan < 5 ? t('game.notEnoughPoints') : '' }}
+            </button>
+          }
+          @if (opts.canSelfKong) {
+            @for (opt of opts.canSelfKong; track $index) {
+              <button (click)="declareSelfKong(opt)" class="action-btn">
+                {{ t('action.selfKong') }}
+                {{ opt.isUpgrade ? t('game.upgradeKong') : t('game.concealedKong') }}
+                {{ opt.value }}
+              </button>
+            }
+          }
+          @if (opts.canReplaceJoker) {
+            @for (opt of opts.canReplaceJoker; track $index) {
+              <button
+                (click)="replaceJoker(opt)"
+                class="action-btn"
+                style="border-color: #fdd835; color: #fdd835"
+              >
+                {{ t('action.replaceJoker') }} {{ t('game.replace') }}{{ opt.tile.display }})
+              </button>
+            }
+          }
+          <button
+            (click)="cancelSelfAction()"
+            class="action-btn"
+            style="border-color: #888; color: #ccc"
+          >
+            {{ t('action.cancel') }}
+          </button>
+        }
+      </div>
+
+      <div style="flex: 1; text-align: right">
+        <button
+          (click)="sortHand()"
+          class="action-btn"
+          style="background: var(--gold-primary); color: #1e130c"
+        >
+          {{ t('game.sortHand') }} ⇄🗃️
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions now integrated into the bottom bar -->
+
+  <!-- GAME OVER SUMMARY LEDGER -->
+  @if (gameOverDetails; as details) {
+    @if (!hideGameOverModal) {
+      <div class="score-modal">
+        <div class="score-card" style="position: relative">
+          <button
+            (click)="hideGameOverModal = true"
+            style="
+              position: absolute;
+              top: 12px;
+              right: 16px;
+              background: transparent;
+              border: none;
+              color: #a0a0ab;
+              font-size: 24px;
+              cursor: pointer;
+              transition: color 0.2s;
+            "
+            onmouseover="this.style.color = '#fff'"
+            onmouseout="this.style.color = '#a0a0ab'"
+          >
+            &times;
+          </button>
+
+          <h2 class="score-title">
+            @if (details.draw) {
+              {{ t('gameover.draw') }}
+            } @else {
+              👑 {{ details.winner }} {{ t('gameover.wins') }}
+            }
+          </h2>
+
+          @if (!details.draw) {
+            <!-- Win type -->
+            <p style="text-align: center; color: #a0a0ab; margin-bottom: 16px">
+              {{ details.isSelfDraw ? t('gameover.selfDraw') : t('gameover.winOnDiscard') }}
+            </p>
+
+            <!-- Show Winner Hand -->
+            <div style="display: flex; justify-content: center; margin-bottom: 20px">
+              <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center">
+                @for (t of details.hand; track $index) {
+                  <div class="mj-tile" style="width: 38px; height: 50px; cursor: default">
+                    <img
+                      [src]="getTileImageUrl(t)"
+                      style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+                    />
+                  </div>
+                }
+              </div>
+              @if (details.winningTile) {
+                <div style="margin-left: 12px; display: flex; align-items: center">
+                  <div
+                    class="mj-tile"
+                    style="
+                      width: 38px;
+                      height: 50px;
+                      cursor: default;
+                      border-color: var(--gold-primary);
+                      box-shadow: var(--gold-glow);
+                    "
+                  >
+                    <img
+                      [src]="getTileImageUrl(details.winningTile)"
+                      style="width: 100%; height: 100%; object-fit: contain; pointer-events: none"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Breakdown checklist -->
+            <div style="margin-bottom: 20px">
+              <h4 style="color: var(--gold-primary); margin-bottom: 8px; font-size: 14px">
+                {{ t('gameover.fanBreakdown') }}
+              </h4>
+              <div>
+                @for (f of details.scoreResult?.breakdown; track $index) {
+                  <div class="score-row">
+                    <span class="detail-name">{{ f.name }}</span>
+                    <span class="detail-fan">+{{ f.fan }} {{ t('gameover.fan') }}</span>
+                  </div>
+                }
+              </div>
+              <div class="score-row total" style="margin-top: 8px">
+                <span>{{ t('gameover.totalFan') }}</span>
+                <span>{{ details.scoreResult?.totalFan }} {{ t('gameover.fan') }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- All Players Hands -->
+          @if (details.allHands) {
+            <div style="margin-bottom: 24px; padding-top: 16px; border-top: 1px solid #333">
+              <h4 style="color: var(--gold-primary); margin-bottom: 12px; font-size: 14px">
+                Players' Final Hands & Feis:
+              </h4>
+              @for (p of gameState?.players; track p.id) {
+                <div
+                  style="
+                    margin-bottom: 12px;
+                    background: rgba(0, 0, 0, 0.3);
+                    padding: 8px;
+                    border-radius: 8px;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      margin-bottom: 8px;
+                      font-size: 13px;
+                    "
+                  >
+                    <span style="color: #fff">{{ p.name }}</span>
+                    <span style="color: #fdd835"
+                      >Total Feis: {{ details.totalFeis?.[p.id] || 0 }}</span
+                    >
+                  </div>
+                  <div style="display: flex; gap: 2px; flex-wrap: wrap">
+                    @for (t of details.allHands[p.id]; track $index) {
+                      <div class="mj-tile-small" style="width: 24px; height: 32px; cursor: default">
+                        <img
+                          [src]="getTileImageUrl(t)"
+                          style="width: 100%; height: 100%; object-fit: contain"
+                        />
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Settlements coins exchanges -->
+          <div style="margin-bottom: 24px; border-top: 1px solid #333; padding-top: 16px">
+            <h4 style="color: var(--gold-primary); margin-bottom: 8px; font-size: 14px">
+              Settlements Ledger:
+            </h4>
+            @for (p of gameState?.players; track p.id) {
+              <div class="score-row">
+                <span>{{ p.name }}</span>
+                <strong
+                  [style.color]="
+                    (details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) > 0
+                      ? '#4caf50'
+                      : (details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) <
+                          0
+                        ? '#f44336'
+                        : '#a0a0ab'
+                  "
+                >
+                  {{
+                    (details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) > 0
+                      ? '+'
+                      : ''
+                  }}{{ (details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) }}
+                  Coins
+                </strong>
+              </div>
+            }
+          </div>
+
+          <div style="display: flex; gap: 12px">
+            <button (click)="hideGameOverModal = true" class="btn-secondary" style="margin-top: 0">
+              {{ t('lobby.hideLedger') }}
+            </button>
+            <button (click)="restartGame()" class="btn-primary" style="margin-top: 0">
+              {{ t('gameover.playAgain') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div
+        style="
+          position: absolute;
+          bottom: 40px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          gap: 16px;
+          z-index: 100;
+        "
+      >
+        <button
+          (click)="hideGameOverModal = false"
+          class="btn-secondary"
+          style="
+            width: auto;
+            padding: 12px 24px;
+            margin: 0;
+            background: rgba(0, 0, 0, 0.85);
+            border-color: var(--gold-primary);
+            color: var(--gold-primary);
+          "
+        >
+          Show Ledger
+        </button>
+        <button
+          (click)="restartGame()"
+          class="btn-primary"
+          style="
+            width: auto;
+            padding: 12px 24px;
+            margin: 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+          "
+        >
+          Play Next Hand
+        </button>
+      </div>
+    }
+  }
+</div>

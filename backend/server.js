@@ -19,10 +19,50 @@ const {
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
 // Health check routes to prevent Render inactivity
 app.get('/', (req, res) => res.send('M3P Mahjong Backend is alive!'));
 app.get('/ping', (req, res) => res.send('pong'));
+
+// Score API for Playground
+app.post('/api/score', (req, res) => {
+  try {
+    const { 
+      handTiles, exposedMelds, flowers, winTile,
+      isSelfDraw, isReplacement, isRobbingKong, seatWind, roundWind
+    } = req.body;
+    
+    // Check if hand is winning
+    const isWin = isWinningHand(handTiles, isSelfDraw);
+    if (!isWin) {
+      return res.json({ success: true, isWinning: false, result: null });
+    }
+
+    const isDealer = seatWind === '东';
+    // Calculate Fan
+    const result = calculateFan(
+      handTiles,
+      exposedMelds || [],
+      flowers || [],
+      winTile || handTiles[handTiles.length - 1],
+      isSelfDraw || false,
+      isDealer,
+      0, // consecutiveDealerWins
+      seatWind || '东',
+      isReplacement || false, // isHuaShang
+      isReplacement || false, // isGangShang
+      false, // isTianHu
+      false, // isDiHu
+      isRobbingKong || false
+    );
+    
+    return res.json({ success: true, isWinning: true, result });
+  } catch (error) {
+    console.error('Scoring error:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -117,9 +157,9 @@ class GameState {
     if (player) {
       if (targetId) {
         const target = this.players.find(p => p.id === targetId);
-        this.addLog(`${player.name} instantly received +${received} Coins from ${target ? target.name : 'player'} for ${reason}!`);
+        this.addLog({ key: 'log.receivedCoins', params: { name: player.name, coins: received, target: target ? target.name : 'player', reason } });
       } else {
-        this.addLog(`${player.name} instantly received +${received} Coins from other players for ${reason}!`);
+        this.addLog({ key: 'log.receivedCoins', params: { name: player.name, coins: received, target: 'other players', reason } });
       }
     }
   }
@@ -209,7 +249,7 @@ class GameState {
     this.discards[id] = [];
     this.accumulatedPoints[id] = 100; // Start with 100 coins
 
-    this.addLog(`${name} joined the room.`);
+    this.addLog({ key: 'log.joined', params: { name } });
     return player;
   }
 
@@ -222,7 +262,7 @@ class GameState {
       delete this.exposed[p.id];
       delete this.flowers[p.id];
       delete this.discards[p.id];
-      this.addLog(`${p.name} left the room.`);
+      this.addLog({ key: 'log.left', params: { name: p.name } });
       
       // If no human players left, clean room
       const humans = this.players.filter(pl => !pl.isBot);
@@ -239,7 +279,7 @@ class GameState {
     this.status = 'PLAYING';
     this.roundNumber++;
     this.deck = shuffleDeck(createDeck());
-    this.addLog(`Game started! Round ${this.roundNumber}. Dealing cards...`);
+    this.addLog({ key: 'log.gameStarted', params: { round: this.roundNumber } });
 
     // Deal cards: Dealer gets 14, others 13
     const dealerId = this.players[this.dealerIndex].id;
@@ -255,7 +295,7 @@ class GameState {
     });
 
     this.currentTurn = this.dealerIndex;
-    this.addLog(`Dealer ${this.players[this.dealerIndex].name}'s turn.`);
+    this.addLog({ key: 'log.dealerTurn', params: { name: this.players[this.dealerIndex].name } });
     this.broadcastState();
 
     // Check if dealer already has 4 flyers or self-draw win!
@@ -264,6 +304,8 @@ class GameState {
 
   // Draw card for the current player
   drawCard() {
+    if (this.status !== 'PLAYING') return;
+
     if (this.deck.length === 0) {
       this.declareDraw();
       return;
@@ -278,12 +320,12 @@ class GameState {
     const player = this.players[this.currentTurn];
     const tile = this.deck.shift();
     this.hands[player.id].push(tile);
-    this.addLog(`${player.name} draws a card.`);
+    this.addLog({ key: 'log.draws', params: { name: player.name } });
 
     // Check if flower / animal
     if (tile.type === TILE_TYPES.FLOWER || tile.type === TILE_TYPES.ANIMAL) {
       currentIsHuaShang = true;
-      this.addLog(`${player.name} got flower/animal ${tile.display}! Compensating...`);
+      this.addLog({ key: 'log.flower', params: { name: player.name, tile: tile.display } });
       this.hands[player.id].pop(); // remove from hand
       this.flowers[player.id].push(tile);
       
@@ -485,7 +527,7 @@ class GameState {
     this.lastDiscard = { tile, playerId };
     this.discards[playerId].push(tile);
     const p = this.players.find(pl => pl.id === playerId);
-    this.addLog(`${p.name} discards ${tile.display}.`);
+    this.addLog({ key: 'log.discards', params: { name: p.name, tile: tile.display } });
     this.broadcastAnimation({ type: 'discard', playerId, tile });
     this.broadcastState();
 
@@ -698,7 +740,7 @@ class GameState {
         
         exposedPong.type = 'kong';
         exposedPong.tiles.push(matchingTile);
-        this.addLog(`${player.name} successfully upgrades Pong to Kong with ${matchingTile.display}!`);
+        this.addLog({ key: 'log.upgradeKong', params: { name: player.name, tile: matchingTile.display } });
         this.processImmediatePayout(playerId, 1, '加杠 (Add Kong)');
         
         this.pendingRobbingKong = null;
@@ -742,7 +784,7 @@ class GameState {
       tiles: [tile, t1, t2]
     });
 
-    this.addLog(`${claimer.name} Pongs ${tile.display}!`);
+    this.addLog({ key: 'log.pongs', params: { name: claimer.name, tile: tile.display } });
     this.currentTurn = this.players.findIndex(p => p.id === claimerId);
     this.broadcastAnimation({ type: 'pong', playerId: claimerId, tile });
     this.broadcastState();
@@ -801,7 +843,7 @@ class GameState {
       tiles: meldTiles
     });
 
-    this.addLog(`${claimer.name} Chows to form sequence [${meldTiles.map(t => t.display).join(', ')}]!`);
+    this.addLog({ key: 'log.chows', params: { name: claimer.name, tiles: meldTiles.map(t => t.display).join(', ') } });
     this.currentTurn = this.players.findIndex(p => p.id === claimerId);
     this.broadcastAnimation({ type: 'chow', playerId: claimerId, tile });
     this.broadcastState();
@@ -839,7 +881,7 @@ class GameState {
       tiles: [tile, { ...tile }, { ...tile }, { ...tile }]
     });
 
-    this.addLog(`${claimer.name} declares Kong with ${tile.display}!`);
+    this.addLog({ key: 'log.declaresKong', params: { name: claimer.name, tile: tile.display } });
     const discarderId = this.lastDiscard ? this.lastDiscard.playerId : null;
     this.processImmediatePayout(claimerId, 2, '明杠 (Exposed Kong)', discarderId);
     this.currentTurn = this.players.findIndex(p => p.id === claimerId);
@@ -907,7 +949,7 @@ class GameState {
 
       this.lastDrawnTile = null;
       this.lastDiscard = { tile: matchingTile, playerId }; // Pretend it's a discard for claims
-      this.addLog(`${player.name} attempts to upgrade Pong to Kong with ${matchingTile.display}...`);
+      this.addLog({ key: 'log.attemptsUpgrade', params: { name: player.name, tile: matchingTile.display } });
       this.broadcastAnimation({ type: 'kong', playerId, tile: matchingTile });
       this.broadcastState();
 
@@ -926,7 +968,7 @@ class GameState {
         type: 'kong',
         tiles: removedTiles
       });
-      this.addLog(`${player.name} declares Dark Kong with ${option.value}${option.type === TILE_TYPES.CIRCLE ? '筒' : ''}!`);
+      this.addLog({ key: 'log.darkKong', params: { name: player.name, tile: option.value + (option.type === TILE_TYPES.CIRCLE ? '筒' : '') } });
       this.processImmediatePayout(playerId, 2, '暗杠 (Dark Kong)');
       this.broadcastAnimation({ type: 'kong', playerId });
       this.broadcastState();
@@ -988,7 +1030,7 @@ class GameState {
     );
 
     this.status = 'GAME_OVER';
-    this.addLog(`${winner.name} HU! wins with ${scoreResult.totalFan} Fan!`);
+    this.addLog({ key: 'log.hu', params: { name: winner.name, fan: scoreResult.totalFan } });
 
     // Calculate coin adjustments
     // Base rate: 1 Fan = 1 coin, up to 9 Fan = 9 coins. 10 Fan (limit) = 12 coins.
@@ -1139,6 +1181,7 @@ class GameState {
   }
 
   moveToNextPlayer() {
+    if (this.status !== 'PLAYING') return;
     this.currentTurn = (this.currentTurn + 1) % 3;
     this.broadcastState();
     this.drawCard();
@@ -1195,7 +1238,7 @@ io.on('connection', (socket) => {
     const p = room.players.find(pl => pl.id === playerId);
     if (p) {
       p.isReady = !p.isReady;
-      room.addLog(`${p.name} is ${p.isReady ? 'READY' : 'NOT READY'}.`);
+      room.addLog({ key: 'log.ready', params: { name: p.name, status: p.isReady ? 'READY' : 'NOT READY' } });
       
       // Auto-start if all 3 players are ready
       const allReady = room.players.length === 3 && room.players.every(pl => pl.isReady);
@@ -1212,7 +1255,7 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     if (room && room.status === 'WAITING') {
       const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-      room.addPlayer(`${botName} (Bot)`, null, true);
+      room.addPlayer(botName, null, true);
       
       // Auto-start if filled and all human players are ready
       const allReady = room.players.length === 3 && room.players.every(pl => pl.isReady);
@@ -1318,7 +1361,7 @@ io.on('connection', (socket) => {
       room.flowers[p.id] = [];
       room.discards[p.id] = [];
     });
-    room.addLog('Room reset. Waiting for players to get ready.');
+    room.addLog({ key: 'log.roomReset' });
     room.broadcastState();
   });
 
