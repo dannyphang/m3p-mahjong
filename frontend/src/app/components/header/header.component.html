@@ -1,5 +1,5 @@
 <header class="game-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative; z-index: 1000;">
-  <div class="brand" style="flex: 1; text-align: left; margin: 0;">🀄 {{ t('lobby.title') }}</div>
+  <a (click)="goHome()" class="brand" style="flex: 1; text-align: left; margin: 0; text-decoration: none; color: inherit; cursor: pointer;">🀄 {{ t('lobby.title') }}</a>
   
   <div style="flex: 2; text-align: center; display: flex; justify-content: center;">
     @if (gameState) {

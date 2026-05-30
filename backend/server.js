@@ -237,10 +237,10 @@ class GameState {
     };
   }
 
-  addPlayer(name, socketId, isBot = false) {
+  addPlayer(name, socketId, isBot = false, difficulty = 'easy') {
     if (this.players.length >= 3) return null;
     const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
-    const player = { id, name, socketId, isBot, isReady: isBot };
+    const player = { id, name, socketId, isBot, isReady: isBot, difficulty: isBot ? difficulty : null };
     this.players.push(player);
     
     this.hands[id] = [];
@@ -479,9 +479,10 @@ class GameState {
   botDiscard(playerId) {
     const hand = this.hands[playerId];
     if (hand.length === 0) return;
+    
+    const p = this.players.find(pl => pl.id === playerId);
+    const difficulty = p.difficulty || 'easy';
 
-    // Smart bot discard:
-    // Identify single Circle tiles or non-matching honors
     const counts = {};
     hand.forEach(t => {
       if (t.type !== TILE_TYPES.FLY) {
@@ -490,7 +491,6 @@ class GameState {
       }
     });
 
-    // Find tiles with count of 1
     let bestDiscardIndex = -1;
     let lowestScore = 999;
 
@@ -502,9 +502,33 @@ class GameState {
       const count = counts[key] || 0;
       let score = count * 10; // lower count is discarded first
 
-      // Circles preferred to discard over Honors (since Honors are valuable for big hands)
       if (tile.type === TILE_TYPES.CIRCLE) {
         score -= 2;
+        
+        if (difficulty === 'normal' || difficulty === 'hard') {
+          // Normal/Hard keeps sequences
+          const val = parseInt(tile.value);
+          const hasAdj = counts[`${TILE_TYPES.CIRCLE}_${val - 1}`] || counts[`${TILE_TYPES.CIRCLE}_${val + 1}`];
+          const hasJump = counts[`${TILE_TYPES.CIRCLE}_${val - 2}`] || counts[`${TILE_TYPES.CIRCLE}_${val + 2}`];
+          
+          if (hasAdj) score += 5; // Connected sequence
+          else if (hasJump) score += 2; // Jump sequence
+        }
+      }
+
+      if (difficulty === 'hard') {
+        // Defensive play late game
+        if (this.deck.length < 40) {
+          if (tile.type === TILE_TYPES.WIND || tile.type === TILE_TYPES.DRAGON) {
+            let seenCount = 0;
+            for (const pid in this.discards) {
+              seenCount += this.discards[pid].filter(t => t.type === tile.type && t.value === tile.value).length;
+            }
+            if (seenCount === 0 && count === 1) {
+              score += 15; // Dangerous unseen honor
+            }
+          }
+        }
       }
 
       if (score < lowestScore) {
@@ -513,7 +537,6 @@ class GameState {
       }
     }
 
-    // Fallback if only Flies are left (rare)
     if (bestDiscardIndex === -1) {
       bestDiscardIndex = 0;
     }
@@ -580,6 +603,8 @@ class GameState {
         if (p.isBot) {
           // Bots auto claim after short delay
           setTimeout(() => {
+            const difficulty = p.difficulty || 'easy';
+            
             if (canClaimHu && huFan >= 5) {
               this.registerClaim(p.id, 'hu');
             } else if (canClaimKong) {
@@ -587,7 +612,18 @@ class GameState {
             } else if (canClaimPong) {
               this.registerClaim(p.id, 'pong');
             } else if (canClaimChow) {
-              this.registerClaim(p.id, 'pass'); // Bots prefer pass to keep it simple
+              if (difficulty === 'normal' || difficulty === 'hard') {
+                const exposedCount = this.exposed[p.id].length;
+                if (exposedCount >= 2 || Math.random() > 0.5) {
+                  this.registerClaim(p.id, 'chow', chowOptions[0]); // Claim first valid Chow option
+                } else {
+                  this.registerClaim(p.id, 'pass');
+                }
+              } else {
+                this.registerClaim(p.id, 'pass'); // Easy bots prefer pass
+              }
+            } else {
+              this.registerClaim(p.id, 'pass');
             }
           }, 1000);
         } else {
@@ -1251,17 +1287,37 @@ io.on('connection', (socket) => {
   });
 
   // Add a Bot
-  socket.on('addBot', ({ roomId }) => {
+  socket.on('addBot', ({ roomId, difficulty }) => {
     const room = rooms[roomId];
     if (room && room.status === 'WAITING') {
       const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-      room.addPlayer(botName, null, true);
+      room.addPlayer(botName, null, true, difficulty || 'easy');
       
       // Auto-start if filled and all human players are ready
       const allReady = room.players.length === 3 && room.players.every(pl => pl.isReady);
       if (allReady) {
         room.startGame();
       } else {
+        room.broadcastState();
+      }
+    }
+  });
+
+  // Remove a Bot
+  socket.on('removeBot', ({ roomId, botId }) => {
+    const room = rooms[roomId];
+    if (room && room.status === 'WAITING') {
+      const idx = room.players.findIndex(p => p.id === botId && p.isBot);
+      if (idx !== -1) {
+        room.players.splice(idx, 1);
+        
+        // Also cleanup their state arrays
+        delete room.hands[botId];
+        delete room.exposed[botId];
+        delete room.flowers[botId];
+        delete room.discards[botId];
+        delete room.accumulatedPoints[botId];
+
         room.broadcastState();
       }
     }

@@ -212,6 +212,12 @@ export class GameService {
   }
 
   disconnect() {
-    this.socket?.disconnect();
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+    this.isJoined.set(false);
+    this.gameState.set(null);
+    this.myPlayerId.set('');
+    this.roomId.set('');
   }
 }

@@ -327,6 +327,8 @@ app-playground {
   flex-direction: column;
   position: relative;
   padding: 20px;
+  align-content: space-around;
+  flex-wrap: wrap;
 }
 
 .player-zone {
@@ -336,6 +338,7 @@ app-playground {
   align-items: center;
   justify-content: center;
   transition: all 0.3s;
+  width: 30%;
 }
 
 /* Bottom Player (Active User) */
@@ -351,6 +354,7 @@ app-playground {
   left: 20px;
   top: 40%;
   transform: translateY(-50%) rotate(90deg);
+  height: 240px;
 }
 
 /* Right Player (Opponent 2) */
@@ -358,6 +362,7 @@ app-playground {
   right: 20px;
   top: 40%;
   transform: translateY(-50%) rotate(-90deg);
+  height: 240px;
 }
 
 /* Central Discards Board */
@@ -777,8 +782,8 @@ app-playground {
   padding-right: 15%;
 }
 
-/* MOBILE / SMALL SCREEN RESPONSIVE STYLES */
-@media (max-width: 900px), (max-height: 600px) {
+/* MOBILE & TABLET RESPONSIVE STYLES */
+@media (max-width: 1180px) {
   /* Smaller Tiles */
   .mj-tile {
     width: 34px !important;
@@ -835,10 +840,12 @@ app-playground {
 
   .player-left {
     left: 5px !important;
+    /* top: 220px !important; */
   }
 
   .player-right {
     right: 5px !important;
+    /* top: 220px !important; */
   }
 
   /* Hand Area */

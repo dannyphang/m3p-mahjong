@@ -84,9 +84,19 @@ export class RoomComponent implements AfterViewChecked {
     });
   }
 
+  selectedBotDifficulty: 'easy' | 'normal' | 'hard' = 'easy';
+
   addBot() {
     this.gameService.socket?.emit('addBot', {
-      roomId: this.gameService.roomId()
+      roomId: this.gameService.roomId(),
+      difficulty: this.selectedBotDifficulty
+    });
+  }
+
+  removeBot(botId: string) {
+    this.gameService.socket?.emit('removeBot', {
+      roomId: this.gameService.roomId(),
+      botId: botId
     });
   }
 

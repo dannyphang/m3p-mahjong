@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 import { TRANSLATIONS } from '../../i18n';
 import { ScoringGuideComponent } from '../scoring-guide/scoring-guide.component';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, ScoringGuideComponent, FormsModule],
+  imports: [CommonModule, ScoringGuideComponent, FormsModule, RouterModule],
   templateUrl: './header.component.html'
 })
 export class HeaderComponent {
@@ -64,6 +65,11 @@ export class HeaderComponent {
     } else {
       this.router.navigate(['/playground']);
     }
+  }
+
+  goHome() {
+    this.gameService.disconnect();
+    this.router.navigate(['/']);
   }
 
   get isPlayground() {
