@@ -104,7 +104,13 @@ class LamiGameState {
       this.hands[p.id] = this.deck.splice(0, 20); // Deal 20 cards
     });
 
-    this.currentTurn = 0;
+    let startingPlayerIndex = 0;
+    if (this.rankings && this.rankings.winner) {
+      startingPlayerIndex = this.players.findIndex(p => p.id === this.rankings.winner);
+      if (startingPlayerIndex === -1) startingPlayerIndex = 0;
+    }
+    this.currentTurn = startingPlayerIndex;
+    
     this.addLog({ key: 'log.gameStarted', params: { round: this.roundNumber } });
     
     // Special Rule: 7 identical cards = Instant Win (Game)
