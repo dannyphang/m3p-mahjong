@@ -63,53 +63,69 @@ function isExactValidSequence(cards) {
 
 function isValidStraightFlush(cards) {
   if (cards.length < 3) return false;
-
-  const nonJokers = cards.filter(c => c.type !== 'joker').map(c => ({...c}));
-  if (nonJokers.length < 2) return false;
-
-  const suit = nonJokers[0].suit;
-  if (!nonJokers.every(c => c.suit === suit)) return false;
-
-  const hasA = nonJokers.some(c => c.value === 1);
-  const hasK = nonJokers.some(c => c.value === 13);
-  const has2 = nonJokers.some(c => c.value === 2);
-  
-  if (hasA && hasK && !has2) {
-    nonJokers.forEach(c => {
-      if (c.value === 1) c.value = 14;
-    });
-  }
-
-  nonJokers.sort((a, b) => a.value - b.value);
-
-  let gaps = 0;
-  for (let i = 0; i < nonJokers.length - 1; i++) {
-    const diff = nonJokers[i + 1].value - nonJokers[i].value;
-    if (diff === 0) return false;
-    gaps += (diff - 1);
-  }
-
-  const jokersCount = cards.length - nonJokers.length;
-  if (gaps > jokersCount) return false;
-
   if (cards.length > 13) return false;
 
-  return true;
+  const jokersCount = cards.filter(c => c.type === 'joker').length;
+  const originalNonJokers = cards.filter(c => c.type !== 'joker').map(c => ({...c}));
+  if (originalNonJokers.length < 2) return true;
+
+  const suit = originalNonJokers[0].suit;
+  if (!originalNonJokers.every(c => c.suit === suit)) return false;
+
+  const checkValidity = (nonJokersArray) => {
+    const sorted = [...nonJokersArray].sort((a, b) => a.value - b.value);
+    let gaps = 0;
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const diff = sorted[i + 1].value - sorted[i].value;
+      if (diff === 0) return false;
+      gaps += (diff - 1);
+    }
+    return gaps <= jokersCount;
+  };
+
+  if (checkValidity(originalNonJokers)) return true;
+
+  const hasA = originalNonJokers.some(c => c.value === 1);
+  if (hasA) {
+    const altNonJokers = originalNonJokers.map(c => ({...c, value: c.value === 1 ? 14 : c.value}));
+    if (checkValidity(altNonJokers)) return true;
+  }
+
+  return false;
 }
 
 function orderStraightFlush(cards) {
-  const nonJokers = cards.filter(c => c.type !== 'joker').map(c => ({...c}));
+  const jokersCount = cards.filter(c => c.type === 'joker').length;
+  const originalNonJokers = cards.filter(c => c.type !== 'joker').map(c => ({...c}));
   
-  const hasA = nonJokers.some(c => c.value === 1);
-  const hasK = nonJokers.some(c => c.value === 13);
-  const has2 = nonJokers.some(c => c.value === 2);
+  let useA14 = false;
+  const hasA = originalNonJokers.some(c => c.value === 1);
   
-  if (hasA && hasK && !has2) {
-    nonJokers.forEach(c => {
-      if (c.value === 1) c.value = 14;
-    });
+  if (hasA) {
+    const checkValidity = (nonJokersArray) => {
+      const sorted = [...nonJokersArray].sort((a, b) => a.value - b.value);
+      let gaps = 0;
+      for (let i = 0; i < sorted.length - 1; i++) {
+        const diff = sorted[i + 1].value - sorted[i].value;
+        if (diff === 0) return false;
+        gaps += (diff - 1);
+      }
+      return gaps <= jokersCount;
+    };
+    
+    const validWith1 = checkValidity(originalNonJokers);
+    const altNonJokers = originalNonJokers.map(c => ({...c, value: c.value === 1 ? 14 : c.value}));
+    const validWith14 = checkValidity(altNonJokers);
+    
+    if (validWith14 && !validWith1) {
+      useA14 = true;
+    } else if (validWith14 && validWith1) {
+      const hasHighCards = originalNonJokers.some(c => c.value >= 10 && c.value <= 13);
+      if (hasHighCards) useA14 = true;
+    }
   }
 
+  const nonJokers = useA14 ? originalNonJokers.map(c => ({...c, value: c.value === 1 ? 14 : c.value})) : originalNonJokers;
   nonJokers.sort((a, b) => a.value - b.value);
   const jokers = cards.filter(c => c.type === 'joker');
   
