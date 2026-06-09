@@ -9,6 +9,7 @@ export interface Tile {
   series?: string;
   index?: number;
   claimed?: boolean;
+  suit?: string;
 }
 
 export interface Player {
@@ -16,6 +17,8 @@ export interface Player {
   name: string;
   isBot: boolean;
   isReady: boolean;
+  passedOut?: boolean;
+  burned?: boolean;
 }
 
 export interface Meld {
@@ -29,21 +32,23 @@ export interface GameState {
   status: string;
   roundNumber: number;
   currentTurn: number;
-  dealerIndex: number;
-  consecutiveDealerWins: number;
+  dealerIndex?: number;
+  consecutiveDealerWins?: number;
   hands: { [key: string]: Tile[] };
-  exposed: { [key: string]: Meld[] };
-  flowers: { [key: string]: Tile[] };
-  flowerPoints: { [key: string]: number };
-  publicPoints: { [key: string]: number };
-  playerWinds: { [key: string]: string };
-  tingPaiState: { [key: string]: boolean | Tile[] };
-  discards: { [key: string]: Tile[] };
-  lastDiscard: { tile: Tile; playerId: string } | null;
-  lastDrawnTile: { playerId: string; tile: Tile } | null;
-  deckRemaining: number;
+  exposed?: { [key: string]: Meld[] };
+  flowers?: { [key: string]: Tile[] };
+  flowerPoints?: { [key: string]: number };
+  publicPoints?: { [key: string]: number };
+  playerWinds?: { [key: string]: string };
+  tingPaiState?: { [key: string]: boolean | Tile[] };
+  discards?: { [key: string]: Tile[] };
+  lastDiscard?: { tile: Tile; playerId: string } | null;
+  lastDrawnTile?: { playerId: string; tile: Tile } | null;
+  deckRemaining?: number;
+  publicMelds?: any[];
   logs: any[];
   accumulatedPoints: { [key: string]: number };
+  rankings?: any;
   settings: {
     enableTimer: boolean;
     timerDuration?: number;
@@ -89,7 +94,7 @@ export class GameService {
   showNarrator = signal(typeof window !== 'undefined' ? window.innerWidth > 900 && window.innerHeight > 600 : true);
   currentAnimation = signal<{ type: string, playerId: string, tile?: Tile } | null>(null);
 
-  connectAndJoin() {
+  connectAndJoin(gameType?: string) {
     if (!this.playerName().trim()) {
       alert('Please enter your name.');
       return;
@@ -101,7 +106,8 @@ export class GameService {
     this.socket.on('connect', () => {
       this.socket?.emit('joinRoom', {
         name: this.playerName(),
-        roomId: this.roomId()
+        roomId: this.roomId(),
+        gameType
       });
     });
 
@@ -219,5 +225,14 @@ export class GameService {
     this.gameState.set(null);
     this.myPlayerId.set('');
     this.roomId.set('');
+  }
+
+  toggleReady() {
+    if (this.socket) {
+      this.socket.emit('toggleReady', {
+        roomId: this.roomId(),
+        playerId: this.myPlayerId()
+      });
+    }
   }
 }

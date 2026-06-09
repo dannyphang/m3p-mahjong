@@ -35,7 +35,7 @@
     </button>
     <button
       (click)="showScoringGuide = true"
-      title="Scoring Guide"
+      [title]="isLamiRoom ? t('lami.rulesTitle') : t('header.scoringGuide')"
       style="background: transparent; border: 1px solid var(--gold-secondary); border-radius: 4px; color: var(--gold-primary); cursor: pointer; font-weight: bold; padding: 2px 6px; font-size: 16px;"
     >
       📖
@@ -63,5 +63,9 @@
 </header>
 
 @if (showScoringGuide) {
-  <app-scoring-guide [lang]="currentLanguage" (close)="showScoringGuide = false"></app-scoring-guide>
+  @if (isLamiRoom) {
+    <app-lami-guide [lang]="currentLanguage" (close)="showScoringGuide = false"></app-lami-guide>
+  } @else {
+    <app-scoring-guide [lang]="currentLanguage" (close)="showScoringGuide = false"></app-scoring-guide>
+  }
 }

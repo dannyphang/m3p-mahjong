@@ -1,0 +1,39 @@
+.lobby-overlay {
+  background: url('/assets/lobby_bg.png') center/cover no-repeat !important;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(25px) !important;
+  border-radius: 30px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.2) !important;
+}
+
+.lobby-title {
+  color: #ffeb3b !important;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.5), 0 0 10px #ff9800 !important;
+  font-size: 36px !important;
+}
+
+.lobby-desc {
+  color: #fff !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5) !important;
+}
+
+.form-group label {
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+}
+
+.form-input {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  font-weight: 600;
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}

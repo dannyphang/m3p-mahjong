@@ -16,6 +16,7 @@ const {
   isTingPai,
   TILE_TYPES
 } = require('./engine');
+const LamiGameState = require('./lami_state');
 
 const app = express();
 app.use(cors());
@@ -1245,14 +1246,19 @@ io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
   // Create or Join Room
-  socket.on('joinRoom', ({ name, roomId }) => {
+  socket.on('joinRoom', ({ name, roomId, gameType }) => {
     let room = rooms[roomId];
     if (!room) {
-      room = new GameState(roomId);
+      if (gameType === 'lami') {
+        room = new LamiGameState(roomId);
+      } else {
+        room = new GameState(roomId);
+      }
       rooms[roomId] = room;
     }
 
-    if (room.players.length >= 3) {
+    const maxPlayers = room.gameType === 'lami' ? 4 : 3;
+    if (room.players.length >= maxPlayers) {
       socket.emit('errorMsg', 'Room is already full.');
       return;
     }
@@ -1261,8 +1267,13 @@ io.on('connection', (socket) => {
     const addedPlayer = room.addPlayer(name, socket.id, false);
     
     if (addedPlayer) {
-      socket.emit('joined', { playerId: addedPlayer.id });
-      room.broadcastState();
+      socket.emit('joined', { playerId: addedPlayer.id, gameType: room.gameType });
+      
+      if (room.gameType === 'lami') {
+        room.broadcastState(io);
+      } else {
+        room.broadcastState();
+      }
     }
   });
 
@@ -1276,12 +1287,14 @@ io.on('connection', (socket) => {
       p.isReady = !p.isReady;
       room.addLog({ key: 'log.ready', params: { name: p.name, status: p.isReady ? 'READY' : 'NOT READY' } });
       
-      // Auto-start if all 3 players are ready
-      const allReady = room.players.length === 3 && room.players.every(pl => pl.isReady);
+      const maxPlayers = room.gameType === 'lami' ? 4 : 3;
+      const allReady = room.players.length === maxPlayers && room.players.every(pl => pl.isReady);
       if (allReady) {
-        room.startGame();
+        if (room.gameType === 'lami') room.startGame(io);
+        else room.startGame();
       } else {
-        room.broadcastState();
+        if (room.gameType === 'lami') room.broadcastState(io);
+        else room.broadcastState();
       }
     }
   });
@@ -1293,12 +1306,14 @@ io.on('connection', (socket) => {
       const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
       room.addPlayer(botName, null, true, difficulty || 'easy');
       
-      // Auto-start if filled and all human players are ready
-      const allReady = room.players.length === 3 && room.players.every(pl => pl.isReady);
+      const maxPlayers = room.gameType === 'lami' ? 4 : 3;
+      const allReady = room.players.length === maxPlayers && room.players.every(pl => pl.isReady);
       if (allReady) {
-        room.startGame();
+        if (room.gameType === 'lami') room.startGame(io);
+        else room.startGame();
       } else {
-        room.broadcastState();
+        if (room.gameType === 'lami') room.broadcastState(io);
+        else room.broadcastState();
       }
     }
   });
@@ -1313,22 +1328,68 @@ io.on('connection', (socket) => {
         
         // Also cleanup their state arrays
         delete room.hands[botId];
-        delete room.exposed[botId];
-        delete room.flowers[botId];
-        delete room.discards[botId];
-        delete room.accumulatedPoints[botId];
+        delete room.exposed?.[botId];
+        delete room.flowers?.[botId];
+        delete room.discards?.[botId];
+        delete room.accumulatedPoints?.[botId];
 
         room.broadcastState();
       }
     }
   });
 
+  // --- LAMI SPECIFIC EVENTS ---
+  socket.on('lamiSortHand', ({ roomId, playerId, sortedHand }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'lami' && room.status === 'PLAYING') {
+      if (room.hands[playerId]) {
+        // Keep only valid tiles to prevent cheating
+        const validSorted = [];
+        const serverHand = [...room.hands[playerId]];
+        for (const st of sortedHand) {
+          const idx = serverHand.findIndex(t => t.id === st.id);
+          if (idx !== -1) {
+            validSorted.push(serverHand.splice(idx, 1)[0]);
+          }
+        }
+        // Add any leftovers
+        validSorted.push(...serverHand);
+        room.hands[playerId] = validSorted;
+        room.broadcastState(io);
+      }
+    }
+  });
+  socket.on('lamiPlayMeld', ({ roomId, playerId, tiles }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'lami') {
+      room.playMeld(playerId, tiles, io);
+    }
+  });
+
+  socket.on('lamiConnectMeld', ({ roomId, playerId, meldId, tiles, position }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'lami') {
+      room.connectMeld(playerId, meldId, tiles, position, io);
+    }
+  });
+
+  socket.on('lamiPassTurn', ({ roomId, playerId }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'lami') {
+      room.passTurn(playerId, io);
+    }
+  });
+  // -----------------------------
+
   socket.on('updateTimer', ({ roomId, enableTimer, timerDuration }) => {
     const room = rooms[roomId];
     if (room && room.status === 'WAITING') {
-      room.settings.enableTimer = !!enableTimer;
-      room.settings.timerDuration = parseInt(timerDuration, 10) || 10;
-      room.broadcastState();
+      if (room.settings) {
+        room.settings.enableTimer = !!enableTimer;
+        room.settings.timerDuration = parseInt(timerDuration, 10) || 10;
+      }
+      if (room.gameType === 'lami') room.broadcastState(io);
+      else room.broadcastState();
     }
   });
 

@@ -43,6 +43,10 @@ export class HomeComponent {
     this.gameService.connectAndJoin();
   }
 
+  navigateToLamiLobby() {
+    this.router.navigate(['/lami-lobby']);
+  }
+
   t(key: string): string {
     const lang = this.gameService.currentLanguage();
     return TRANSLATIONS[lang as keyof typeof TRANSLATIONS]?.[key] || key;

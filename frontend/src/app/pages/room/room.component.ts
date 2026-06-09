@@ -334,7 +334,7 @@ export class RoomComponent implements AfterViewChecked {
     const oppPlayer = s.players[oppIndex];
     if (!oppPlayer) return [];
 
-    return s.discards[oppPlayer.id] || [];
+    return s.discards?.[oppPlayer.id] || [];
   }
 
   isArray(val: any): boolean {
@@ -354,13 +354,13 @@ export class RoomComponent implements AfterViewChecked {
   getOpponentExposed(offset: number): Meld[] {
     const opp = this.getRemainingPlayerPosition(offset);
     if (!opp) return [];
-    return this.gameState?.exposed[opp.id] || [];
+    return this.gameState?.exposed?.[opp.id] || [];
   }
 
   getOpponentFlowers(offset: number): Tile[] {
     const opp = this.getRemainingPlayerPosition(offset);
     if (!opp) return [];
-    return this.gameState?.flowers[opp.id] || [];
+    return this.gameState?.flowers?.[opp.id] || [];
   }
 
   isMyTurn(): boolean {

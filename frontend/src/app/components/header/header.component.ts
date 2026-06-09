@@ -4,13 +4,14 @@ import { GameService } from '../../services/game.service';
 import { Router } from '@angular/router';
 import { TRANSLATIONS } from '../../i18n';
 import { ScoringGuideComponent } from '../scoring-guide/scoring-guide.component';
+import { LamiGuideComponent } from '../lami-guide/lami-guide.component';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, ScoringGuideComponent, FormsModule, RouterModule],
+  imports: [CommonModule, ScoringGuideComponent, LamiGuideComponent, FormsModule, RouterModule],
   templateUrl: './header.component.html'
 })
 export class HeaderComponent {
@@ -74,5 +75,9 @@ export class HeaderComponent {
 
   get isPlayground() {
     return this.router.url.includes('playground');
+  }
+
+  get isLamiRoom() {
+    return this.router.url.includes('lami');
   }
 }
