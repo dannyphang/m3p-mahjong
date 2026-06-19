@@ -1353,6 +1353,16 @@ io.on('connection', (socket) => {
   });
 
   // --- LAMI SPECIFIC EVENTS ---
+
+  socket.on('lamiUpdateRates', ({ roomId, playerId, rates }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'lami' && room.status === 'WAITING') {
+      if (room.players[0] && room.players[0].id === playerId) {
+        room.rates = { ...room.rates, ...rates };
+        room.broadcastState(io);
+      }
+    }
+  });
   socket.on('lamiSortHand', ({ roomId, playerId, sortedHand }) => {
     const room = rooms[roomId];
     if (room && room.gameType === 'lami' && room.status === 'PLAYING') {
@@ -1504,6 +1514,9 @@ io.on('connection', (socket) => {
       const shouldDestroy = room.removePlayer(socket.id);
       if (shouldDestroy) {
         delete rooms[roomId];
+      } else {
+        if (room.gameType === 'lami') room.broadcastState(io);
+        else room.broadcastState();
       }
     });
   });

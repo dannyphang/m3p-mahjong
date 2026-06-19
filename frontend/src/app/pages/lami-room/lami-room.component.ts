@@ -117,6 +117,13 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     return '';
   }
 
+  updateRate(type: 'win' | 'joker' | 'ace', amount: number) {
+    if (this.state?.players[0]?.id !== this.myId) return;
+    const currentRates = this.state?.rates || { win: 10, joker: 10, ace: 5 };
+    const newRate = Math.max(1, (currentRates[type] || 1) + amount);
+    this.gameService.updateLamiRates({ [type]: newRate });
+  }
+
   myHand = computed(() => {
     const s = this.state;
     const pid = this.myId;

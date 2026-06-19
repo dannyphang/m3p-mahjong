@@ -49,6 +49,11 @@ export interface GameState {
   logs: any[];
   accumulatedPoints: { [key: string]: number };
   rankings?: any;
+  rates?: {
+    win: number;
+    joker: number;
+    ace: number;
+  };
   settings: {
     enableTimer: boolean;
     timerDuration?: number;
@@ -232,6 +237,16 @@ export class GameService {
       this.socket.emit('toggleReady', {
         roomId: this.roomId(),
         playerId: this.myPlayerId()
+      });
+    }
+  }
+
+  updateLamiRates(rates: { win?: number, joker?: number, ace?: number }) {
+    if (this.socket) {
+      this.socket.emit('lamiUpdateRates', {
+        roomId: this.roomId(),
+        playerId: this.myPlayerId(),
+        rates
       });
     }
   }

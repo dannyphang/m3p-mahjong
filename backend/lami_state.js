@@ -33,6 +33,11 @@ class LamiGameState {
     this.accumulatedPoints = {}; // playerId -> net points
 
     this.settings = {};
+    this.rates = {
+      win: 10,
+      joker: 10,
+      ace: 5
+    };
   }
 
   addLog(msg) {
@@ -69,6 +74,7 @@ class LamiGameState {
       logs: this.logs,
       accumulatedPoints: this.accumulatedPoints,
       settings: this.settings,
+      rates: this.rates,
       rankings: this.rankings
     };
   }
@@ -399,14 +405,14 @@ class LamiGameState {
       });
     });
 
-    let coins = jokers * 10;
+    let coins = jokers * (this.rates?.joker ?? 10);
     
     // Count sets of 4 different aces
     let setsOf4 = Math.min(aceCounts.red, aceCounts.blue, aceCounts.green, aceCounts.yellow);
-    coins += setsOf4 * 25; // 5 aces worth
+    coins += setsOf4 * ((this.rates?.ace ?? 5) * 5); // 5 aces worth
     
     let remainingAces = (aceCounts.red - setsOf4) + (aceCounts.blue - setsOf4) + (aceCounts.green - setsOf4) + (aceCounts.yellow - setsOf4);
-    coins += remainingAces * 5;
+    coins += remainingAces * (this.rates?.ace ?? 5);
 
     return {
       value: coins,
@@ -450,21 +456,21 @@ class LamiGameState {
     const multiplier = isDraw ? 1 : 2;
 
     if (losers.length >= 1) { // 大哥
-      const penalty = 30 * multiplier;
+      const penalty = (this.rates?.win ?? 10) * 3 * multiplier;
       this.accumulatedPoints[losers[0].id] -= penalty;
       this.accumulatedPoints[actualWinnerId] += penalty;
       roundBreakdown[losers[0].id].base -= penalty;
       roundBreakdown[actualWinnerId].base += penalty;
     }
     if (losers.length >= 2) { // 二哥
-      const penalty = 20 * multiplier;
+      const penalty = (this.rates?.win ?? 10) * 2 * multiplier;
       this.accumulatedPoints[losers[1].id] -= penalty;
       this.accumulatedPoints[actualWinnerId] += penalty;
       roundBreakdown[losers[1].id].base -= penalty;
       roundBreakdown[actualWinnerId].base += penalty;
     }
     if (losers.length >= 3) { // 小哥
-      const penalty = 10 * multiplier;
+      const penalty = (this.rates?.win ?? 10) * 1 * multiplier;
       this.accumulatedPoints[losers[2].id] -= penalty;
       this.accumulatedPoints[actualWinnerId] += penalty;
       roundBreakdown[losers[2].id].base -= penalty;

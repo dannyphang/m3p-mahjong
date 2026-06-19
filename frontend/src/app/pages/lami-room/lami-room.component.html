@@ -56,6 +56,37 @@
         </button>
       </div>
 
+      <div class="rates-container" style="margin: 20px 0; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+        <h3 style="margin-top: 0; margin-bottom: 10px; color: #ffd700;">💰 Coin Rates</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span>Base Win Rate: </span>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('win', -1)">-</button>
+            <span style="font-weight: bold; width: 30px;">{{ state.rates?.win || 10 }}</span>
+            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('win', 1)">+</button>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span>Joker Rate: </span>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('joker', -1)">-</button>
+            <span style="font-weight: bold; width: 30px;">{{ state.rates?.joker || 10 }}</span>
+            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('joker', 1)">+</button>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Ace Rate: </span>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('ace', -1)">-</button>
+            <span style="font-weight: bold; width: 30px;">{{ state.rates?.ace || 5 }}</span>
+            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('ace', 1)">+</button>
+          </div>
+        </div>
+        <div *ngIf="state.players[0]?.id !== myId" style="font-size: 12px; color: #aaa; margin-top: 10px;">
+          Only the host can modify these rates.
+        </div>
+      </div>
+
       <button
         (click)="toggleReady()"
         class="btn-primary"
