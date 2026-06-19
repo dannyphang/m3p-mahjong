@@ -163,10 +163,18 @@
   transition: all 0.2s;
 }
 
-.connect-btn:hover {
+.connect-btn:hover:not(:disabled) {
   background: #ffeb3b;
   color: black;
   transform: scale(1.1);
+}
+
+.connect-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+  background: rgba(255,255,255,0.2);
+  color: white;
 }
 
 .my-player-zone {

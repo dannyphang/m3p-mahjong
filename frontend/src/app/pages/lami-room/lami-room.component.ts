@@ -1,6 +1,7 @@
-import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, ViewChild, ElementRef, AfterViewChecked, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { GameService, Player } from '../../services/game.service';
 import { LamiTileComponent } from '../../components/lami-tile/lami-tile.component';
 import { FormsModule } from '@angular/forms';
@@ -9,14 +10,24 @@ import { TRANSLATIONS } from '../../i18n';
 @Component({
   selector: 'app-lami-room',
   standalone: true,
-  imports: [CommonModule, FormsModule, LamiTileComponent],
+  imports: [CommonModule, FormsModule, DragDropModule, LamiTileComponent],
   templateUrl: './lami-room.component.html',
   styleUrls: ['./lami-room.component.css']
 })
-export class LamiRoomComponent implements OnInit, OnDestroy {
+export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   route = inject(ActivatedRoute);
   router = inject(Router);
   gameService = inject(GameService);
+
+  @ViewChild('logsContainer') private logsContainer!: ElementRef;
+
+  constructor() {
+    effect(() => {
+      const logsCount = this.gameService.gameState()?.logs?.length || 0;
+      const showNarrator = this.gameService.showNarrator();
+      setTimeout(() => this.scrollToBottom(), 50);
+    });
+  }
 
   gameStateSignal = this.gameService.gameState;
   playerIdSignal = this.gameService.myPlayerId;
@@ -58,12 +69,68 @@ export class LamiRoomComponent implements OnInit, OnDestroy {
     return this.state?.players.find((p: any) => p.id === this.myId);
   }
 
+  get showNarrator() {
+    return this.gameService.showNarrator();
+  }
+
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    try {
+      if (this.logsContainer && this.logsContainer.nativeElement) {
+        setTimeout(() => {
+          if (this.logsContainer && this.logsContainer.nativeElement) {
+            this.logsContainer.nativeElement.scrollTop = this.logsContainer.nativeElement.scrollHeight;
+          }
+        }, 10);
+      }
+    } catch (err) {}
+  }
+
+  t(key: string, params?: Record<string, any>): string {
+    const lang = this.gameService.currentLanguage();
+    let str = TRANSLATIONS[lang as keyof typeof TRANSLATIONS]?.[key] || key;
+    if (params) {
+      Object.keys(params).forEach(k => {
+        str = str.replace(`{${k}}`, params[k]);
+      });
+    }
+    return str;
+  }
+
+  formatLog(log: any): string {
+    if (typeof log === 'string') return log;
+    if (log && log.key) {
+      return this.t(log.key, log.params);
+    }
+    return '';
+  }
+
   myHand = computed(() => {
     const s = this.state;
     const pid = this.myId;
-    if (!s || !pid) return [];
-    return s.hands[pid] || [];
+    if (s && s.hands && s.hands[pid]) {
+      return s.hands[pid];
+    }
+    return [];
   });
+
+  onCdkDrop(event: CdkDragDrop<any[]>) {
+    const hand = [...(this.state?.hands[this.myId] || [])];
+    if (!hand || event.previousIndex === event.currentIndex) return;
+
+    if (event.previousContainer === event.container) {
+      moveItemInArray(hand, event.previousIndex, event.currentIndex);
+      
+      this.gameService.socket?.emit('lamiSortHand', {
+        roomId: this.gameService.roomId(),
+        playerId: this.myId,
+        sortedHand: hand
+      });
+    }
+  }
 
   getOpponents(): (Player & { index: number; position: string })[] {
     const s = this.state;
@@ -106,10 +173,7 @@ export class LamiRoomComponent implements OnInit, OnDestroy {
     });
   }
 
-  t(key: string): string {
-    const lang = this.gameService.currentLanguage();
-    return TRANSLATIONS[lang as keyof typeof TRANSLATIONS]?.[key] || key;
-  }
+
 
   ngOnDestroy() {
     this.gameService.disconnect();

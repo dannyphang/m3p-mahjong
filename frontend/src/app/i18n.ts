@@ -114,6 +114,10 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'lami.rule3.desc': 'Jokers can substitute for any tile. If a Joker is on the table in a meld, and you have the exact tile it is substituting for, you can swap your tile with the Joker and take the Joker into your hand! You must then immediately use that Joker in the same turn.',
     'lami.rule4.title': '4. Sets vs Straights',
     'lami.rule4.desc': 'If there is a valid Set of a specific number on the table (e.g. 7-7-7), you are forbidden from adding that number to a Straight (e.g. you cannot add a 7 to a 8-9-10 Straight). You must add it to the Set instead!',
+    'lami.rule5.title': '5. Point Calculation',
+    'lami.rule5.desc': 'When the game ends, your remaining hand tiles are converted to penalty points:\n- Joker = 20 points\n- Ace = 15 points\n- J, Q, K = 10 points\n- 2-10 = Face value (e.g., 5 = 5 points)',
+    'lami.rule6.title': '6. Coin Rewards System',
+    'lami.rule6.desc': 'You earn Coins instantly when you play special tiles to the public table:\n- Each Joker played = +10 Coins\n- Each Ace played = +5 Coins\n- Set of 4 Aces (all different suits) = +25 Coins bonus',
 
     // Lami Lobby & Room
     'lami.lobbyTitle': 'Lami Lobby',
@@ -165,7 +169,13 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'log.draw': 'Deck empty. Game is a Draw (流局)!',
     'log.ready': '{name} is {status}.',
     'log.roomReset': 'Room reset. Waiting for players to get ready.',
-    'log.receivedCoins': '{name} instantly received +{coins} Coins from {target} for {reason}!'
+    'log.receivedCoins': '{name} instantly received +{coins} Coins from {target} for {reason}!',
+    'log.lami.playMeld': '{name} played a meld [{tiles}]',
+    'log.lami.connect': '{name} connected [{tiles}] to an existing meld',
+    'log.lami.burned': '{name} is BURNED (OUT) for playing an invalid first meld!',
+    'log.lami.pass': '{name} passed and drew a card.',
+    'log.lami.draw': 'Game ends in a DRAW! No more valid moves.',
+    'log.lami.win': '{name} has played all tiles and won the game!'
   },
   zh: {
     // Lobby
@@ -282,6 +292,10 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'lami.rule3.desc': '飞牌可以代替任何牌。如果公共桌面上有一张飞牌，而您手里有它所替代的真实牌，您可以用真实牌替换该飞牌，并将飞牌收回手中！但您必须在同一回合内立即使用这换回的飞牌。',
     'lami.rule4.title': '4. 刻子优先规则',
     'lami.rule4.desc': '如果桌面上已经存在某个数字的刻子（例如：7-7-7），则您禁止将该数字加入到顺子中（例如您不能把7加到8-9-10的顺子中）。您必须将它加入到刻子中！',
+    'lami.rule5.title': '5. 积分计算方式',
+    'lami.rule5.desc': '游戏结束时，您手中剩余的牌将换算为罚分：\n- 飞牌 (Joker) = 20 分\n- A = 15 分\n- J, Q, K = 10 分\n- 2-10 = 牌面点数（例如：5 = 5 分）',
+    'lami.rule6.title': '6. 金币奖励系统',
+    'lami.rule6.desc': '将特殊牌打到公共桌面上可立即赚取金币：\n- 打出一张飞牌 = +10 金币\n- 打出一张A = +5 金币\n- 集齐一套4张不同花色的A = 额外 +25 金币奖励',
 
     // Lami Lobby & Room
     'lami.lobbyTitle': 'Lami 大厅',
@@ -333,6 +347,12 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'log.draw': '牌墙已空。本局流局！',
     'log.ready': '{name} 准备状态: {status}。',
     'log.roomReset': '房间已重置。等待玩家准备。',
-    'log.receivedCoins': '{name} 因为 {reason} 从 {target} 获得了 +{coins} 金币！'
+    'log.receivedCoins': '{name} 因为 {reason} 从 {target} 获得了 +{coins} 金币！',
+    'log.lami.playMeld': '{name} 出牌了一组 [{tiles}]',
+    'log.lami.connect': '{name} 将 [{tiles}] 接到了现有的牌组上',
+    'log.lami.burned': '{name} 烧烟 (OUT)！因为第一手出的牌不合法！',
+    'log.lami.pass': '{name} 跳过本回合并摸了一张牌。',
+    'log.lami.draw': '所有人都无法出牌。本局平局 (和局)！',
+    'log.lami.win': '{name} 出完了所有牌，赢得了本局游戏！'
   }
 };

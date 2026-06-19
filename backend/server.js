@@ -18,6 +18,14 @@ const {
 } = require('./engine');
 const LamiGameState = require('./lami_state');
 
+// Global error handlers to prevent silent crashes
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+});
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -239,9 +247,18 @@ class GameState {
   }
 
   addPlayer(name, socketId, isBot = false, difficulty = 'easy') {
+    // Check if player is reconnecting
+    const existingPlayer = this.players.find(p => p.name === name && !p.isBot);
+    if (existingPlayer && existingPlayer.isConnected === false) {
+      existingPlayer.socketId = socketId;
+      existingPlayer.isConnected = true;
+      this.addLog({ key: 'log.joined', params: { name: name + ' (Reconnected)' } });
+      return existingPlayer;
+    }
+
     if (this.players.length >= 3) return null;
     const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
-    const player = { id, name, socketId, isBot, isReady: isBot, difficulty: isBot ? difficulty : null };
+    const player = { id, name, socketId, isBot, isReady: isBot, difficulty: isBot ? difficulty : null, isConnected: true };
     this.players.push(player);
     
     this.hands[id] = [];
@@ -258,19 +275,14 @@ class GameState {
     const idx = this.players.findIndex(p => p.socketId === socketId);
     if (idx !== -1) {
       const p = this.players[idx];
-      this.players.splice(idx, 1);
-      delete this.hands[p.id];
-      delete this.exposed[p.id];
-      delete this.flowers[p.id];
-      delete this.discards[p.id];
+      p.isConnected = false;
       this.addLog({ key: 'log.left', params: { name: p.name } });
       
-      // If no human players left, clean room
-      const humans = this.players.filter(pl => !pl.isBot);
-      if (humans.length === 0) {
+      // If no human players left are connected, clean room
+      const activeHumans = this.players.filter(pl => !pl.isBot && pl.isConnected);
+      if (activeHumans.length === 0) {
         delete rooms[this.roomId];
       } else {
-        this.status = 'WAITING';
         this.broadcastState();
       }
     }
@@ -1258,7 +1270,9 @@ io.on('connection', (socket) => {
     }
 
     const maxPlayers = room.gameType === 'lami' ? 4 : 3;
-    if (room.players.length >= maxPlayers) {
+    const isReconnecting = room.players.some(p => p.name === name && !p.isBot && p.isConnected === false);
+    
+    if (room.players.length >= maxPlayers && !isReconnecting) {
       socket.emit('errorMsg', 'Room is already full.');
       return;
     }

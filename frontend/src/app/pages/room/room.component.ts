@@ -26,6 +26,10 @@ export class RoomComponent implements AfterViewChecked {
       if (!this.gameService.isJoined()) {
         this.router.navigate(['/']);
       }
+      // Trigger scroll when logs or showNarrator state changes
+      const logsCount = this.gameService.gameState()?.logs?.length || 0;
+      const showNarrator = this.gameService.showNarrator();
+      setTimeout(() => this.scrollToBottom(), 50);
     });
   }
 

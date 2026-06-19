@@ -37,6 +37,16 @@ import { TRANSLATIONS } from '../../i18n';
             <p style="white-space: pre-line">{{ t('lami.rule4.desc') }}</p>
           </div>
           
+          <div style="margin-bottom: 24px;">
+            <h3 style="color: var(--gold-primary); border-bottom: 1px solid var(--gold-secondary); padding-bottom: 8px; margin-bottom: 12px;">{{ t('lami.rule5.title') }}</h3>
+            <p style="white-space: pre-line">{{ t('lami.rule5.desc') }}</p>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <h3 style="color: var(--gold-primary); border-bottom: 1px solid var(--gold-secondary); padding-bottom: 8px; margin-bottom: 12px;">{{ t('lami.rule6.title') }}</h3>
+            <p style="white-space: pre-line">{{ t('lami.rule6.desc') }}</p>
+          </div>
+          
         </div>
       </div>
     </div>

@@ -1,5 +1,20 @@
-const { createLamiDeck, shuffleLamiDeck, isValidStraightFlush, isValidSet, orderStraightFlush, orderSet, calculateHandPoints, calculateAJokerPieces, hasAnyValidMove, isExactValidSequence } = require('./lami_engine');
+const { createLamiDeck, shuffleLamiDeck, isValidStraightFlush, isValidSet, orderStraightFlush, orderSet, calculateHandPoints, calculateAJokerPieces, hasAnyValidMove, isExactValidSequence, getCardValue } = require('./lami_engine');
 const { executeBotTurn } = require('./lami_bot');
+
+const LAMI_SUIT_EMOJI = { red: '♥', blue: '♠', green: '♣', yellow: '♦' };
+
+function formatLamiTilesForLog(tiles) {
+  if (!tiles || !Array.isArray(tiles)) return '';
+  return tiles.map(t => {
+    if (t.type === 'joker' || t.value === 'joker' || t.value === 'Joker') return '☺ Joker';
+    let val = t.value;
+    if (val === 1 || val === '1') val = 'A';
+    if (val === 11) val = 'J';
+    if (val === 12) val = 'Q';
+    if (val === 13) val = 'K';
+    return `${LAMI_SUIT_EMOJI[t.suit] || ''}${val}`;
+  }).join(' ');
+}
 
 class LamiGameState {
   constructor(roomId) {
@@ -59,9 +74,18 @@ class LamiGameState {
   }
 
   addPlayer(name, socketId, isBot = false) {
+    // Check if player is reconnecting
+    const existingPlayer = this.players.find(p => p.name === name && !p.isBot);
+    if (existingPlayer && existingPlayer.isConnected === false) {
+      existingPlayer.socketId = socketId;
+      existingPlayer.isConnected = true;
+      this.addLog({ key: 'log.joined', params: { name: name + ' (Reconnected)' } });
+      return existingPlayer;
+    }
+
     if (this.players.length >= 4) return null;
     const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
-    const player = { id, name, socketId, isBot, isReady: isBot, hasBrokenIce: false, burned: false };
+    const player = { id, name, socketId, isBot, isReady: isBot, hasBrokenIce: false, burned: false, isConnected: true };
     this.players.push(player);
     
     this.hands[id] = [];
@@ -75,15 +99,12 @@ class LamiGameState {
     const idx = this.players.findIndex(p => p.socketId === socketId);
     if (idx !== -1) {
       const p = this.players[idx];
-      this.players.splice(idx, 1);
-      delete this.hands[p.id];
+      p.isConnected = false;
       this.addLog({ key: 'log.left', params: { name: p.name } });
       
-      const humans = this.players.filter(pl => !pl.isBot);
-      if (humans.length === 0) {
+      const activeHumans = this.players.filter(pl => !pl.isBot && pl.isConnected);
+      if (activeHumans.length === 0) {
         return true; // indicates room should be destroyed
-      } else {
-        this.status = 'WAITING';
       }
     }
     return false;
@@ -160,9 +181,6 @@ class LamiGameState {
     if (!player.hasBrokenIce) {
       // Must be a straight flush to break ice
       if (!isValidStraightFlush(tiles)) {
-        player.burned = true; // 烧烟
-        this.addLog({ key: 'log.lami.burned', params: { name: player.name } });
-        this.moveToNextPlayer(io);
         return;
       } else {
         player.hasBrokenIce = true;
@@ -188,7 +206,7 @@ class LamiGameState {
 
     // A move was made, reset consecutive passes
     this.players.forEach(p => p.consecutivePasses = 0);
-    this.addLog({ key: 'log.lami.playMeld', params: { name: player.name } });
+    this.addLog({ key: 'log.lami.playMeld', params: { name: player.name, tiles: formatLamiTilesForLog(placedTiles) } });
 
     if (this.hands[playerId].length === 0) {
       this.handleGameEnd(playerId, false, io);
@@ -280,7 +298,7 @@ class LamiGameState {
 
     // A move was made, reset consecutive passes
     this.players.forEach(p => p.consecutivePasses = 0);
-    this.addLog({ key: 'log.lami.connect', params: { name: player.name } });
+    this.addLog({ key: 'log.lami.connect', params: { name: player.name, tiles: formatLamiTilesForLog(tiles) } });
 
     if (this.hands[playerId].length === 0) {
       this.handleGameEnd(playerId, false, io);

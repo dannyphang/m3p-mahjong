@@ -2,7 +2,7 @@
   <div class="table-watermark"></div>
 
   <!-- Waiting Room -->
-  <div *ngIf="state.status === 'WAITING'" class="lobby-overlay" style="z-index: 1000">
+  <div *ngIf="state.status === 'WAITING' || (state.status === 'GAME_OVER' && myPlayer?.isReady)" class="lobby-overlay" style="z-index: 1000">
     <div class="glass-card" style="text-align: center">
       <h2 class="lobby-title">{{ t('lami.roomTitle') }}{{ state.roomId }}</h2>
 
@@ -94,7 +94,7 @@
       <div class="meld-list">
         <div *ngFor="let meld of state.publicMelds" class="public-meld glass-panel">
           <button
-            *ngIf="selectedTiles.length > 0 && state.status === 'PLAYING'"
+            [disabled]="selectedTiles.length === 0 || state.status !== 'PLAYING' || state.players[state.currentTurn]?.id !== myId"
             class="connect-btn"
             (click)="connectMeld(meld.id, 'start')"
           >
@@ -111,7 +111,7 @@
             ></app-lami-tile>
           </div>
           <button
-            *ngIf="selectedTiles.length > 0 && state.status === 'PLAYING'"
+            [disabled]="selectedTiles.length === 0 || state.status !== 'PLAYING' || state.players[state.currentTurn]?.id !== myId"
             class="connect-btn"
             (click)="connectMeld(meld.id, 'end')"
           >
@@ -173,9 +173,10 @@
         </div>
       </div>
 
-      <div class="player-hand">
+      <div class="player-hand" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="onCdkDrop($event)">
         <div
           *ngFor="let tile of myHand()"
+          cdkDrag
           (click)="state.status === 'PLAYING' && toggleTileSelection(tile)"
           [class.selected]="isSelected(tile)"
           class="hand-tile-wrapper"
@@ -185,9 +186,15 @@
       </div>
     </div>
 
+    <!-- LOGS PANEL -->
+    <div *ngIf="showNarrator" class="logs-panel" #logsContainer>
+      <div class="logs-title">{{ t('header.narratorTitle') }}</div>
+      <div *ngFor="let log of state?.logs" class="log-item">{{ formatLog(log) }}</div>
+    </div>
+
     <!-- Show Dashboard Button -->
     <button
-      *ngIf="state.status === 'GAME_OVER' && !showGameOver"
+      *ngIf="state.status === 'GAME_OVER' && !showGameOver && !myPlayer?.isReady"
       (click)="showGameOver = true"
       class="btn-primary"
       style="
@@ -207,7 +214,7 @@
 
   <!-- Game Over Area -->
   <div
-    *ngIf="state.status === 'GAME_OVER' && showGameOver"
+    *ngIf="state.status === 'GAME_OVER' && showGameOver && !myPlayer?.isReady"
     class="lobby-overlay"
     style="z-index: 1000"
   >
