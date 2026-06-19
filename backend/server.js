@@ -1501,7 +1501,10 @@ io.on('connection', (socket) => {
     console.log(`Socket disconnected: ${socket.id}`);
     Object.keys(rooms).forEach(roomId => {
       const room = rooms[roomId];
-      room.removePlayer(socket.id);
+      const shouldDestroy = room.removePlayer(socket.id);
+      if (shouldDestroy) {
+        delete rooms[roomId];
+      }
     });
   });
 });

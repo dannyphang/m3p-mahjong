@@ -37,7 +37,10 @@ function isExactValidSequence(cards) {
   if (cards.length > 13) return false;
   
   const nonJokerIdx = cards.findIndex(c => c.type !== 'joker');
-  if (nonJokerIdx === -1) return true; // all jokers
+  if (nonJokerIdx === -1) {
+    cards.forEach(c => { c.representedValue = 'joker'; c.representedSuit = 'purple'; });
+    return true; // all jokers
+  }
   
   const suit = cards[nonJokerIdx].suit;
   const firstNonJokerVal = cards[nonJokerIdx].value;
@@ -48,6 +51,8 @@ function isExactValidSequence(cards) {
   for (const c of cards) {
     if (c.type === 'joker') {
       if (expected > 14) return false;
+      c.representedValue = expected === 14 ? 1 : expected;
+      c.representedSuit = 'purple';
       expected++;
     } else {
       if (c.suit !== suit) return false;
@@ -164,6 +169,29 @@ function orderStraightFlush(cards) {
     if (c.value === 14) c.value = 1;
   });
   
+  const firstNonJokerIdx = ordered.findIndex(c => c.type !== 'joker');
+  if (firstNonJokerIdx !== -1) {
+    const firstVal = ordered[firstNonJokerIdx].value;
+    const suit = ordered[firstNonJokerIdx].suit;
+    // We know ordered array is sequential in values.
+    // Index firstNonJokerIdx has value firstVal. So index i has value: firstVal + (i - firstNonJokerIdx)
+    ordered.forEach((c, i) => {
+      if (c.type === 'joker') {
+        let repVal = firstVal + (i - firstNonJokerIdx);
+        // If repVal is outside 1-13, we might need to wrap it if it represents an Ace
+        if (repVal === 14) repVal = 1;
+        if (repVal < 1) repVal = 14 + repVal; // unlikely in Rummy but just in case
+        c.representedValue = repVal;
+        c.representedSuit = 'purple';
+      }
+    });
+  } else {
+    ordered.forEach(c => {
+      c.representedValue = 'joker';
+      c.representedSuit = 'purple';
+    });
+  }
+  
   return ordered;
 }
 
@@ -173,6 +201,12 @@ function orderSet(cards) {
   
   const suitOrder = { red: 1, blue: 2, green: 3, yellow: 4 };
   nonJokers.sort((a, b) => suitOrder[a.suit] - suitOrder[b.suit]);
+  
+  const val = nonJokers.length > 0 ? nonJokers[0].value : 'joker';
+  jokers.forEach(j => {
+    j.representedValue = val;
+    j.representedSuit = 'purple';
+  });
   
   return [...nonJokers, ...jokers];
 }

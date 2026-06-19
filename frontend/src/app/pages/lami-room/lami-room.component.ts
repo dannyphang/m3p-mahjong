@@ -6,6 +6,7 @@ import { GameService, Player } from '../../services/game.service';
 import { LamiTileComponent } from '../../components/lami-tile/lami-tile.component';
 import { FormsModule } from '@angular/forms';
 import { TRANSLATIONS } from '../../i18n';
+import { canConnectMeld } from '../../utils/lami-validator';
 
 @Component({
   selector: 'app-lami-room',
@@ -45,6 +46,13 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     const idx = this.state.players.findIndex((p: any) => p.id === playerId);
     if (idx === -1) return '#ffeb3b';
     return this.playerColors[idx % this.playerColors.length];
+  }
+
+  isConnectDisabled(meld: any, position: 'start' | 'end'): boolean {
+    if (this.selectedTiles.length === 0 || this.state?.status !== 'PLAYING') return true;
+    if (this.state?.players[this.state?.currentTurn]?.id !== this.myId) return true;
+    
+    return !canConnectMeld(meld, this.selectedTiles, position, this.state?.publicMelds || []);
   }
 
   get state() {

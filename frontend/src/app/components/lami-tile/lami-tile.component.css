@@ -70,6 +70,7 @@
 .color-blue { color: #1976d2; }
 .color-green { color: #388e3c; }
 .color-yellow { color: #fbc02d; }
+.color-purple { color: #9c27b0; }
 .color-undefined { color: #9c27b0; } /* Fallback for Joker */
 
 /* New Tile Indicator */

@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
       @if (!isBack) {
         <div class="lami-content">
           <div class="lami-number">{{ getDisplayNumber() }}</div>
-          @if (number === 'Joker' || number === 'joker') {
+          @if (isJoker || number === 'Joker' || number === 'joker') {
             <div class="lami-joker-icon">★</div>
           } @else {
             <div class="lami-suit-icon" [ngSwitch]="color">
@@ -40,11 +40,12 @@ import { CommonModule } from '@angular/common';
 })
 export class LamiTileComponent {
   @Input() number: string | number = 1; // 1-10, J, Q, K, or 'Joker'
-  @Input() color: 'red' | 'blue' | 'green' | 'yellow' = 'red';
+  @Input() color: 'red' | 'blue' | 'green' | 'yellow' | 'purple' | 'undefined' = 'red';
   @Input() small: boolean = false;
   @Input() isBack: boolean = false;
   @Input() isNew: boolean = false;
   @Input() newColor: string | null = null;
+  @Input() isJoker: boolean = false;
 
   getDisplayNumber(): string | number {
     if (this.number === 'Joker' || this.number === 'joker') return '☺';

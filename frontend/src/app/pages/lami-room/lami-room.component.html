@@ -94,7 +94,7 @@
       <div class="meld-list">
         <div *ngFor="let meld of state.publicMelds" class="public-meld glass-panel">
           <button
-            [disabled]="selectedTiles.length === 0 || state.status !== 'PLAYING' || state.players[state.currentTurn]?.id !== myId"
+            [disabled]="isConnectDisabled(meld, 'start')"
             class="connect-btn"
             (click)="connectMeld(meld.id, 'start')"
           >
@@ -103,15 +103,16 @@
           <div class="meld-tiles">
             <app-lami-tile
               *ngFor="let t of meld.tiles"
-              [number]="t.value"
-              [color]="$any(t.suit)"
+              [number]="t.type === 'joker' && t.representedValue ? t.representedValue : t.value"
+              [color]="t.type === 'joker' ? 'purple' : $any(t.suit)"
               [small]="true"
               [isNew]="t.isNew"
+              [isJoker]="t.type === 'joker'"
               [newColor]="t.newFromPlayer ? getPlayerColor(t.newFromPlayer) : null"
             ></app-lami-tile>
           </div>
           <button
-            [disabled]="selectedTiles.length === 0 || state.status !== 'PLAYING' || state.players[state.currentTurn]?.id !== myId"
+            [disabled]="isConnectDisabled(meld, 'end')"
             class="connect-btn"
             (click)="connectMeld(meld.id, 'end')"
           >
@@ -189,7 +190,7 @@
     <!-- LOGS PANEL -->
     <div *ngIf="showNarrator" class="logs-panel" #logsContainer>
       <div class="logs-title">{{ t('header.narratorTitle') }}</div>
-      <div *ngFor="let log of state?.logs" class="log-item">{{ formatLog(log) }}</div>
+      <div *ngFor="let log of state.logs" class="log-item">{{ formatLog(log) }}</div>
     </div>
 
     <!-- Show Dashboard Button -->
