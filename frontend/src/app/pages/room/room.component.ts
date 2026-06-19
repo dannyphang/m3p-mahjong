@@ -1,4 +1,5 @@
-import { Component, inject, ViewChild, ElementRef, AfterViewChecked, effect, signal } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, AfterViewChecked, effect, signal, OnInit } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -12,14 +13,19 @@ import { Router } from '@angular/router';
   imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './room.component.html'
 })
-export class RoomComponent implements AfterViewChecked {
+export class RoomComponent implements AfterViewChecked, OnInit {
   gameService = inject(GameService);
   router = inject(Router);
+  titleService = inject(Title);
 
   @ViewChild('logsContainer') private logsContainer!: ElementRef;
 
   draggedIndex: number | null = null;
   dragOverIndex: number | null = null;
+
+  ngOnInit() {
+    this.titleService.setTitle('M3P Mahjong');
+  }
 
   constructor() {
     effect(() => {

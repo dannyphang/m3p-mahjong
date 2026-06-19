@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, computed, ViewChild, ElementRef, AfterViewChecked, effect } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -171,7 +172,10 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  titleService = inject(Title);
+
   ngOnInit() {
+    this.titleService.setTitle('Lami | M3P Mahjong');
     this.route.queryParams.subscribe(params => {
       const name = params['name'] || 'Player';
       const roomId = params['id'] || Math.random().toString(36).substr(2, 6);

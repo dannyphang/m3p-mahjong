@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { GameService } from '../../services/game.service';
 import { Router } from '@angular/router';
 import { TRANSLATIONS } from '../../i18n';
+import { Title } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-home',
@@ -14,6 +15,7 @@ import { TRANSLATIONS } from '../../i18n';
 export class HomeComponent {
   gameService = inject(GameService);
   router = inject(Router);
+  titleService = inject(Title);
 
   constructor() {
     effect(() => {
@@ -21,6 +23,10 @@ export class HomeComponent {
         this.router.navigate(['/room']);
       }
     });
+  }
+
+  ngOnInit() {
+    this.titleService.setTitle('M3P Mahjong');
   }
 
   get playerName() {
