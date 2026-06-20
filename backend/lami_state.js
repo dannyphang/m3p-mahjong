@@ -34,7 +34,7 @@ class LamiGameState {
 
     this.settings = {};
     this.rates = {
-      win: 10,
+      win: 20,
       joker: 10,
       ace: 5
     };
@@ -456,21 +456,21 @@ class LamiGameState {
     const multiplier = isDraw ? 1 : 2;
 
     if (losers.length >= 1) { // 大哥
-      const penalty = (this.rates?.win ?? 10) * 3 * multiplier;
+      const penalty = (this.rates?.win ?? 20) * 3 * multiplier;
       this.accumulatedPoints[losers[0].id] -= penalty;
       this.accumulatedPoints[actualWinnerId] += penalty;
       roundBreakdown[losers[0].id].base -= penalty;
       roundBreakdown[actualWinnerId].base += penalty;
     }
     if (losers.length >= 2) { // 二哥
-      const penalty = (this.rates?.win ?? 10) * 2 * multiplier;
+      const penalty = (this.rates?.win ?? 20) * 2 * multiplier;
       this.accumulatedPoints[losers[1].id] -= penalty;
       this.accumulatedPoints[actualWinnerId] += penalty;
       roundBreakdown[losers[1].id].base -= penalty;
       roundBreakdown[actualWinnerId].base += penalty;
     }
     if (losers.length >= 3) { // 小哥
-      const penalty = (this.rates?.win ?? 10) * 1 * multiplier;
+      const penalty = (this.rates?.win ?? 20) * 1 * multiplier;
       this.accumulatedPoints[losers[2].id] -= penalty;
       this.accumulatedPoints[actualWinnerId] += penalty;
       roundBreakdown[losers[2].id].base -= penalty;

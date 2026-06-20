@@ -62,7 +62,7 @@
           <span>Base Win Rate: </span>
           <div style="display: flex; align-items: center; gap: 10px;">
             <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('win', -1)">-</button>
-            <span style="font-weight: bold; width: 30px;">{{ state.rates?.win || 10 }}</span>
+            <span style="font-weight: bold; width: 30px;">{{ state.rates?.win || 20 }}</span>
             <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('win', 1)">+</button>
           </div>
         </div>
@@ -132,15 +132,21 @@
             +
           </button>
           <div class="meld-tiles">
-            <app-lami-tile
-              *ngFor="let t of meld.tiles"
-              [number]="t.type === 'joker' && t.representedValue ? t.representedValue : t.value"
-              [color]="t.type === 'joker' ? 'purple' : $any(t.suit)"
-              [small]="true"
-              [isNew]="t.isNew"
-              [isJoker]="t.type === 'joker'"
-              [newColor]="t.newFromPlayer ? getPlayerColor(t.newFromPlayer) : null"
-            ></app-lami-tile>
+            <ng-container *ngFor="let t of getDisplayMeldTiles(meld.tiles)">
+              <app-lami-tile
+                *ngIf="!t.isHiddenStack"
+                [number]="t.type === 'joker' && t.representedValue ? t.representedValue : t.value"
+                [color]="t.type === 'joker' ? 'purple' : $any(t.suit)"
+                [small]="true"
+                [isNew]="t.isNew"
+                [isJoker]="t.type === 'joker'"
+                [newColor]="t.newFromPlayer ? getPlayerColor(t.newFromPlayer) : null"
+              ></app-lami-tile>
+              <div *ngIf="t.isHiddenStack" class="hidden-stack-indicator" [title]="t.count + ' tiles hidden'">
+                <div class="stack-dots">...</div>
+                <div class="stack-count">+{{ t.count }}</div>
+              </div>
+            </ng-container>
           </div>
           <button
             [disabled]="isConnectDisabled(meld, 'end')"

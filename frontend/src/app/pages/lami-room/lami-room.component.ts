@@ -119,7 +119,7 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   updateRate(type: 'win' | 'joker' | 'ace', amount: number) {
     if (this.state?.players[0]?.id !== this.myId) return;
-    const currentRates = this.state?.rates || { win: 10, joker: 10, ace: 5 };
+    const currentRates = this.state?.rates || { win: 20, joker: 10, ace: 5 };
     const newRate = Math.max(1, (currentRates[type] || 1) + amount);
     this.gameService.updateLamiRates({ [type]: newRate });
   }
@@ -212,31 +212,70 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   getStraightFlushOptions(tiles: any[]): any[][] {
-    const nonJokers = tiles.filter(t => t.type !== 'joker').sort((a, b) => a.value - b.value);
+    const nonJokers = tiles.filter(t => t.type !== 'joker');
     const jokers = tiles.filter(t => t.type === 'joker');
     
-    if (nonJokers.length === 0 || jokers.length === 0) return [];
-    
+    if (nonJokers.length === 0) {
+      if (jokers.length >= 3) return [tiles];
+      return [];
+    }
+
+    const options: any[][] = [];
+
+    // 1. Check if it can be a SET
+    const firstVal = nonJokers[0].value;
+    const isSet = nonJokers.every(t => t.value === firstVal);
+    if (isSet && tiles.length >= 3) {
+      // One option for Set
+      options.push([...nonJokers, ...jokers]);
+    }
+
+    // 2. Check if it can be a STRAIGHT FLUSH
     const suit = nonJokers[0].suit;
-    if (!nonJokers.every(t => t.suit === suit)) return [];
+    const isSameSuit = nonJokers.every(t => t.suit === suit);
     
+    if (isSameSuit) {
+      const normalSorted = [...nonJokers].sort((a, b) => a.value - b.value);
+      this.addStraightOptions(normalSorted, jokers, options, false);
+
+      if (nonJokers.some(t => t.value === 1)) {
+        const a14Sorted = [...nonJokers].map(t => ({...t, value: t.value === 1 ? 14 : t.value})).sort((a, b) => a.value - b.value);
+        this.addStraightOptions(a14Sorted, jokers, options, true);
+      }
+    }
+    
+    // Remove duplicates
+    const uniqueOptions: any[][] = [];
+    const seen = new Set<string>();
+    for (const opt of options) {
+      const key = opt.map(t => t.id).join(',');
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueOptions.push(opt);
+      }
+    }
+
+    return uniqueOptions;
+  }
+
+  addStraightOptions(sortedNonJokers: any[], jokers: any[], options: any[][], isA14: boolean) {
     let gaps = 0;
-    for(let i=0; i<nonJokers.length - 1; i++) {
-      const diff = nonJokers[i+1].value - nonJokers[i].value;
-      if (diff === 0) return [];
+    for(let i=0; i<sortedNonJokers.length - 1; i++) {
+      const diff = sortedNonJokers[i+1].value - sortedNonJokers[i].value;
+      if (diff === 0) return;
       gaps += (diff - 1);
     }
     
-    if (gaps > jokers.length) return [];
-    
+    if (gaps > jokers.length) return;
+
     const core: any[] = [];
-    let expected = nonJokers[0].value;
+    let expected = sortedNonJokers[0].value;
     let nonJokerIdx = 0;
     let usedJokers = 0;
     
-    while(nonJokerIdx < nonJokers.length) {
-      if (nonJokers[nonJokerIdx].value === expected) {
-        core.push(nonJokers[nonJokerIdx]);
+    while(nonJokerIdx < sortedNonJokers.length) {
+      if (sortedNonJokers[nonJokerIdx].value === expected) {
+        core.push(sortedNonJokers[nonJokerIdx]);
         nonJokerIdx++;
       } else {
         core.push(jokers[usedJokers]);
@@ -246,18 +285,31 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     
     const remainingJokers = jokers.length - usedJokers;
-    if (remainingJokers === 0) return []; // No choices
-    
-    const options: any[][] = [];
+    if (remainingJokers < 0) return;
+
     const unusedJokersList = jokers.slice(usedJokers);
+    const firstVal = sortedNonJokers[0].value;
+    const coreLastVal = expected - 1;
+    
     for(let left=0; left <= remainingJokers; left++) {
       const right = remainingJokers - left;
+      
+      if (firstVal - left < 1) continue; // cannot go below A(1)
+      if (coreLastVal + right > 14) continue; // cannot go above A(14)
+      if (!isA14 && coreLastVal + right > 13) continue; // if A is 1, max is K(13)
+
       const leftPart = unusedJokersList.slice(0, left);
       const rightPart = unusedJokersList.slice(left);
-      options.push([...leftPart, ...core, ...rightPart]);
+      
+      const result = [...leftPart, ...core, ...rightPart].map(t => {
+         if (t.type !== 'joker' && t.value === 14) {
+             return { ...t, value: 1 };
+         }
+         return t;
+      });
+
+      options.push(result);
     }
-    
-    return options;
   }
 
   playMeld() {
@@ -290,6 +342,21 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
       position
     });
     this.selectedTiles = [];
+  }
+
+  getDisplayMeldTiles(tiles: any[]) {
+    if (!tiles || tiles.length <= 4) {
+      return tiles;
+    }
+    const firstTwo = tiles.slice(0, 2);
+    const lastTwo = tiles.slice(tiles.length - 2);
+    const hiddenCount = tiles.length - 4;
+    
+    return [
+      ...firstTwo,
+      { isHiddenStack: true, count: hiddenCount, id: 'hidden-' + (tiles[0]?.id || Math.random()) },
+      ...lastTwo
+    ];
   }
 
   passTurn() {
