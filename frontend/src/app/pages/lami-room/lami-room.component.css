@@ -37,7 +37,7 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0px;
+  bottom: 20px;
 }
 
 .opponent-zone {
@@ -258,10 +258,6 @@
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
-  .game-area {
-    bottom: 20px;
-  }
-
   .public-meld {
     padding: 6px 10px;
     gap: 5px;
