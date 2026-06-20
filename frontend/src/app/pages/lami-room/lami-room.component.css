@@ -1,9 +1,12 @@
 .casino-felt {
   background: radial-gradient(circle at center, #1b5e20 0%, #0a2e0f 100%);
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: hidden;
-  box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.8);
 }
 
 .table-watermark {
@@ -13,7 +16,7 @@
   transform: translate(-50%, -50%);
   width: 500px;
   height: 500px;
-  border: 2px dashed rgba(255,255,255,0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.05);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -25,13 +28,16 @@
   left: 10px;
   right: 10px;
   bottom: 10px;
-  border: 1px solid rgba(255,255,255,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: 50%;
 }
 
 .game-area {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0px;
 }
 
 .opponent-zone {
@@ -59,7 +65,7 @@
 .avatar-box {
   display: flex;
   align-items: center;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   border: 2px solid #555;
   border-radius: 12px;
   padding: 8px 16px;
@@ -90,7 +96,7 @@
   border-radius: 8px;
   font-size: 14px;
   transform: rotate(15deg);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
   border: 2px solid white;
 }
 
@@ -129,12 +135,12 @@
 }
 
 .glass-panel {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
   padding: 10px 15px;
   border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
 .public-meld {
@@ -176,8 +182,8 @@
 }
 
 .connect-btn {
-  background: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   color: white;
   border-radius: 50%;
   width: 30px;
@@ -200,7 +206,7 @@
   opacity: 0.3;
   cursor: not-allowed;
   transform: none;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
@@ -252,24 +258,28 @@
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
+  .game-area {
+    bottom: 20px;
+  }
+
   .public-meld {
     padding: 6px 10px;
     gap: 5px;
   }
-  
+
   .avatar-box {
     padding: 6px 12px;
     min-width: 120px;
   }
-  
+
   .avatar-icon {
     font-size: 20px;
   }
-  
+
   .avatar-info .name {
     font-size: 14px;
   }
-  
+
   .player-hand {
     gap: 4px;
   }
@@ -281,40 +291,41 @@
     gap: 3px;
     border-radius: 6px;
   }
-  
+
   .connect-btn {
     width: 24px;
     height: 24px;
     font-size: 16px;
   }
-  
+
   .avatar-box {
     padding: 4px 8px;
     min-width: 90px;
     border-radius: 6px;
   }
-  
+
   .avatar-icon {
     font-size: 16px;
   }
-  
+
   .avatar-info .name {
     font-size: 12px;
   }
-  
+
   .avatar-info .cards-left {
     font-size: 10px;
   }
-  
+
   .player-hand {
     gap: 2px;
   }
-  
+
   .player-controls {
     gap: 8px;
   }
-  
-  .hud-btn, .action-btn {
+
+  .hud-btn,
+  .action-btn {
     padding: 8px 16px;
     font-size: 12px;
   }
