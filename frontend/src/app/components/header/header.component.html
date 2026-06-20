@@ -1,5 +1,7 @@
 <header class="game-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative; z-index: 1000;">
-  <a (click)="goHome()" class="brand" style="flex: 1; text-align: left; margin: 0; text-decoration: none; color: inherit; cursor: pointer;">🀄 {{ t('lobby.title') }}</a>
+  <a (click)="goHome()" class="brand" style="flex: 1; text-align: left; margin: 0; text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: baseline;">
+    🀄 {{ t('lobby.title') }} <span style="font-size: 12px; color: #aaa; margin-left: 8px; font-weight: normal; font-family: monospace;">v{{ appVersion }}</span>
+  </a>
   
   <div style="flex: 2; text-align: center; display: flex; justify-content: center;">
     @if (gameState) {

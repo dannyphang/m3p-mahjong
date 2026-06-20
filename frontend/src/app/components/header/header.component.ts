@@ -7,6 +7,7 @@ import { ScoringGuideComponent } from '../scoring-guide/scoring-guide.component'
 import { LamiGuideComponent } from '../lami-guide/lami-guide.component';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { APP_VERSION } from '../../../environments/version';
 
 @Component({
   selector: 'app-header',
@@ -20,6 +21,7 @@ export class HeaderComponent {
 
   showScoringGuide = false;
   showPlayground = false;
+  appVersion = APP_VERSION;
 
   get currentLanguage() {
     return this.gameService.currentLanguage();
