@@ -27,6 +27,37 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
 });
+
+async function updatePlayerStats(playerId, netCoins, isWin, fanWon) {
+  if (!playerId || playerId.startsWith('bot-')) return;
+  try {
+    // Find socket by id to get user uid
+    const sockets = await io.fetchSockets();
+    const playerSocket = sockets.find(s => s.id === playerId);
+    if (!playerSocket || !playerSocket.user) return; // Guest or unauthenticated
+
+    const uid = playerSocket.user.uid;
+    const userRef = db.collection('users').doc(uid);
+    
+    await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(userRef);
+      if (!doc.exists) return;
+      
+      const data = doc.data();
+      const currentStats = data.stats || { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 };
+      
+      transaction.update(userRef, {
+        coins: (data.coins || 0) + netCoins,
+        'stats.totalGamesPlayed': currentStats.totalGamesPlayed + 1,
+        'stats.totalWins': currentStats.totalWins + (isWin ? 1 : 0),
+        'stats.totalFanWon': currentStats.totalFanWon + (fanWon || 0)
+      });
+    });
+  } catch (err) {
+    console.error('Failed to update stats for player', playerId, err);
+  }
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -1176,6 +1207,14 @@ class GameState {
     });
 
     this.broadcastState();
+
+    // Firebase: Update Stats
+    this.players.forEach(p => {
+      const netCoins = settlements[p.id] + feiSettlements[p.id];
+      const isWin = p.id === winnerId;
+      const fanWon = isWin ? scoreResult.totalFan : 0;
+      updatePlayerStats(p.id, netCoins, isWin, fanWon);
+    });
   }
 
   declareDraw() {
@@ -1228,6 +1267,12 @@ class GameState {
       totalFeis
     });
     this.broadcastState();
+
+    // Firebase: Update Stats
+    this.players.forEach(p => {
+      const netCoins = feiSettlements[p.id] || 0;
+      updatePlayerStats(p.id, netCoins, false, 0);
+    });
   }
 
   moveToNextPlayer() {

@@ -29,7 +29,7 @@ export class AuthService {
   public currentUser: User | null = null;
 
   constructor() {
-    authState(this.auth).subscribe((user) => {
+    authState(this.auth).subscribe((user: User | null) => {
       this.currentUser = user;
       if (user) {
         this.loadUserProfile(user);
