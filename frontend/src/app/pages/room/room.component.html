@@ -96,20 +96,19 @@
                 "
               >
                 {{ p.isReady ? t('lobby.ready') : t('lobby.notReady') }}
-                @if (p.isBot) {
+                @if (gameState?.players?.[0]?.id === myPlayerId && p.id !== myPlayerId) {
                   <button
-                    (click)="removeBot(p.id)"
-                    class="btn-secondary"
+                    (click)="p.isBot ? removeBot(p.id) : kickPlayer(p.id)"
+                    class="btn-danger btn-sm"
                     style="
-                      margin: 0;
-                      padding: 2px 8px;
-                      font-size: 12px;
+                      padding: 4px 8px;
                       background: rgba(244, 67, 54, 0.2);
-                      border: 1px solid #f44336;
                       color: #f44336;
-                      min-width: unset;
-                      height: auto;
+                      border: 1px solid rgba(244, 67, 54, 0.4);
+                      border-radius: 4px;
+                      cursor: pointer;
                     "
+                    title="Remove Player"
                   >
                     ✕
                   </button>
@@ -161,7 +160,7 @@
                 : t('lobby.getReady')
             }}
           </button>
-          @if ((gameState?.players?.length || 0) < 3) {
+          @if ((gameState?.players?.length || 0) < 3 && gameState?.players?.[0]?.id === myPlayerId) {
             <div
               style="
                 display: flex;

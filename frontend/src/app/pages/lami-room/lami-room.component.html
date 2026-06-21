@@ -26,8 +26,8 @@
             >({{ t('lami.ready') }})</span
           >
           <button
-            *ngIf="p.isBot"
-            (click)="removeBot(p.id)"
+            *ngIf="state.players[0].id === myId && p.id !== myId"
+            (click)="p.isBot ? removeBot(p.id) : kickPlayer(p.id)"
             class="btn-danger btn-sm"
             style="
               float: right;
@@ -38,7 +38,7 @@
               border: none;
               box-shadow: none;
             "
-            title="Remove Bot"
+            title="Remove Player"
           >
             ✖
           </button>
@@ -46,7 +46,7 @@
       </div>
 
       <div
-        *ngIf="state.players.length < 4"
+        *ngIf="state.players.length < 4 && state.players[0].id === myId"
         class="bot-controls"
         style="margin: 20px 0; display: flex; gap: 10px; justify-content: center"
       >

@@ -25,6 +25,11 @@ export class RoomComponent implements AfterViewChecked, OnInit {
 
   ngOnInit() {
     this.titleService.setTitle('M3P Mahjong');
+    
+    this.gameService.socket?.on('kickedFromRoom', () => {
+      alert('You have been removed from the lobby by the host.');
+      this.router.navigate(['/']);
+    });
   }
 
   constructor() {
@@ -107,6 +112,13 @@ export class RoomComponent implements AfterViewChecked, OnInit {
     this.gameService.socket?.emit('removeBot', {
       roomId: this.gameService.roomId(),
       botId: botId
+    });
+  }
+
+  kickPlayer(playerId: string) {
+    this.gameService.socket?.emit('kickPlayer', {
+      roomId: this.gameService.roomId(),
+      playerId: playerId
     });
   }
 

@@ -1347,7 +1347,40 @@ io.on('connection', (socket) => {
         delete room.discards?.[botId];
         delete room.accumulatedPoints?.[botId];
 
-        room.broadcastState();
+        if (room.gameType === 'lami') room.broadcastState(io);
+        else room.broadcastState();
+      }
+    }
+  });
+
+  // Kick a Player
+  socket.on('kickPlayer', ({ roomId, playerId }) => {
+    const room = rooms[roomId];
+    if (room && room.status === 'WAITING') {
+      // Security check: Only the host can kick (host is players[0])
+      if (room.players[0] && room.players[0].id !== socket.id) return;
+      // Cannot kick yourself
+      if (playerId === socket.id) return;
+
+      const idx = room.players.findIndex(p => p.id === playerId);
+      if (idx !== -1) {
+        const kickedPlayer = room.players[idx];
+        room.players.splice(idx, 1);
+        
+        // Also cleanup their state arrays
+        delete room.hands[playerId];
+        delete room.exposed?.[playerId];
+        delete room.flowers?.[playerId];
+        delete room.discards?.[playerId];
+        delete room.accumulatedPoints?.[playerId];
+
+        // Notify the kicked player if they are not a bot
+        if (!kickedPlayer.isBot && kickedPlayer.socketId) {
+          io.to(kickedPlayer.socketId).emit('kickedFromRoom');
+        }
+
+        if (room.gameType === 'lami') room.broadcastState(io);
+        else room.broadcastState();
       }
     }
   });

@@ -202,6 +202,11 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.gameService.playerName.set(name);
       this.gameService.roomId.set(roomId);
       this.gameService.connectAndJoin('lami');
+      
+      this.gameService.socket?.on('kickedFromRoom', () => {
+        alert('You have been removed from the lobby by the host.');
+        this.router.navigate(['/']);
+      });
     });
   }
 
@@ -403,6 +408,13 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.gameService.socket?.emit('removeBot', {
       roomId: this.state?.roomId,
       botId: botId
+    });
+  }
+
+  kickPlayer(playerId: string) {
+    this.gameService.socket?.emit('kickPlayer', {
+      roomId: this.state?.roomId,
+      playerId: playerId
     });
   }
 
