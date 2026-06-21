@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameService } from '../../services/game.service';
 import { AudioService } from '../../services/audio.service';
@@ -100,8 +100,12 @@ export class HeaderComponent {
     return this.router.url.includes('lami');
   }
 
+  ngZone = inject(NgZone);
+
   async logout() {
     await this.authService.logout();
-    this.router.navigate(['/login']);
+    this.ngZone.run(() => {
+      this.router.navigate(['/login']);
+    });
   }
 }
