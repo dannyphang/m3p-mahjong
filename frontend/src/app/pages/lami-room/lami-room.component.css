@@ -258,6 +258,18 @@
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
+  .public-table-center {
+    top: 120px;
+    /* height: calc(100% - 180px); */
+    width: calc(100% - 300px);
+  }
+
+  .meld-list {
+    height: 105px;
+    overflow-y: auto;
+    gap: 5px;
+  }
+
   .public-meld {
     padding: 6px 10px;
     gap: 5px;
