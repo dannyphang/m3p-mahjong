@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameService } from '../../services/game.service';
 import { AudioService } from '../../services/audio.service';
+import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { TRANSLATIONS } from '../../i18n';
 import { ScoringGuideComponent } from '../scoring-guide/scoring-guide.component';
@@ -19,6 +20,7 @@ import { APP_VERSION } from '../../../environments/version';
 export class HeaderComponent {
   gameService = inject(GameService);
   audioService = inject(AudioService);
+  authService = inject(AuthService);
   router = inject(Router);
 
   showScoringGuide = false;
@@ -96,5 +98,10 @@ export class HeaderComponent {
 
   get isLamiRoom() {
     return this.router.url.includes('lami');
+  }
+
+  async logout() {
+    await this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

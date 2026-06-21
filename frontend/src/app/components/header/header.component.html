@@ -19,8 +19,15 @@
   </div>
 
   <div class="global-actions" style="flex: 1; text-align: right; display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
-    @if (!gameState) {
-      <button
+    @if (authService.userProfile$ | async; as profile) {
+      <div style="display: flex; align-items: center; gap: 8px; margin-right: 12px; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 20px;">
+        <img [src]="profile.avatar" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;" />
+        <span style="font-weight: bold; font-size: 14px;">{{ profile.name }}</span>
+        <span style="color: #ffd700; font-size: 14px; margin-left: 4px;">💰 {{ profile.coins }}</span>
+        <button (click)="logout()" style="background: transparent; border: none; color: #ff4444; cursor: pointer; font-size: 14px; margin-left: 8px;" title="Logout">🚪</button>
+      </div>
+    }
+    @if (!gameState) {      <button
         (click)="togglePlayground()"
         class="btn-primary"
         style="padding: 4px 12px; font-size: 14px; margin-right: 8px;"

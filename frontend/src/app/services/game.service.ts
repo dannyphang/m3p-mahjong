@@ -1,5 +1,6 @@
-import { Injectable, signal, isDevMode, effect } from '@angular/core';
+import { Injectable, signal, isDevMode, effect, inject } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
+import { AuthService } from './auth.service';
 
 export interface Tile {
   type: string;
@@ -82,6 +83,7 @@ export function regularHandSort(hand: Tile[], honorOrder: string[]) {
 })
 export class GameService {
   public socket: Socket | null = null;
+  private authService = inject(AuthService);
 
   playerName = signal(typeof localStorage !== 'undefined' ? localStorage.getItem('m3p_playerName') || '' : '');
   roomId = signal('room-' + Math.floor(1000 + Math.random() * 9000));
@@ -93,8 +95,7 @@ export class GameService {
         localStorage.setItem('m3p_playerName', name);
       }
     });
-  }
-  isJoined = signal(false);
+  }  isJoined = signal(false);
   myPlayerId = signal('');
   gameState = signal<GameState | null>(null);
   claimOptions = signal<any | null>(null);
@@ -108,15 +109,17 @@ export class GameService {
   showNarrator = signal(typeof window !== 'undefined' ? window.innerWidth > 900 && window.innerHeight > 600 : true);
   currentAnimation = signal<{ type: string, playerId: string, tile?: Tile } | null>(null);
 
-  connectAndJoin(gameType?: string) {
+  async connectAndJoin(gameType?: string) {
     if (!this.playerName().trim()) {
       alert('Please enter your name.');
       return;
     }
 
+    const token = await this.authService.getToken();
     const backendUrl = isDevMode() ? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000') : 'https://mahjong-new.onrender.com';
-    this.socket = io(backendUrl);
-
+    this.socket = io(backendUrl, {
+      auth: { token }
+    });
     this.socket.on('connect', () => {
       this.socket?.emit('joinRoom', {
         name: this.playerName(),

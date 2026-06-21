@@ -17,6 +17,7 @@ const {
   TILE_TYPES
 } = require('./engine');
 const LamiGameState = require('./lami_state');
+const { db, auth } = require('./firebase-admin');
 
 // Global error handlers to prevent silent crashes
 process.on('uncaughtException', (err) => {
@@ -1254,8 +1255,26 @@ class GameState {
 }
 
 // Socket IO Lobby events
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    // For local dev without auth or backward compatibility, allow connection
+    // But ideal is to throw error: return next(new Error('Authentication error: No token provided'));
+    socket.user = null;
+    return next();
+  }
+  try {
+    const decodedToken = await auth.verifyIdToken(token);
+    socket.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('Socket authentication error:', error);
+    return next(new Error('Authentication error: Invalid token'));
+  }
+});
+
 io.on('connection', (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+  console.log(`Socket connected: ${socket.id}, User: ${socket.user ? socket.user.uid : 'Guest'}`);
 
   // Create or Join Room
   socket.on('joinRoom', ({ name, roomId, gameType }) => {
