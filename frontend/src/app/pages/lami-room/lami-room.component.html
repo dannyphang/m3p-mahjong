@@ -2,7 +2,11 @@
   <div class="table-watermark"></div>
 
   <!-- Waiting Room -->
-  <div *ngIf="state.status === 'WAITING' || (state.status === 'GAME_OVER' && myPlayer?.isReady)" class="lobby-overlay" style="z-index: 1000">
+  <div
+    *ngIf="state.status === 'WAITING' || (state.status === 'GAME_OVER' && myPlayer?.isReady)"
+    class="lobby-overlay"
+    style="z-index: 1000"
+  >
     <div class="glass-card" style="text-align: center">
       <h2 class="lobby-title">{{ t('lami.roomTitle') }}{{ state.roomId }}</h2>
 
@@ -56,33 +60,95 @@
         </button>
       </div>
 
-      <div class="rates-container" style="margin: 20px 0; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
-        <h3 style="margin-top: 0; margin-bottom: 10px; color: #ffd700;">💰 Coin Rates</h3>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <div
+        class="rates-container"
+        style="margin: 20px 0; background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px"
+      >
+        <h3 style="margin-top: 0; margin-bottom: 10px; color: #ffd700">💰 Coin Rates</h3>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+          "
+        >
           <span>Base Win Rate: </span>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('win', -1)">-</button>
-            <span style="font-weight: bold; width: 30px;">{{ state.rates?.win || 20 }}</span>
-            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('win', 1)">+</button>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <button
+              class="btn-secondary"
+              style="margin: 0; padding: 2px 8px; width: auto"
+              [disabled]="state.players[0]?.id !== myId"
+              (click)="updateRate('win', -1)"
+            >
+              -
+            </button>
+            <span style="font-weight: bold; width: 30px">{{ state.rates?.win || 20 }}</span>
+            <button
+              class="btn-secondary"
+              style="margin: 0; padding: 2px 8px; width: auto"
+              [disabled]="state.players[0]?.id !== myId"
+              (click)="updateRate('win', 1)"
+            >
+              +
+            </button>
           </div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+          "
+        >
           <span>Joker Rate: </span>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('joker', -1)">-</button>
-            <span style="font-weight: bold; width: 30px;">{{ state.rates?.joker || 10 }}</span>
-            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('joker', 1)">+</button>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <button
+              class="btn-secondary"
+              style="margin: 0; padding: 2px 8px; width: auto"
+              [disabled]="state.players[0]?.id !== myId"
+              (click)="updateRate('joker', -1)"
+            >
+              -
+            </button>
+            <span style="font-weight: bold; width: 30px">{{ state.rates?.joker || 10 }}</span>
+            <button
+              class="btn-secondary"
+              style="margin: 0; padding: 2px 8px; width: auto"
+              [disabled]="state.players[0]?.id !== myId"
+              (click)="updateRate('joker', 1)"
+            >
+              +
+            </button>
           </div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center">
           <span>Ace Rate: </span>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('ace', -1)">-</button>
-            <span style="font-weight: bold; width: 30px;">{{ state.rates?.ace || 5 }}</span>
-            <button class="btn-secondary" style="margin: 0; padding: 2px 8px; width: auto;" [disabled]="state.players[0]?.id !== myId" (click)="updateRate('ace', 1)">+</button>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <button
+              class="btn-secondary"
+              style="margin: 0; padding: 2px 8px; width: auto"
+              [disabled]="state.players[0]?.id !== myId"
+              (click)="updateRate('ace', -1)"
+            >
+              -
+            </button>
+            <span style="font-weight: bold; width: 30px">{{ state.rates?.ace || 5 }}</span>
+            <button
+              class="btn-secondary"
+              style="margin: 0; padding: 2px 8px; width: auto"
+              [disabled]="state.players[0]?.id !== myId"
+              (click)="updateRate('ace', 1)"
+            >
+              +
+            </button>
           </div>
         </div>
-        <div *ngIf="state.players[0]?.id !== myId" style="font-size: 12px; color: #aaa; margin-top: 10px;">
+        <div
+          *ngIf="state.players[0]?.id !== myId"
+          style="font-size: 12px; color: #aaa; margin-top: 10px"
+        >
           Only the host can modify these rates.
         </div>
       </div>
@@ -111,9 +177,14 @@
         <div class="avatar-icon">👤</div>
         <div class="avatar-info">
           <div class="name">{{ p.name }}</div>
-          <div class="cards-left">🎴 {{ state.hands[p.id]?.length || 0 }}</div>
-          <div class="coins" style="font-size: 12px; color: var(--gold-primary); font-weight: bold">
-            🪙 {{ state.accumulatedPoints[p.id] }}
+          <div style="display: flex; align-items: center; gap: 5px">
+            <div class="cards-left">🎴 {{ state.hands[p.id]?.length || 0 }}</div>
+            <div
+              class="coins"
+              style="font-size: 12px; color: var(--gold-primary); font-weight: bold"
+            >
+              🪙 {{ state.accumulatedPoints[p.id] }}
+            </div>
           </div>
         </div>
         <div class="out-badge" *ngIf="p.passedOut || p.burned">{{ t('lami.out') }}</div>
@@ -142,7 +213,11 @@
                 [isJoker]="t.type === 'joker'"
                 [newColor]="t.newFromPlayer ? getPlayerColor(t.newFromPlayer) : null"
               ></app-lami-tile>
-              <div *ngIf="t.isHiddenStack" class="hidden-stack-indicator" [title]="t.count + ' tiles hidden'">
+              <div
+                *ngIf="t.isHiddenStack"
+                class="hidden-stack-indicator"
+                [title]="t.count + ' tiles hidden'"
+              >
                 <div class="stack-dots">...</div>
                 <div class="stack-count">+{{ t.count }}</div>
               </div>
@@ -211,7 +286,12 @@
         </div>
       </div>
 
-      <div class="player-hand" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="onCdkDrop($event)">
+      <div
+        class="player-hand"
+        cdkDropList
+        cdkDropListOrientation="horizontal"
+        (cdkDropListDropped)="onCdkDrop($event)"
+      >
         <div
           *ngFor="let tile of myHand()"
           cdkDrag

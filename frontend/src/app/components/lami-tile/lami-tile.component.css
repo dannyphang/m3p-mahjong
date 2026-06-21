@@ -3,7 +3,9 @@
   height: 60px;
   background-color: #fdfdfd;
   border-radius: 6px;
-  box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.3), inset 0 0 4px rgba(255, 255, 255, 0.8);
+  box-shadow:
+    2px 4px 6px rgba(0, 0, 0, 0.3),
+    inset 0 0 4px rgba(255, 255, 255, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,7 +27,13 @@
 
 .lami-tile.back {
   background-color: #e57373; /* Or any back color you prefer */
-  background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.2) 5px, rgba(255,255,255,0.2) 10px);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    rgba(255, 255, 255, 0.2) 5px,
+    rgba(255, 255, 255, 0.2) 10px
+  );
   border-color: #c62828;
 }
 
@@ -66,12 +74,24 @@
 }
 
 /* Colors */
-.color-red { color: #d32f2f; }
-.color-blue { color: #1976d2; }
-.color-green { color: #388e3c; }
-.color-yellow { color: #fbc02d; }
-.color-purple { color: #9c27b0; }
-.color-undefined { color: #9c27b0; } /* Fallback for Joker */
+.color-red {
+  color: #d32f2f;
+}
+.color-blue {
+  color: #1976d2;
+}
+.color-green {
+  color: #388e3c;
+}
+.color-yellow {
+  color: #fbc02d;
+}
+.color-purple {
+  color: #9c27b0;
+}
+.color-undefined {
+  color: #9c27b0;
+} /* Fallback for Joker */
 
 /* New Tile Indicator */
 .lami-tile.is-new {
@@ -81,41 +101,47 @@
 }
 
 @keyframes new-tile-pulse {
-  0% { outline-width: 2px; outline-offset: 1px; }
-  100% { outline-width: 5px; outline-offset: 3px; }
+  0% {
+    outline-width: 2px;
+    outline-offset: 1px;
+  }
+  100% {
+    outline-width: 5px;
+    outline-offset: 3px;
+  }
 }
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .lami-tile {
-    width: 38px;
-    height: 52px;
+    width: 30px;
+    height: 44px;
     border-radius: 6px;
     border-width: 1px;
   }
   .lami-number {
-    font-size: 18px;
+    font-size: 14px;
   }
   .lami-joker-icon {
-    font-size: 12px;
+    font-size: 10px;
   }
   .lami-suit-icon {
-    font-size: 12px;
+    font-size: 10px;
   }
-  
+
   .lami-tile.small {
-    width: 32px;
-    height: 44px;
+    width: 26px;
+    height: 38px;
     border-radius: 4px;
   }
   .lami-tile.small .lami-number {
-    font-size: 14px;
+    font-size: 12px;
   }
   .lami-tile.small .lami-joker-icon {
     font-size: 8px;
   }
   .lami-tile.small .lami-suit-icon {
-    font-size: 10px;
+    font-size: 8px;
   }
 }
 
@@ -135,7 +161,7 @@
   .lami-suit-icon {
     font-size: 10px;
   }
-  
+
   .lami-tile.small {
     width: 24px;
     height: 34px;

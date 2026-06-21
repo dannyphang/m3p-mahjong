@@ -269,15 +269,27 @@
   }
 
   .avatar-icon {
-    font-size: 20px;
+    font-size: 10px;
   }
 
   .avatar-info .name {
-    font-size: 14px;
+    font-size: 8px;
+  }
+
+  .coins {
+    font-size: 8px !important;
+  }
+
+  .avatar-info .cards-left {
+    font-size: 10px;
   }
 
   .player-hand {
-    gap: 4px;
+    gap: 0px;
+  }
+
+  .glass-panel {
+    padding: 6px 8px;
   }
 }
 
@@ -305,15 +317,19 @@
   }
 
   .avatar-info .name {
-    font-size: 12px;
-  }
-
-  .avatar-info .cards-left {
     font-size: 10px;
   }
 
+  .coins {
+    font-size: 8px !important;
+  }
+
+  .avatar-info .cards-left {
+    font-size: 8px;
+  }
+
   .player-hand {
-    gap: 2px;
+    gap: 0px;
   }
 
   .player-controls {

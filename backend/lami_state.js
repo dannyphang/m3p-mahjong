@@ -179,22 +179,22 @@ class LamiGameState {
 
   // Player action: play a new meld to the public table
   playMeld(playerId, tiles, io) {
-    if (this.status !== 'PLAYING') return;
+    if (this.status !== 'PLAYING') return false;
     const player = this.players[this.currentTurn];
-    if (player.id !== playerId) return; // Not their turn
-    if (player.burned) return;
+    if (player.id !== playerId) return false; // Not their turn
+    if (player.burned) return false;
 
     if (!player.hasBrokenIce) {
       // Must be a straight flush to break ice
       if (!isValidStraightFlush(tiles)) {
-        return;
+        return false;
       } else {
         player.hasBrokenIce = true;
       }
     } else {
       // Subsquent plays can be set or straight
       if (!isValidStraightFlush(tiles) && !isValidSet(tiles)) {
-        return; // Invalid play
+        return false; // Invalid play
       }
     }
 
@@ -219,16 +219,17 @@ class LamiGameState {
     } else {
       this.moveToNextPlayer(io); // Turn ends after 1 action
     }
+    return true;
   }
 
   connectMeld(playerId, meldId, tiles, position, io) {
-    if (this.status !== 'PLAYING') return;
+    if (this.status !== 'PLAYING') return false;
     const player = this.players[this.currentTurn];
-    if (player.id !== playerId) return;
-    if (player.burned || !player.hasBrokenIce) return; // Must break ice first
+    if (player.id !== playerId) return false;
+    if (player.burned || !player.hasBrokenIce) return false; // Must break ice first
 
     const meld = this.publicMelds.find(m => m.id === meldId);
-    if (!meld) return;
+    if (!meld) return false;
 
     if (!Array.isArray(tiles)) tiles = [tiles]; // backwards compatibility
 
@@ -248,7 +249,7 @@ class LamiGameState {
             
             if (hasMatchingSet) {
               // Forbidden by house rule
-              return;
+              return false;
             }
           }
         }
@@ -282,7 +283,7 @@ class LamiGameState {
         }
       }
       
-      if (!validCopy) return;
+      if (!validCopy) return false;
       
       tiles.forEach(t => { t.newFromPlayer = playerId; t.placedBy = playerId; });
       meld.tiles = validCopy;
@@ -293,7 +294,7 @@ class LamiGameState {
       } else {
         copy.push(...tiles);
       }
-      if (!isValidSet(copy)) return;
+      if (!isValidSet(copy)) return false;
       
       tiles.forEach(t => { t.newFromPlayer = playerId; t.placedBy = playerId; });
       meld.tiles = orderSet(copy);
@@ -311,6 +312,7 @@ class LamiGameState {
     } else {
       this.moveToNextPlayer(io); // Turn ends after 1 action
     }
+    return true;
   }
 
   removeTilesFromHand(playerId, tilesToRemove) {

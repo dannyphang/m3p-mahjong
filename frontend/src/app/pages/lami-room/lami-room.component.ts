@@ -241,6 +241,9 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (nonJokers.some(t => t.value === 1)) {
         const a14Sorted = [...nonJokers].map(t => ({...t, value: t.value === 1 ? 14 : t.value})).sort((a, b) => a.value - b.value);
         this.addStraightOptions(a14Sorted, jokers, options, true);
+      } else if (nonJokers.some(t => t.value >= 10)) {
+        // High cards without an explicit Ace could still connect to an Ace via a Joker
+        this.addStraightOptions(normalSorted, jokers, options, true);
       }
     }
     
@@ -317,7 +320,10 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (options.length > 1) {
       this.meldOptions = options;
       this.showMeldOptions = true;
+    } else if (options.length === 1) {
+      this.sendMeld(options[0]);
     } else {
+      // In case it's somehow invalid or options is empty, though UI usually disables the button
       this.sendMeld(this.selectedTiles);
     }
   }

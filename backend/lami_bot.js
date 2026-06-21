@@ -12,11 +12,11 @@ function executeBotTurn(gameState, io) {
     if (!player.hasBrokenIce) {
       const sf = checkCombinations(hand, 3, isValidStraightFlush);
       if (sf) {
-        gameState.playMeld(player.id, sf, io);
-      } else {
-        // Can't break ice -> pass (will burn)
-        gameState.playMeld(player.id, [hand[0], hand[1]], io); // Intentionally invalid
+        const success = gameState.playMeld(player.id, sf, io);
+        if (success) return;
       }
+      // Can't break ice -> pass (will burn)
+      gameState.passTurn(player.id, io);
       return;
     }
 
@@ -41,8 +41,8 @@ function executeBotTurn(gameState, io) {
 
         const position = canConnectBruteForce(tile, meld);
         if (position) {
-          gameState.connectMeld(player.id, meld.id, tile, position, io);
-          return;
+          const success = gameState.connectMeld(player.id, meld.id, tile, position, io);
+          if (success) return;
         }
       }
     }
@@ -50,8 +50,8 @@ function executeBotTurn(gameState, io) {
     // 3. Try to play a new set or straight flush
     const newMeld = checkCombinations(hand, 3, isValidSet) || checkCombinations(hand, 3, isValidStraightFlush);
     if (newMeld) {
-      gameState.playMeld(player.id, newMeld, io);
-      return;
+      const success = gameState.playMeld(player.id, newMeld, io);
+      if (success) return;
     }
 
     // 4. Pass turn if nothing to do
