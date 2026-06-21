@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, authState, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, User } from '@angular/fire/auth';
+import { Auth, authState, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, User, getRedirectResult } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, setDoc, updateDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 
@@ -29,6 +29,9 @@ export class AuthService {
   public currentUser: User | null = null;
 
   constructor() {
+    // Process any returning Google Redirects
+    getRedirectResult(this.auth).catch(err => console.error('Redirect result error', err));
+
     authState(this.auth).subscribe((user: User | null) => {
       this.currentUser = user;
       if (user) {
