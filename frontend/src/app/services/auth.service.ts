@@ -44,18 +44,10 @@ export class AuthService {
 
   async loginWithGoogle() {
     const provider = new GoogleAuthProvider();
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      // Mobile devices work better with redirect to avoid popup blockers and hidden tabs
-      await signInWithRedirect(this.auth, provider);
-    } else {
-      // Desktop browsers work better with popup to avoid cross-origin redirect state loss
-      const result = await signInWithPopup(this.auth, provider);
-      if (result && result.user) {
-        this.currentUser = result.user;
-        await this.loadUserProfile(result.user);
-      }
+    const result = await signInWithPopup(this.auth, provider);
+    if (result && result.user) {
+      this.currentUser = result.user;
+      await this.loadUserProfile(result.user);
     }
   }
 
