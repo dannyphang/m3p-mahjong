@@ -419,11 +419,8 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   sortHand() {
-    const s = this.state;
-    const pid = this.myId;
-    if (!s || !pid || !s.hands[pid]) return;
-
-    const hand = [...s.hands[pid]];
+    const hand = [...this.myHand()];
+    if (!hand || hand.length === 0) return;
     
     hand.sort((a, b) => {
       // Put jokers at the end
@@ -444,15 +441,7 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
       return a.value - b.value;
     });
 
-    // Update the state locally for immediate feedback
-    s.hands[pid] = hand;
-    this.gameService.gameState.set({ ...s });
-
-    // Tell server to persist this order
-    this.gameService.socket?.emit('lamiSortHand', {
-      roomId: s.roomId,
-      playerId: pid,
-      sortedHand: hand
-    });
+    // Update the local hand state
+    this.myHand.set(hand);
   }
 }
