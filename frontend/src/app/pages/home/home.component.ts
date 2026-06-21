@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { GameService } from '../../services/game.service';
 import { Router } from '@angular/router';
 import { TRANSLATIONS } from '../../i18n';
+import { AuthService } from '../../services/auth.service';
 import { Title } from '@angular/platform-browser';
 
 @Component({
@@ -14,6 +15,7 @@ import { Title } from '@angular/platform-browser';
 })
 export class HomeComponent {
   gameService = inject(GameService);
+  authService = inject(AuthService);
   router = inject(Router);
   titleService = inject(Title);
 
@@ -46,6 +48,9 @@ export class HomeComponent {
   }
 
   joinRoom() {
+    if (this.playerName.trim()) {
+      this.authService.updateUserName(this.playerName.trim());
+    }
     this.gameService.connectAndJoin();
   }
 

@@ -1,8 +1,8 @@
 <div class="mahjong-container" [style.--tile-bg-back]="'url(/assets/images/mahjong/' + tileBackStyle + ') center/cover no-repeat, linear-gradient(135deg, #028043 0%, #014c27 100%)'">
   
-  <app-header></app-header>
+  <app-header style="position: relative; z-index: 1000; display: block;"></app-header>
 
-  <main style="flex: 1; overflow: hidden; position: relative; display: flex; flex-direction: column;">
+  <main style="flex: 1; overflow: hidden; position: relative; display: flex; flex-direction: column; z-index: 1;">
     <router-outlet></router-outlet>
   </main>
 </div>

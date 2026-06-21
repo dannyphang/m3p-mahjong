@@ -95,6 +95,13 @@ export class GameService {
         localStorage.setItem('m3p_playerName', name);
       }
     });
+
+    // Sync from auth profile to local playerName
+    this.authService.userProfile$.subscribe(profile => {
+      if (profile && profile.name) {
+        this.playerName.set(profile.name);
+      }
+    });
   }  isJoined = signal(false);
   myPlayerId = signal('');
   gameState = signal<GameState | null>(null);

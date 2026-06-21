@@ -199,7 +199,7 @@ export class LoginComponent {
       await this.authService.loginWithGoogle();
     } catch (error) {
       console.error('Login error', error);
-      alert('Failed to login with Google');
+      alert('Failed to login with Google: ' + (error as Error).message);
       this.ngZone.run(() => {
         this.isLoading = false;
       });

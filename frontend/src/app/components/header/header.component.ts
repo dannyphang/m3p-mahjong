@@ -26,6 +26,7 @@ export class HeaderComponent {
   showScoringGuide = false;
   showPlayground = false;
   showVolumeSlider = false;
+  showAccountMenu = false;
   appVersion = APP_VERSION;
 
   get currentLanguage() {
@@ -36,16 +37,28 @@ export class HeaderComponent {
     return this.gameService.showNarrator();
   }
 
-  get isMusicMuted() {
+  get isBgmMuted() {
     return this.audioService.isMusicMuted;
   }
 
-  get volume() {
-    return this.audioService.volume;
+  get bgmVolume() {
+    return this.audioService.bgmVolume;
   }
 
-  onVolumeChange(event: any) {
-    this.audioService.setVolume(parseFloat(event.target.value));
+  onBgmVolumeChange(event: any) {
+    this.audioService.setBgmVolume(parseFloat(event.target.value));
+  }
+
+  get isSfxMuted() {
+    return this.audioService.isSoundEffectsMuted;
+  }
+
+  get sfxVolume() {
+    return this.audioService.sfxVolume;
+  }
+
+  onSfxVolumeChange(event: any) {
+    this.audioService.setSfxVolume(parseFloat(event.target.value));
   }
 
   get gameState() {
@@ -75,8 +88,12 @@ export class HeaderComponent {
     this.showVolumeSlider = !this.showVolumeSlider;
   }
 
-  toggleMusic() {
-    this.audioService.toggleMusic();
+  toggleBgm() {
+    this.audioService.toggleBgm();
+  }
+
+  toggleSfx() {
+    this.audioService.toggleSfx();
   }
 
   togglePlayground() {

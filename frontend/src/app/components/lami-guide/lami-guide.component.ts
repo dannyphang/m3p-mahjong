@@ -7,7 +7,7 @@ import { TRANSLATIONS } from '../../i18n';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="lobby-overlay" style="background: rgba(12, 9, 7, 0.85); z-index: 2000;" (click)="close.emit()">
+    <div class="lobby-overlay" style="position: fixed; background: rgba(12, 9, 7, 0.85); z-index: 2000;" (click)="close.emit()">
       <div class="glass-card scoring-modal" style="max-width: 800px; width: 90%; max-height: 85vh; overflow-y: auto; padding: 24px; position: relative;" (click)="$event.stopPropagation()">
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">

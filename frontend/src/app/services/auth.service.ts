@@ -44,7 +44,19 @@ export class AuthService {
 
   async loginWithGoogle() {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(this.auth, provider);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Mobile devices work better with redirect to avoid popup blockers and hidden tabs
+      await signInWithRedirect(this.auth, provider);
+    } else {
+      // Desktop browsers work better with popup to avoid cross-origin redirect state loss
+      const result = await signInWithPopup(this.auth, provider);
+      if (result && result.user) {
+        this.currentUser = result.user;
+        await this.loadUserProfile(result.user);
+      }
+    }
   }
 
   async loginAsGuest() {
@@ -56,28 +68,53 @@ export class AuthService {
   }
 
   private async loadUserProfile(user: User) {
-    const userDocRef = doc(this.firestore, `users/${user.uid}`);
-    const docSnap = await getDoc(userDocRef);
+    // Eagerly emit a basic profile so the UI isn't blocked if Firestore hangs
+    const basicProfile: UserProfile = {
+      uid: user.uid,
+      name: user.displayName || (user.isAnonymous ? `Guest_${user.uid.substring(0, 5)}` : 'Player'),
+      email: user.email,
+      avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
+      coins: 10000,
+      stats: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 }
+    };
+    
+    // Only emit eagerly if we don't already have one, to avoid flashing
+    if (!this.userProfileSubject.value) {
+      this.userProfileSubject.next(basicProfile);
+    }
 
-    if (docSnap.exists()) {
-      this.userProfileSubject.next(docSnap.data() as UserProfile);
-    } else {
-      // Create new user profile
-      const newProfile: UserProfile = {
-        uid: user.uid,
-        name: user.displayName || (user.isAnonymous ? `Guest_${user.uid.substring(0, 5)}` : 'Player'),
-        email: user.email,
-        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
-        coins: 10000,
-        stats: {
-          totalGamesPlayed: 0,
-          totalWins: 0,
-          totalFanWon: 0
+    try {
+      // Add a simple timeout wrapper to prevent hanging forever
+      const userDocRef = doc(this.firestore, `users/${user.uid}`);
+      const fetchDoc = getDoc(userDocRef);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000));
+      
+      const docSnap = await Promise.race([fetchDoc, timeoutPromise]) as any;
+
+      if (docSnap.exists()) {
+        this.userProfileSubject.next(docSnap.data() as UserProfile);
+      } else {
+        await setDoc(userDocRef, basicProfile);
+        this.userProfileSubject.next(basicProfile);
+      }
+    } catch (error) {
+      console.error('Error loading user profile from Firestore:', error);
+      // We already emitted the basic profile, so we can just leave it as is
+    }
+  }
+
+  async updateUserName(newName: string) {
+    if (this.currentUser && newName.trim()) {
+      try {
+        const userDocRef = doc(this.firestore, `users/${this.currentUser.uid}`);
+        await updateDoc(userDocRef, { name: newName.trim() });
+        const currentProfile = this.userProfileSubject.value;
+        if (currentProfile) {
+          this.userProfileSubject.next({ ...currentProfile, name: newName.trim() });
         }
-      };
-
-      await setDoc(userDocRef, newProfile);
-      this.userProfileSubject.next(newProfile);
+      } catch (error) {
+        console.error('Error updating user name:', error);
+      }
     }
   }
 

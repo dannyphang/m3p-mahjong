@@ -6,6 +6,7 @@ import { LamiTileComponent } from '../../components/lami-tile/lami-tile.componen
 import { GameService } from '../../services/game.service';
 import { TRANSLATIONS } from '../../i18n';
 import { Title } from '@angular/platform-browser';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-lami-lobby',
@@ -17,6 +18,7 @@ import { Title } from '@angular/platform-browser';
 export class LamiLobbyComponent {
   private router = inject(Router);
   private gameService = inject(GameService);
+  private authService = inject(AuthService);
   titleService = inject(Title);
 
   playerName: string = '';
@@ -36,6 +38,7 @@ export class LamiLobbyComponent {
   joinRoom() {
     if (!this.playerName.trim()) return;
     this.gameService.playerName.set(this.playerName.trim());
+    this.authService.updateUserName(this.playerName.trim());
     this.router.navigate(['/lami-room'], { queryParams: { id: this.roomId, type: 'lami', name: this.playerName.trim() } });
   }
 
