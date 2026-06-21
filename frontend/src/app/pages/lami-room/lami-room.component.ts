@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, computed, ViewChild, ElementRef, AfterViewChecked, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, signal, ViewChild, ElementRef, AfterViewChecked, effect } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -29,6 +29,30 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
       const showNarrator = this.gameService.showNarrator();
       setTimeout(() => this.scrollToBottom(), 50);
     });
+
+    effect(() => {
+      const state = this.gameStateSignal();
+      const myId = this.playerIdSignal();
+      if (!state || !state.hands || !state.hands[myId]) {
+        this.myHand.set([]);
+        return;
+      }
+      
+      const serverHand = state.hands[myId];
+      const currentLocal = this.myHand();
+      
+      // Keep tiles from local hand that still exist in the server hand
+      const newLocalHand = currentLocal.filter((t: any) => serverHand.some((st: any) => st.id === t.id));
+      
+      // Append any new tiles from the server hand that are not in our local hand
+      serverHand.forEach((st: any) => {
+        if (!newLocalHand.some((t: any) => t.id === st.id)) {
+          newLocalHand.push(st);
+        }
+      });
+      
+      this.myHand.set(newLocalHand);
+    }, { allowSignalWrites: true });
   }
 
   gameStateSignal = this.gameService.gameState;
@@ -124,27 +148,15 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.gameService.updateLamiRates({ [type]: newRate });
   }
 
-  myHand = computed(() => {
-    const s = this.state;
-    const pid = this.myId;
-    if (s && s.hands && s.hands[pid]) {
-      return s.hands[pid];
-    }
-    return [];
-  });
+  myHand = signal<any[]>([]);
 
   onCdkDrop(event: CdkDragDrop<any[]>) {
-    const hand = [...(this.state?.hands[this.myId] || [])];
+    const hand = [...this.myHand()];
     if (!hand || event.previousIndex === event.currentIndex) return;
 
     if (event.previousContainer === event.container) {
       moveItemInArray(hand, event.previousIndex, event.currentIndex);
-      
-      this.gameService.socket?.emit('lamiSortHand', {
-        roomId: this.gameService.roomId(),
-        playerId: this.myId,
-        sortedHand: hand
-      });
+      this.myHand.set(hand);
     }
   }
 
