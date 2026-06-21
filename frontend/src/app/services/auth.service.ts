@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, authState, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut, User } from '@angular/fire/auth';
+import { Auth, authState, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, User } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, setDoc, updateDoc } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 
@@ -41,7 +41,7 @@ export class AuthService {
 
   async loginWithGoogle() {
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(this.auth, provider);
+    await signInWithRedirect(this.auth, provider);
   }
 
   async loginAsGuest() {
