@@ -1,12 +1,24 @@
-const { initializeApp } = require('firebase-admin/app');
+const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
+const fs = require('fs');
+const path = require('path');
 
-// Initialize Firebase Admin SDK
-// This uses Application Default Credentials.
-const app = initializeApp({
-  projectId: 'm3p-mahjong-auth-5678'
-});
+let app;
+const serviceAccountPath = path.join(__dirname, 'service-account.json');
+
+if (fs.existsSync(serviceAccountPath)) {
+  // Use local service account key if it exists
+  const serviceAccount = require(serviceAccountPath);
+  app = initializeApp({
+    credential: cert(serviceAccount)
+  });
+} else {
+  // Use Application Default Credentials (e.g. on Render)
+  app = initializeApp({
+    projectId: 'm3p-mahjong-auth-5678'
+  });
+}
 
 const db = getFirestore(app);
 const auth = getAuth(app);
