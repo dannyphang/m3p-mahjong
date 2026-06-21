@@ -265,7 +265,7 @@
   }
 
   .meld-list {
-    height: 105px;
+    max-height: 105px;
     overflow-y: auto;
     gap: 5px;
   }
