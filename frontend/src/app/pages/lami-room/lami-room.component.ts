@@ -39,19 +39,20 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
       
       const serverHand = state.hands[myId];
-      const currentLocal = this.myHand();
       
-      // Keep tiles from local hand that still exist in the server hand
-      const newLocalHand = currentLocal.filter((t: any) => serverHand.some((st: any) => st.id === t.id));
-      
-      // Append any new tiles from the server hand that are not in our local hand
-      serverHand.forEach((st: any) => {
-        if (!newLocalHand.some((t: any) => t.id === st.id)) {
-          newLocalHand.push(st);
-        }
+      this.myHand.update(currentLocal => {
+        // Keep tiles from local hand that still exist in the server hand
+        const newLocalHand = currentLocal.filter((t: any) => serverHand.some((st: any) => st.id === t.id));
+        
+        // Append any new tiles from the server hand that are not in our local hand
+        serverHand.forEach((st: any) => {
+          if (!newLocalHand.some((t: any) => t.id === st.id)) {
+            newLocalHand.push(st);
+          }
+        });
+        
+        return newLocalHand;
       });
-      
-      this.myHand.set(newLocalHand);
     }, { allowSignalWrites: true });
   }
 
