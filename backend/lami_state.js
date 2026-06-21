@@ -94,7 +94,7 @@ class LamiGameState {
     };
   }
 
-  addPlayer(name, socketId, isBot = false) {
+  addPlayer(name, socketId, isBot = false, initialCoins = 1000) {
     // Check if player is reconnecting
     const existingPlayer = this.players.find(p => p.name === name && !p.isBot);
     if (existingPlayer && existingPlayer.isConnected === false) {
@@ -110,7 +110,7 @@ class LamiGameState {
     this.players.push(player);
     
     this.hands[id] = [];
-    this.accumulatedPoints[id] = 1000;
+    this.accumulatedPoints[id] = initialCoins;
 
     this.addLog({ key: 'log.joined', params: { name } });
     return player;

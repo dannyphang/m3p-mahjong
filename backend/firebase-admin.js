@@ -51,8 +51,23 @@ async function updatePlayerStats(uid, gameType, netCoins, isWin, fanWon) {
   }
 }
 
+async function getPlayerCoins(uid) {
+  if (!uid) return null;
+  try {
+    const userRef = db.collection('users').doc(uid);
+    const doc = await userRef.get();
+    if (doc.exists) {
+      return doc.data().coins;
+    }
+  } catch (err) {
+    console.error('Failed to get coins for user', uid, err);
+  }
+  return null;
+}
+
 module.exports = {
   db,
   auth,
-  updatePlayerStats
+  updatePlayerStats,
+  getPlayerCoins
 };

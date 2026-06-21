@@ -17,7 +17,7 @@ const {
   TILE_TYPES
 } = require('./engine');
 const LamiGameState = require('./lami_state');
-const { db, auth, updatePlayerStats: dbUpdatePlayerStats } = require('./firebase-admin');
+const { db, auth, updatePlayerStats: dbUpdatePlayerStats, getPlayerCoins } = require('./firebase-admin');
 
 // Global error handlers to prevent silent crashes
 process.on('uncaughtException', (err) => {
@@ -261,7 +261,7 @@ class GameState {
     };
   }
 
-  addPlayer(name, socketId, isBot = false, difficulty = 'easy') {
+  addPlayer(name, socketId, isBot = false, difficulty = 'easy', initialCoins = 100) {
     // Check if player is reconnecting
     const existingPlayer = this.players.find(p => p.name === name && !p.isBot);
     if (existingPlayer && existingPlayer.isConnected === false) {
@@ -280,7 +280,7 @@ class GameState {
     this.exposed[id] = [];
     this.flowers[id] = [];
     this.discards[id] = [];
-    this.accumulatedPoints[id] = 100; // Start with 100 coins
+    this.accumulatedPoints[id] = initialCoins;
 
     this.addLog({ key: 'log.joined', params: { name } });
     return player;
@@ -1305,7 +1305,7 @@ io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}, User: ${socket.user ? socket.user.uid : 'Guest'}`);
 
   // Create or Join Room
-  socket.on('joinRoom', ({ name, roomId, gameType }) => {
+  socket.on('joinRoom', async ({ name, roomId, gameType }) => {
     let room = rooms[roomId];
     if (!room) {
       if (gameType === 'lami') {
@@ -1325,7 +1325,22 @@ io.on('connection', (socket) => {
     }
 
     socket.join(roomId);
-    const addedPlayer = room.addPlayer(name, socket.id, false);
+    
+    // Fetch initial coins from Firebase for humans, fallback to default (1000 for lami, 100 for mahjong)
+    let initialCoins = gameType === 'lami' ? 1000 : 100;
+    if (socket.user && socket.user.uid) {
+      const dbCoins = await getPlayerCoins(socket.user.uid);
+      if (dbCoins !== null && dbCoins !== undefined) {
+        initialCoins = dbCoins;
+      }
+    }
+
+    let addedPlayer;
+    if (gameType === 'lami') {
+      addedPlayer = room.addPlayer(name, socket.id, false, initialCoins);
+    } else {
+      addedPlayer = room.addPlayer(name, socket.id, false, 'easy', initialCoins);
+    }
     
     if (addedPlayer) {
       socket.emit('joined', { playerId: addedPlayer.id, gameType: room.gameType });
@@ -1365,7 +1380,12 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     if (room && room.status === 'WAITING') {
       const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-      room.addPlayer(botName, null, true, difficulty || 'easy');
+      
+      if (room.gameType === 'lami') {
+        room.addPlayer(botName, null, true); // initialCoins defaults to 1000
+      } else {
+        room.addPlayer(botName, null, true, difficulty || 'easy'); // initialCoins defaults to 100
+      }
       
       const maxPlayers = room.gameType === 'lami' ? 4 : 3;
       const allReady = room.players.length === maxPlayers && room.players.every(pl => pl.isReady);
