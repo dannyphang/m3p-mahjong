@@ -1,4 +1,4 @@
-import { Injectable, signal, isDevMode } from '@angular/core';
+import { Injectable, signal, isDevMode, effect } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 
 export interface Tile {
@@ -83,8 +83,17 @@ export function regularHandSort(hand: Tile[], honorOrder: string[]) {
 export class GameService {
   public socket: Socket | null = null;
 
-  playerName = signal('');
+  playerName = signal(typeof localStorage !== 'undefined' ? localStorage.getItem('m3p_playerName') || '' : '');
   roomId = signal('room-' + Math.floor(1000 + Math.random() * 9000));
+  
+  constructor() {
+    effect(() => {
+      const name = this.playerName();
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('m3p_playerName', name);
+      }
+    });
+  }
   isJoined = signal(false);
   myPlayerId = signal('');
   gameState = signal<GameState | null>(null);

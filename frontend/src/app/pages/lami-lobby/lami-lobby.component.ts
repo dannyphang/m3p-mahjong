@@ -25,6 +25,7 @@ export class LamiLobbyComponent {
   ngOnInit() {
     this.titleService.setTitle('Lami | M3P Mahjong');
     this.roomId = Math.random().toString(36).substr(2, 6).toUpperCase();
+    this.playerName = this.gameService.playerName();
   }
 
   t(key: string): string {
@@ -34,7 +35,8 @@ export class LamiLobbyComponent {
 
   joinRoom() {
     if (!this.playerName.trim()) return;
-    this.router.navigate(['/lami-room'], { queryParams: { id: this.roomId, type: 'lami', name: this.playerName } });
+    this.gameService.playerName.set(this.playerName.trim());
+    this.router.navigate(['/lami-room'], { queryParams: { id: this.roomId, type: 'lami', name: this.playerName.trim() } });
   }
 
   backToMain() {
