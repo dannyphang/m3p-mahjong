@@ -37,7 +37,7 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: 20px;
+  bottom: 0px;
 }
 
 .opponent-zone {
@@ -267,6 +267,7 @@
   .meld-list {
     max-height: 105px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     gap: 5px;
   }
 

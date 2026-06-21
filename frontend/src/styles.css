@@ -27,6 +27,8 @@ body {
   overflow: hidden;
   height: 100vh;
   width: 100vw;
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
 }
 
 app-home,
@@ -43,12 +45,19 @@ app-playground {
   flex-direction: column;
   height: 100vh;
   width: 100vw;
-  background: var(--table-green);
-  border: 16px solid var(--wood-dark);
-  box-shadow:
-    inset 0 0 100px rgba(0, 0, 0, 0.8),
+  background: var(--table-bg);
+  border: 20px solid #2a110a;
+  border-radius: 12px;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8),
     0 10px 30px rgba(0, 0, 0, 0.5);
   position: relative;
+}
+
+@media (max-width: 768px) {
+  .mahjong-container {
+    border: none;
+    border-radius: 0;
+  }
 }
 
 /* Header bar */
@@ -88,8 +97,11 @@ app-playground {
   backdrop-filter: blur(20px);
   z-index: 100;
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Important: prevents top from clipping */
   justify-content: center;
+  padding: 40px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .glass-card {
@@ -101,8 +113,14 @@ app-playground {
   max-width: 460px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   text-align: center;
-  max-height: 70vh;
-  overflow-y: auto;
+  margin: auto 0; /* Auto margin centers vertically, 0 horizontally */
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .glass-card {
+    padding: 20px;
+  }
 }
 
 .lobby-title {
@@ -492,6 +510,7 @@ app-playground {
   padding: 12px;
   font-size: 11px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--glass-border);
   z-index: 5;
 }
@@ -869,15 +888,13 @@ app-playground {
   .logs-panel {
     width: 220px !important;
     font-size: 10px !important;
-    max-height: 80px !important;
+    max-height: 120px !important;
     left: 10px !important;
-    pointer-events: none !important;
   }
 
   .glass-card {
     padding: 15px;
     width: 95%;
-    max-height: 70vh;
   }
 
   /* Action Animations */

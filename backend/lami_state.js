@@ -69,6 +69,7 @@ class LamiGameState {
       status: this.status,
       roundNumber: this.roundNumber,
       currentTurn: this.currentTurn,
+      dealerIndex: this.dealerIndex,
       hands: sanitizedHands,
       publicMelds: this.publicMelds,
       logs: this.logs,
@@ -137,6 +138,7 @@ class LamiGameState {
       if (startingPlayerIndex === -1) startingPlayerIndex = 0;
     }
     this.currentTurn = startingPlayerIndex;
+    this.dealerIndex = startingPlayerIndex;
     
     this.addLog({ key: 'log.gameStarted', params: { round: this.roundNumber } });
     

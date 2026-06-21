@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameService } from '../../services/game.service';
+import { AudioService } from '../../services/audio.service';
 import { Router } from '@angular/router';
 import { TRANSLATIONS } from '../../i18n';
 import { ScoringGuideComponent } from '../scoring-guide/scoring-guide.component';
@@ -17,10 +18,12 @@ import { APP_VERSION } from '../../../environments/version';
 })
 export class HeaderComponent {
   gameService = inject(GameService);
+  audioService = inject(AudioService);
   router = inject(Router);
 
   showScoringGuide = false;
   showPlayground = false;
+  showVolumeSlider = false;
   appVersion = APP_VERSION;
 
   get currentLanguage() {
@@ -31,8 +34,16 @@ export class HeaderComponent {
     return this.gameService.showNarrator();
   }
 
-  get tileBackStyle() {
-    return this.gameService.tileBackStyle();
+  get isMusicMuted() {
+    return this.audioService.isMusicMuted;
+  }
+
+  get volume() {
+    return this.audioService.volume;
+  }
+
+  onVolumeChange(event: any) {
+    this.audioService.setVolume(parseFloat(event.target.value));
   }
 
   get gameState() {
@@ -58,8 +69,12 @@ export class HeaderComponent {
     this.gameService.showNarrator.set(!this.showNarrator);
   }
 
-  onTileBackChange(event: any) {
-    this.gameService.tileBackStyle.set(event.target.value);
+  toggleVolumeSlider() {
+    this.showVolumeSlider = !this.showVolumeSlider;
+  }
+
+  toggleMusic() {
+    this.audioService.toggleMusic();
   }
 
   togglePlayground() {
