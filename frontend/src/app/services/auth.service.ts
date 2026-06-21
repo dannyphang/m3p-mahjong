@@ -10,9 +10,16 @@ export interface UserProfile {
   avatar: string;
   coins: number;
   stats: {
-    totalGamesPlayed: number;
-    totalWins: number;
-    totalFanWon: number;
+    mahjong: {
+      totalGamesPlayed: number;
+      totalWins: number;
+      totalFanWon: number;
+    },
+    lami: {
+      totalGamesPlayed: number;
+      totalWins: number;
+      totalFanWon: number;
+    }
   };
 }
 
@@ -67,7 +74,10 @@ export class AuthService {
       email: user.email,
       avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
       coins: 10000,
-      stats: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 }
+      stats: { 
+        mahjong: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 },
+        lami: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 }
+      }
     };
     
     // Only emit eagerly if we don't already have one, to avoid flashing
@@ -84,7 +94,21 @@ export class AuthService {
       const docSnap = await Promise.race([fetchDoc, timeoutPromise]) as any;
 
       if (docSnap.exists()) {
-        this.userProfileSubject.next(docSnap.data() as UserProfile);
+        const data = docSnap.data() as any;
+        // Migrate old flat stats format if it exists
+        if (data.stats && typeof data.stats.totalGamesPlayed === 'number') {
+          data.stats = {
+            mahjong: { ...data.stats },
+            lami: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 }
+          };
+          // Silently update Firestore in the background
+          updateDoc(userDocRef, { stats: data.stats }).catch(e => console.error('Migration failed', e));
+        }
+        // Ensure stats object exists even for very old profiles
+        if (!data.stats) {
+          data.stats = basicProfile.stats;
+        }
+        this.userProfileSubject.next(data as UserProfile);
       } else {
         await setDoc(userDocRef, basicProfile);
         this.userProfileSubject.next(basicProfile);
