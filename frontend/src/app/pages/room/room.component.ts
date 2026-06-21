@@ -56,6 +56,13 @@ export class RoomComponent implements AfterViewChecked, OnInit {
     } catch (err) { }
   }
 
+  quitRoom() {
+    if (confirm('Are you sure you want to quit the room?')) {
+      this.gameService.disconnect();
+      this.router.navigate(['/']);
+    }
+  }
+
   hoveredTile = signal<Tile | null>(null);
 
   get gameState() { return this.gameService.gameState(); }

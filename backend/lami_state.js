@@ -1,7 +1,21 @@
 const { createLamiDeck, shuffleLamiDeck, isValidStraightFlush, isValidSet, orderStraightFlush, orderSet, calculateHandPoints, calculateAJokerPieces, hasAnyValidMove, isExactValidSequence, getCardValue } = require('./lami_engine');
 const { executeBotTurn } = require('./lami_bot');
+const { updatePlayerStats: dbUpdatePlayerStats } = require('./firebase-admin');
 
 const LAMI_SUIT_EMOJI = { red: '♥', blue: '♠', green: '♣', yellow: '♦' };
+
+async function updateLamiPlayerStats(io, playerId, netCoins, isWin, fanWon) {
+  if (!playerId || playerId.startsWith('bot-')) return;
+  try {
+    const sockets = await io.fetchSockets();
+    const playerSocket = sockets.find(s => s.id === playerId);
+    if (!playerSocket || !playerSocket.user) return; // Guest or unauthenticated
+
+    await dbUpdatePlayerStats(playerSocket.user.uid, 'lami', netCoins, isWin, fanWon);
+  } catch (err) {
+    console.error('Failed to update stats for lami player', playerId, err);
+  }
+}
 
 function formatLamiTilesForLog(tiles) {
   if (!tiles || !Array.isArray(tiles)) return '';
@@ -512,6 +526,10 @@ class LamiGameState {
 
     this.players.forEach(p => {
       roundBreakdown[p.id].total = roundBreakdown[p.id].base + roundBreakdown[p.id].jokerAce;
+      
+      // Update Firebase stats
+      const isWin = p.id === actualWinnerId;
+      updateLamiPlayerStats(io, p.id, roundBreakdown[p.id].total, isWin, 0);
     });
 
     // Save rankings for frontend dashboard

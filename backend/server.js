@@ -17,7 +17,7 @@ const {
   TILE_TYPES
 } = require('./engine');
 const LamiGameState = require('./lami_state');
-const { db, auth } = require('./firebase-admin');
+const { db, auth, updatePlayerStats: dbUpdatePlayerStats } = require('./firebase-admin');
 
 // Global error handlers to prevent silent crashes
 process.on('uncaughtException', (err) => {
@@ -31,28 +31,11 @@ process.on('unhandledRejection', (reason, promise) => {
 async function updatePlayerStats(playerId, netCoins, isWin, fanWon) {
   if (!playerId || playerId.startsWith('bot-')) return;
   try {
-    // Find socket by id to get user uid
     const sockets = await io.fetchSockets();
     const playerSocket = sockets.find(s => s.id === playerId);
     if (!playerSocket || !playerSocket.user) return; // Guest or unauthenticated
 
-    const uid = playerSocket.user.uid;
-    const userRef = db.collection('users').doc(uid);
-    
-    await db.runTransaction(async (transaction) => {
-      const doc = await transaction.get(userRef);
-      if (!doc.exists) return;
-      
-      const data = doc.data();
-      const currentStats = data.stats || { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 };
-      
-      transaction.update(userRef, {
-        coins: (data.coins || 0) + netCoins,
-        'stats.totalGamesPlayed': currentStats.totalGamesPlayed + 1,
-        'stats.totalWins': currentStats.totalWins + (isWin ? 1 : 0),
-        'stats.totalFanWon': currentStats.totalFanWon + (fanWon || 0)
-      });
-    });
+    await dbUpdatePlayerStats(playerSocket.user.uid, 'mahjong', netCoins, isWin, fanWon);
   } catch (err) {
     console.error('Failed to update stats for player', playerId, err);
   }

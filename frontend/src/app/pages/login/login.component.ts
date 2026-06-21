@@ -185,7 +185,8 @@ export class LoginComponent {
 
   constructor() {
     this.authService.userProfile$.subscribe(profile => {
-      if (profile) {
+      // Only redirect if we are currently on the login page
+      if (profile && this.router.url === '/login') {
         this.ngZone.run(() => {
           this.router.navigate(['/']); // redirect to home
         });

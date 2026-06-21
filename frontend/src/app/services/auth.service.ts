@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Auth, authState, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, User, getRedirectResult } from '@angular/fire/auth';
-import { Firestore, doc, getDoc, setDoc, updateDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, setDoc, updateDoc, onSnapshot, Unsubscribe } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface UserProfile {
@@ -29,6 +29,7 @@ export interface UserProfile {
 export class AuthService {
   private auth: Auth = inject(Auth);
   private firestore: Firestore = inject(Firestore);
+  private profileUnsubscribe?: Unsubscribe;
 
   private userProfileSubject = new BehaviorSubject<UserProfile | null>(null);
   userProfile$ = this.userProfileSubject.asObservable();
@@ -63,6 +64,10 @@ export class AuthService {
   }
 
   async logout() {
+    if (this.profileUnsubscribe) {
+      this.profileUnsubscribe();
+      this.profileUnsubscribe = undefined;
+    }
     return signOut(this.auth);
   }
 
@@ -88,31 +93,31 @@ export class AuthService {
     try {
       // Add a simple timeout wrapper to prevent hanging forever
       const userDocRef = doc(this.firestore, `users/${user.uid}`);
-      const fetchDoc = getDoc(userDocRef);
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000));
       
-      const docSnap = await Promise.race([fetchDoc, timeoutPromise]) as any;
-
-      if (docSnap.exists()) {
-        const data = docSnap.data() as any;
-        // Migrate old flat stats format if it exists
-        if (data.stats && typeof data.stats.totalGamesPlayed === 'number') {
-          data.stats = {
-            mahjong: { ...data.stats },
-            lami: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 }
-          };
-          // Silently update Firestore in the background
-          updateDoc(userDocRef, { stats: data.stats }).catch(e => console.error('Migration failed', e));
-        }
-        // Ensure stats object exists even for very old profiles
-        if (!data.stats) {
-          data.stats = basicProfile.stats;
-        }
-        this.userProfileSubject.next(data as UserProfile);
-      } else {
+      // Ensure the document exists first
+      const docSnap = await getDoc(userDocRef);
+      if (!docSnap.exists()) {
         await setDoc(userDocRef, basicProfile);
-        this.userProfileSubject.next(basicProfile);
       }
+
+      // Listen for real-time updates
+      this.profileUnsubscribe = onSnapshot(userDocRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data() as any;
+          // Migrate old flat stats format if it exists
+          if (data.stats && typeof data.stats.totalGamesPlayed === 'number') {
+            data.stats = {
+              mahjong: { ...data.stats },
+              lami: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 }
+            };
+            updateDoc(userDocRef, { stats: data.stats }).catch(e => console.error('Migration failed', e));
+          }
+          if (!data.stats) {
+            data.stats = basicProfile.stats;
+          }
+          this.userProfileSubject.next(data as UserProfile);
+        }
+      });
     } catch (error) {
       console.error('Error loading user profile from Firestore:', error);
       // We already emitted the basic profile, so we can just leave it as is

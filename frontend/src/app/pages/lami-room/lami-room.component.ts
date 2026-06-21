@@ -216,6 +216,13 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.gameService.disconnect();
   }
 
+  quitRoom() {
+    if (confirm('Are you sure you want to quit the room?')) {
+      this.gameService.disconnect();
+      this.router.navigate(['/']);
+    }
+  }
+
   toggleTileSelection(tile: any) {
     const idx = this.selectedTiles.findIndex(t => t.id === tile.id);
     if (idx !== -1) {
