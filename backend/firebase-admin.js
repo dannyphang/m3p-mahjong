@@ -1,18 +1,17 @@
-const admin = require('firebase-admin');
+const { initializeApp } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 
 // Initialize Firebase Admin SDK
 // This uses Application Default Credentials.
-// Make sure to run `export GOOGLE_APPLICATION_CREDENTIALS="path/to/serviceAccountKey.json"`
-// or if hosted on Google Cloud/Firebase, it automatically detects credentials.
-admin.initializeApp({
+const app = initializeApp({
   projectId: 'm3p-mahjong-auth-5678'
 });
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 module.exports = {
-  admin,
   db,
   auth
 };
