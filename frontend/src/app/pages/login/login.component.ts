@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -180,12 +180,15 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
   authService = inject(AuthService);
   router = inject(Router);
+  ngZone = inject(NgZone);
   isLoading = false;
 
   constructor() {
     this.authService.userProfile$.subscribe(profile => {
       if (profile) {
-        this.router.navigate(['/']); // redirect to home
+        this.ngZone.run(() => {
+          this.router.navigate(['/']); // redirect to home
+        });
       }
     });
   }
@@ -197,7 +200,9 @@ export class LoginComponent {
     } catch (error) {
       console.error('Login error', error);
       alert('Failed to login with Google');
-      this.isLoading = false;
+      this.ngZone.run(() => {
+        this.isLoading = false;
+      });
     }
   }
 
@@ -208,7 +213,9 @@ export class LoginComponent {
     } catch (error) {
       console.error('Guest login error', error);
       alert('Failed to login as guest');
-      this.isLoading = false;
+      this.ngZone.run(() => {
+        this.isLoading = false;
+      });
     }
   }
 }
