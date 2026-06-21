@@ -13,6 +13,7 @@ export const routes: Routes = [
   { path: 'lami-lobby', component: LamiLobbyComponent, canActivate: [authGuard] },
   { path: 'lami-room', component: LamiRoomComponent, canActivate: [authGuard] },
   { path: 'room', component: RoomComponent, canActivate: [authGuard] },
+  { path: 'stats', loadComponent: () => import('./pages/stats/stats.component').then(m => m.StatsComponent), canActivate: [authGuard] },
   { path: 'playground', component: PlaygroundComponent },
   { path: '**', redirectTo: '' }
 ];

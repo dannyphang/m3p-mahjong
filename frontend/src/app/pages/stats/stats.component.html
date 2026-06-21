@@ -1,0 +1,65 @@
+<div class="stats-container casino-felt">
+  <div class="table-watermark"></div>
+
+  <button (click)="goHome()" class="back-btn">
+    🚪 Back to Lobby
+  </button>
+
+  <div class="stats-content" *ngIf="authService.userProfile$ | async as profile">
+    <div class="profile-header">
+      <img [src]="profile.avatar" alt="Avatar" class="profile-avatar" />
+      <h1 class="profile-name">{{ profile.name }}'s Statistics</h1>
+      <div class="total-coins">💰 {{ profile.coins }}</div>
+    </div>
+
+    <div class="stats-cards">
+      <!-- Mahjong Stats -->
+      <div class="stat-card glass-panel">
+        <div class="card-header">
+          <span class="game-icon">🀄</span>
+          <h2>Mahjong</h2>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Games Played</span>
+          <span class="stat-value">{{ profile.stats?.mahjong?.totalGamesPlayed || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Wins</span>
+          <span class="stat-value">{{ profile.stats?.mahjong?.totalWins || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Win Rate</span>
+          <span class="stat-value highlight">{{ getWinRate(profile.stats?.mahjong?.totalWins || 0, profile.stats?.mahjong?.totalGamesPlayed || 0) }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Total Fan Won</span>
+          <span class="stat-value">{{ profile.stats?.mahjong?.totalFanWon || 0 }}</span>
+        </div>
+      </div>
+
+      <!-- Lami Stats -->
+      <div class="stat-card glass-panel">
+        <div class="card-header">
+          <span class="game-icon">🃏</span>
+          <h2>Lami</h2>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Games Played</span>
+          <span class="stat-value">{{ profile.stats?.lami?.totalGamesPlayed || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Wins</span>
+          <span class="stat-value">{{ profile.stats?.lami?.totalWins || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Win Rate</span>
+          <span class="stat-value highlight">{{ getWinRate(profile.stats?.lami?.totalWins || 0, profile.stats?.lami?.totalGamesPlayed || 0) }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Total Fan Won</span>
+          <span class="stat-value">{{ profile.stats?.lami?.totalFanWon || 0 }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

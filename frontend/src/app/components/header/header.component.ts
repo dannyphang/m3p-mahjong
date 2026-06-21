@@ -104,6 +104,10 @@ export class HeaderComponent {
     }
   }
 
+  goToStats() {
+    this.router.navigate(['/stats']);
+  }
+
   goHome() {
     this.gameService.disconnect();
     this.router.navigate(['/']);
