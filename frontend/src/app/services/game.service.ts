@@ -105,7 +105,7 @@ export class GameService {
       return;
     }
 
-    const backendUrl = isDevMode() ? 'http://localhost:3000' : 'https://mahjong-new.onrender.com';
+    const backendUrl = isDevMode() ? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000') : 'https://mahjong-new.onrender.com';
     this.socket = io(backendUrl);
 
     this.socket.on('connect', () => {

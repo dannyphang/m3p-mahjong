@@ -80,7 +80,8 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
-            "allowedHosts": [".ngrok-free.dev", "asparagus-grandkid-jokester.ngrok-free.dev", "all"]
+            "allowedHosts": [".ngrok-free.dev", "asparagus-grandkid-jokester.ngrok-free.dev", "all"],
+            "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
             "production": {
