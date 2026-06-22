@@ -2,10 +2,13 @@
   width: 100vw;
   height: 100vh;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding: 80px 0 40px 0;
+  box-sizing: border-box;
 }
 
 .table-watermark {
@@ -54,6 +57,7 @@
   flex-direction: column;
   gap: 32px;
   animation: fadeIn 0.5s ease-out;
+  margin: auto;
 }
 
 @keyframes fadeIn {

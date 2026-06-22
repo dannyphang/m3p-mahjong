@@ -1,7 +1,33 @@
 <div class="lami-room-container casino-felt" *ngIf="state">
   <div class="table-watermark"></div>
 
-  <button (click)="quitRoom()" style="position: absolute; top: 16px; left: 16px; z-index: 999; background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.3); color: #ff6b6b; border-radius: 8px; padding: 8px 16px; font-weight: bold; cursor: pointer; transition: all 0.2s ease; backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.2);" onmouseover="this.style.background='rgba(255,68,68,0.3)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(255,68,68,0.15)'; this.style.transform='scale(1)';">
+  <button
+    (click)="quitRoom()"
+    style="
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 999;
+      background: rgba(255, 68, 68, 0.15);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+      color: #ff6b6b;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    "
+    onmouseover="
+      this.style.background = 'rgba(255,68,68,0.3)';
+      this.style.transform = 'scale(1.05)';
+    "
+    onmouseout="
+      this.style.background = 'rgba(255,68,68,0.15)';
+      this.style.transform = 'scale(1)';
+    "
+  >
     🚪 Quit Room
   </button>
 
@@ -55,12 +81,12 @@
         style="margin: 20px 0; display: flex; gap: 10px; justify-content: center"
       >
         <select [(ngModel)]="selectedBotDifficulty" class="form-input" style="width: auto">
-          <option value="easy">Easy Bot</option>
-          <option value="normal">Normal Bot</option>
-          <option value="hard">Hard Bot</option>
+          <option value="easy">{{ t('lobby.botEasy') }}</option>
+          <option value="normal">{{ t('lobby.botNormal') }}</option>
+          <option value="hard">{{ t('lobby.botHard') }}</option>
         </select>
         <button (click)="addBot()" class="btn-secondary" style="margin-top: 0; padding: 10px 20px">
-          Add Bot
+          {{ t('lobby.addBot') }}
         </button>
       </div>
 
@@ -68,7 +94,9 @@
         class="rates-container"
         style="margin: 20px 0; background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px"
       >
-        <h3 style="margin-top: 0; margin-bottom: 10px; color: #ffd700">💰 Coin Rates</h3>
+        <h3 style="margin-top: 0; margin-bottom: 10px; color: #ffd700">
+          {{ t('lami.coinRates') }}
+        </h3>
         <div
           style="
             display: flex;
@@ -77,7 +105,7 @@
             margin-bottom: 10px;
           "
         >
-          <span>Base Win Rate: </span>
+          <span>{{ t('lami.baseWinRate') }} </span>
           <div style="display: flex; align-items: center; gap: 10px">
             <button
               class="btn-secondary"
@@ -106,7 +134,7 @@
             margin-bottom: 10px;
           "
         >
-          <span>Joker Rate: </span>
+          <span>{{ t('lami.jokerRate') }} </span>
           <div style="display: flex; align-items: center; gap: 10px">
             <button
               class="btn-secondary"
@@ -128,7 +156,7 @@
           </div>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center">
-          <span>Ace Rate: </span>
+          <span>{{ t('lami.aceRate') }} </span>
           <div style="display: flex; align-items: center; gap: 10px">
             <button
               class="btn-secondary"
@@ -153,17 +181,37 @@
           *ngIf="state.players[0]?.id !== myId"
           style="font-size: 12px; color: #aaa; margin-top: 10px"
         >
-          Only the host can modify these rates.
+          {{ t('lami.hostModifyOnly') }}
         </div>
       </div>
 
-      <button
-        (click)="toggleReady()"
-        class="btn-primary"
-        style="margin-top: 10px; font-size: 20px; padding: 15px"
-      >
-        {{ state.players[0]?.id === myId ? t('lami.startGame') : t('lami.ready') }}
-      </button>
+      <div style="display: flex; gap: 12px; margin-top: 10px;">
+        <button
+          *ngIf="isHost"
+          (click)="startGame()"
+          class="btn-primary"
+          [disabled]="!isAllReady"
+          style="flex: 1; font-size: 20px; padding: 15px"
+        >
+          {{ t('lami.startGame') }}
+        </button>
+        <button
+          *ngIf="!myPlayer?.isReady"
+          (click)="toggleReady()"
+          class="btn-primary"
+          style="flex: 1; font-size: 20px; padding: 15px"
+        >
+          {{ t('lami.ready') }}
+        </button>
+        <button
+          *ngIf="myPlayer?.isReady"
+          (click)="toggleReady()"
+          class="btn-secondary"
+          style="flex: 1; font-size: 20px; padding: 15px; margin-top: 0;"
+        >
+          {{ t('lobby.cancelReady') }}
+        </button>
+      </div>
     </div>
   </div>
 
@@ -508,8 +556,8 @@
         <button (click)="showGameOver = false" class="btn-secondary" style="padding: 10px 20px">
           {{ t('lami.viewTable') }}
         </button>
-        <button (click)="toggleReady()" class="btn-primary" style="padding: 10px 20px">
-          {{ t('lami.readyNextRound') }}
+        <button (click)="restartGame()" class="btn-primary" style="padding: 10px 20px">
+          {{ t('gameover.readyNextGame') }}
         </button>
       </div>
     </div>

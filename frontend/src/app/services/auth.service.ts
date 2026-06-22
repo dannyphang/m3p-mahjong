@@ -10,16 +10,24 @@ export interface UserProfile {
   avatar: string;
   coins: number;
   stats: {
-    mahjong: {
+    mahjong?: {
       totalGamesPlayed: number;
       totalWins: number;
       totalFanWon: number;
-    },
-    lami: {
+      currentWinStreak?: number;
+      highestWinStreak?: number;
+      highestCoinWin?: number;
+      highestCoinLose?: number;
+    };
+    lami?: {
       totalGamesPlayed: number;
       totalWins: number;
       totalFanWon: number;
-    }
+      currentWinStreak?: number;
+      highestWinStreak?: number;
+      highestCoinWin?: number;
+      highestCoinLose?: number;
+    };
   };
 }
 

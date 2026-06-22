@@ -67,6 +67,15 @@ export class RoomComponent implements AfterViewChecked, OnInit {
 
   get gameState() { return this.gameService.gameState(); }
   get myPlayerId() { return this.gameService.myPlayerId(); }
+  get myPlayer() { return this.gameState?.players?.find((p: any) => p.id === this.myPlayerId); }
+  get isHost() { 
+    const players = this.gameState?.players;
+    return !!players && players.length > 0 && players[0].id === this.myPlayerId; 
+  }
+  get isAllReady() { 
+    const players = this.gameState?.players;
+    return !!players && players.length === 3 && players.every((p: any) => p.isReady); 
+  }
   get currentAnimation() { return this.gameService.currentAnimation(); }
   get turnOptions() { return this.gameService.turnOptions(); }
   get claimOptions() { return this.gameService.claimOptions(); }
@@ -290,8 +299,15 @@ export class RoomComponent implements AfterViewChecked, OnInit {
     this.gameService.turnOptions.set(null);
   }
 
+  startGame() {
+    this.gameService.socket?.emit('startGame', { roomId: this.gameService.roomId() });
+  }
+
   restartGame() {
-    this.gameService.socket?.emit('restartGame', { roomId: this.gameService.roomId() });
+    this.gameService.socket?.emit('restartGame', { 
+      roomId: this.gameService.roomId(),
+      playerId: this.myPlayer?.id
+    });
     this.gameService.gameOverDetails.set(null);
     this.gameService.hideGameOverModal.set(false);
   }

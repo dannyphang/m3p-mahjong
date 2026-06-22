@@ -1363,15 +1363,8 @@ io.on('connection', (socket) => {
       p.isReady = !p.isReady;
       room.addLog({ key: 'log.ready', params: { name: p.name, status: p.isReady ? 'READY' : 'NOT READY' } });
       
-      const maxPlayers = room.gameType === 'lami' ? 4 : 3;
-      const allReady = room.players.length === maxPlayers && room.players.every(pl => pl.isReady);
-      if (allReady) {
-        if (room.gameType === 'lami') room.startGame(io);
-        else room.startGame();
-      } else {
-        if (room.gameType === 'lami') room.broadcastState(io);
-        else room.broadcastState();
-      }
+      if (room.gameType === 'lami') room.broadcastState(io);
+      else room.broadcastState();
     }
   });
 
@@ -1387,15 +1380,8 @@ io.on('connection', (socket) => {
         room.addPlayer(botName, null, true, difficulty || 'easy'); // initialCoins defaults to 100
       }
       
-      const maxPlayers = room.gameType === 'lami' ? 4 : 3;
-      const allReady = room.players.length === maxPlayers && room.players.every(pl => pl.isReady);
-      if (allReady) {
-        if (room.gameType === 'lami') room.startGame(io);
-        else room.startGame();
-      } else {
-        if (room.gameType === 'lami') room.broadcastState(io);
-        else room.broadcastState();
-      }
+      if (room.gameType === 'lami') room.broadcastState(io);
+      else room.broadcastState();
     }
   });
 
@@ -1579,31 +1565,60 @@ io.on('connection', (socket) => {
     room.executeReplaceJoker(playerId, opt.meldIndex, opt.tileIndex, opt.handIndex);
   });
 
+  // Start Game (Manual Trigger by Host)
+  socket.on('startGame', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+    
+    // Check if caller is host
+    if (room.players.length === 0 || room.players[0].id !== socket.id) return;
+
+    const maxPlayers = room.gameType === 'lami' ? 4 : 3;
+    const allReady = room.players.length === maxPlayers && room.players.every(pl => pl.isReady);
+    
+    if (allReady && room.status === 'WAITING') {
+      if (room.gameType === 'lami') room.startGame(io);
+      else room.startGame();
+    }
+  });
+
   // Reset/Restart Game
-  socket.on('restartGame', ({ roomId }) => {
+  socket.on('restartGame', ({ roomId, playerId }) => {
     const room = rooms[roomId];
     if (!room) return;
 
-    // Apply the pending dealer updates now that the next round is starting
-    if (room.nextDealerIndex !== undefined) {
-      room.dealerIndex = room.nextDealerIndex;
-      room.consecutiveDealerWins = room.nextConsecutiveDealerWins;
-      room.nextDealerIndex = undefined;
-      room.nextConsecutiveDealerWins = undefined;
+    if (room.status !== 'WAITING') {
+      // Apply the pending dealer updates now that the next round is starting
+      if (room.nextDealerIndex !== undefined) {
+        room.dealerIndex = room.nextDealerIndex;
+        room.consecutiveDealerWins = room.nextConsecutiveDealerWins;
+        room.nextDealerIndex = undefined;
+        room.nextConsecutiveDealerWins = undefined;
+      }
+
+      room.status = 'WAITING';
+      room.lastDiscard = null;
+      room.logs = [];
+      room.players.forEach(p => {
+        p.isReady = p.isBot; // bots stay ready
+        room.hands[p.id] = [];
+        room.exposed[p.id] = [];
+        room.flowers[p.id] = [];
+        room.discards[p.id] = [];
+      });
+      room.addLog({ key: 'log.roomReset' });
     }
 
-    room.status = 'WAITING';
-    room.lastDiscard = null;
-    room.logs = [];
-    room.players.forEach(p => {
-      p.isReady = p.isBot; // bots stay ready
-      room.hands[p.id] = [];
-      room.exposed[p.id] = [];
-      room.flowers[p.id] = [];
-      room.discards[p.id] = [];
-    });
-    room.addLog({ key: 'log.roomReset' });
-    room.broadcastState();
+    if (playerId) {
+      const p = room.players.find(pl => pl.id === playerId);
+      if (p) {
+        p.isReady = true;
+        room.addLog({ key: 'log.ready', params: { name: p.name, status: 'READY' } });
+      }
+    }
+
+    if (room.gameType === 'lami') room.broadcastState(io);
+    else room.broadcastState();
   });
 
   // Disconnect

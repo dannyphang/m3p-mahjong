@@ -58,6 +58,21 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   gameStateSignal = this.gameService.gameState;
   playerIdSignal = this.gameService.myPlayerId;
+
+  get myPlayer() {
+    return this.state?.players?.find((p: any) => p.id === this.myId);
+  }
+
+  get isHost() {
+    const players = this.state?.players;
+    return !!players && players.length > 0 && players[0].id === this.myId;
+  }
+
+  get isAllReady() {
+    const players = this.state?.players;
+    return !!players && players.length === 4 && players.every((p: any) => p.isReady);
+  }
+  
   selectedTiles: any[] = [];
   showMeldOptions = false;
   meldOptions: any[][] = [];
@@ -99,8 +114,8 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     return this.playerIdSignal();
   }
 
-  get myPlayer() {
-    return this.state?.players.find((p: any) => p.id === this.myId);
+  get roomId() {
+    return this.gameService.roomId();
   }
 
   get showNarrator() {
@@ -399,7 +414,22 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   toggleReady() {
-    this.gameService.toggleReady();
+    this.gameService.socket?.emit('toggleReady', {
+      roomId: this.roomId,
+      playerId: this.myId
+    });
+  }
+
+  startGame() {
+    this.gameService.socket?.emit('startGame', { roomId: this.roomId });
+  }
+
+  restartGame() {
+    this.gameService.socket?.emit('restartGame', { 
+      roomId: this.roomId,
+      playerId: this.myId
+    });
+    this.showGameOver = false;
   }
 
   selectedBotDifficulty: 'easy' | 'normal' | 'hard' = 'easy';

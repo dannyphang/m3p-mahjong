@@ -155,15 +155,24 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 12px">
-          <button (click)="toggleReady()" class="btn-primary" style="flex: 1">
-            {{
-              gameState?.players?.find((p) => p.id === myPlayerId)?.isReady
-                ? t('lobby.notReady')
-                : t('lobby.getReady')
-            }}
-          </button>
-          @if ((gameState?.players?.length || 0) < 3 && gameState?.players?.[0]?.id === myPlayerId) {
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          @if (myPlayer?.isReady) {
+            <button (click)="toggleReady()" class="btn-secondary" style="flex: 1; margin-top: 0;">
+              {{ t('lobby.cancelReady') }}
+            </button>
+          } @else {
+            <button (click)="toggleReady()" class="btn-primary" style="flex: 1">
+              {{ t('lobby.ready') }}
+            </button>
+          }
+
+          @if (isHost) {
+            <button (click)="startGame()" class="btn-primary" [disabled]="!isAllReady" style="flex: 1">
+              {{ t('lobby.startGame') }}
+            </button>
+          }
+
+          @if ((gameState?.players?.length || 0) < 3 && isHost) {
             <div
               style="
                 display: flex;
@@ -1289,7 +1298,7 @@
               {{ t('lobby.hideLedger') }}
             </button>
             <button (click)="restartGame()" class="btn-primary" style="margin-top: 0">
-              {{ t('gameover.playAgain') }}
+              {{ t('gameover.readyNextGame') }}
             </button>
           </div>
         </div>
@@ -1318,7 +1327,7 @@
             color: var(--gold-primary);
           "
         >
-          Show Ledger
+          {{ t('lobby.hideLedger') }}
         </button>
         <button
           (click)="restartGame()"
@@ -1330,7 +1339,7 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
           "
         >
-          Play Next Hand
+          {{ t('gameover.readyNextGame') }}
         </button>
       </div>
     }

@@ -51,9 +51,31 @@ async function updatePlayerStats(uid, gameType, netCoins, isWin, fanWon) {
         coins: (data.coins || 0) + netCoins,
       };
       
+      const currentWinStreak = currentStats.currentWinStreak || 0;
+      const highestWinStreak = currentStats.highestWinStreak || 0;
+      const highestCoinWin = currentStats.highestCoinWin || 0;
+      const highestCoinLose = currentStats.highestCoinLose || 0;
+
+      let newCurrentWinStreak = isWin ? currentWinStreak + 1 : 0;
+      let newHighestWinStreak = Math.max(highestWinStreak, newCurrentWinStreak);
+      
+      let newHighestCoinWin = highestCoinWin;
+      if (netCoins > 0 && netCoins > highestCoinWin) {
+        newHighestCoinWin = netCoins;
+      }
+
+      let newHighestCoinLose = highestCoinLose;
+      if (netCoins < 0 && Math.abs(netCoins) > highestCoinLose) {
+        newHighestCoinLose = Math.abs(netCoins);
+      }
+      
       updates[`stats.${type}.totalGamesPlayed`] = currentStats.totalGamesPlayed + 1;
       updates[`stats.${type}.totalWins`] = currentStats.totalWins + (isWin ? 1 : 0);
       updates[`stats.${type}.totalFanWon`] = currentStats.totalFanWon + (fanWon || 0);
+      updates[`stats.${type}.currentWinStreak`] = newCurrentWinStreak;
+      updates[`stats.${type}.highestWinStreak`] = newHighestWinStreak;
+      updates[`stats.${type}.highestCoinWin`] = newHighestCoinWin;
+      updates[`stats.${type}.highestCoinLose`] = newHighestCoinLose;
 
       transaction.update(userRef, updates);
     });
