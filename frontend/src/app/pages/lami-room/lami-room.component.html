@@ -246,14 +246,12 @@
     <!-- Public Table -->
     <div class="public-table-center">
       <div class="meld-list">
-        <div *ngFor="let meld of state.publicMelds" class="public-meld glass-panel">
-          <button
-            [disabled]="isConnectDisabled(meld, 'start')"
-            class="connect-btn"
-            (click)="connectMeld(meld.id, 'start')"
-          >
-            +
-          </button>
+        <div
+          *ngFor="let meld of state.publicMelds"
+          class="public-meld glass-panel"
+          [class.valid-target-glow]="isMeldValidTarget(meld)"
+          (click)="handleMeldClick(meld)"
+        >
           <div class="meld-tiles">
             <ng-container *ngFor="let t of getDisplayMeldTiles(meld.tiles)">
               <app-lami-tile
@@ -275,13 +273,6 @@
               </div>
             </ng-container>
           </div>
-          <button
-            [disabled]="isConnectDisabled(meld, 'end')"
-            class="connect-btn"
-            (click)="connectMeld(meld.id, 'end')"
-          >
-            +
-          </button>
         </div>
       </div>
     </div>

@@ -89,11 +89,27 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     return this.playerColors[idx % this.playerColors.length];
   }
 
-  isConnectDisabled(meld: any, position: 'start' | 'end'): boolean {
-    if (this.selectedTiles.length === 0 || this.state?.status !== 'PLAYING') return true;
-    if (this.state?.players[this.state?.currentTurn]?.id !== this.myId) return true;
+  isMeldValidTarget(meld: any): boolean {
+    if (this.selectedTiles.length === 0 || this.state?.status !== 'PLAYING') return false;
+    if (this.state?.players[this.state?.currentTurn]?.id !== this.myId) return false;
     
-    return !canConnectMeld(meld, this.selectedTiles, position, this.state?.publicMelds || []);
+    return canConnectMeld(meld, this.selectedTiles, 'end', this.state?.publicMelds || []) ||
+           canConnectMeld(meld, this.selectedTiles, 'start', this.state?.publicMelds || []);
+  }
+
+  handleMeldClick(meld: any) {
+    if (!this.isMeldValidTarget(meld)) return;
+
+    let position: 'start' | 'end' = 'end';
+    if (canConnectMeld(meld, this.selectedTiles, 'end', this.state?.publicMelds || [])) {
+      position = 'end';
+    } else if (canConnectMeld(meld, this.selectedTiles, 'start', this.state?.publicMelds || [])) {
+      position = 'start';
+    } else {
+      return;
+    }
+
+    this.connectMeld(meld.id, position);
   }
 
   get state() {
