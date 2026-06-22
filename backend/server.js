@@ -261,19 +261,20 @@ class GameState {
     };
   }
 
-  addPlayer(name, socketId, isBot = false, difficulty = 'easy', initialCoins = 100) {
+  addPlayer(name, socketId, isBot = false, difficulty = 'easy', initialCoins = 100, avatar = null) {
     // Check if player is reconnecting
     const existingPlayer = this.players.find(p => p.name === name && !p.isBot);
     if (existingPlayer && existingPlayer.isConnected === false) {
       existingPlayer.socketId = socketId;
       existingPlayer.isConnected = true;
+      if (avatar) existingPlayer.avatar = avatar;
       this.addLog({ key: 'log.joined', params: { name: name + ' (Reconnected)' } });
       return existingPlayer;
     }
 
     if (this.players.length >= 3) return null;
     const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
-    const player = { id, name, socketId, isBot, isReady: isBot, difficulty: isBot ? difficulty : null, isConnected: true };
+    const player = { id, name, socketId, isBot, isReady: isBot, difficulty: isBot ? difficulty : null, isConnected: true, avatar };
     this.players.push(player);
     
     this.hands[id] = [];
@@ -1305,7 +1306,7 @@ io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}, User: ${socket.user ? socket.user.uid : 'Guest'}`);
 
   // Create or Join Room
-  socket.on('joinRoom', async ({ name, roomId, gameType }) => {
+  socket.on('joinRoom', async ({ name, roomId, gameType, avatar }) => {
     let room = rooms[roomId];
     if (!room) {
       if (gameType === 'lami') {
@@ -1337,9 +1338,9 @@ io.on('connection', (socket) => {
 
     let addedPlayer;
     if (gameType === 'lami') {
-      addedPlayer = room.addPlayer(name, socket.id, false, initialCoins);
+      addedPlayer = room.addPlayer(name, socket.id, false, initialCoins, avatar);
     } else {
-      addedPlayer = room.addPlayer(name, socket.id, false, 'easy', initialCoins);
+      addedPlayer = room.addPlayer(name, socket.id, false, 'easy', initialCoins, avatar);
     }
     
     if (addedPlayer) {

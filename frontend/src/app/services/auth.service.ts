@@ -42,6 +42,10 @@ export class AuthService {
   private userProfileSubject = new BehaviorSubject<UserProfile | null>(null);
   userProfile$ = this.userProfileSubject.asObservable();
   
+  get currentProfile(): UserProfile | null {
+    return this.userProfileSubject.value;
+  }
+
   public currentUser: User | null = null;
 
   constructor() {

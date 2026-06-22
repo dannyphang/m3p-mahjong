@@ -79,7 +79,8 @@
                 align-items: center;
               "
             >
-              <span>
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <img *ngIf="p.avatar" [src]="p.avatar" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" />
                 {{ p.name }}
                 @if (p.id === myPlayerId) {
                   <strong style="color: #ffd700">{{ t('lobby.you') }}</strong>
@@ -241,8 +242,10 @@
           height: 90px;
         "
       >
-        <span style="font-weight: 700; color: #fff; text-align: center"
-          >{{ opp1.name }}
+        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 4px; gap: 6px;">
+          <img *ngIf="opp1.avatar" [src]="opp1.avatar" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+          <span style="font-weight: 700; color: #fff; text-align: center"
+            >{{ opp1.name }}
           <span style="font-weight: normal">{{
             opp1.isBot
               ? t(
@@ -258,7 +261,7 @@
           ><br /><span style="color: #4caf50; font-size: 10px"
             >{{ t('game.coins') }} {{ gameState?.accumulatedPoints?.[opp1.id] || 0 }}</span
           ></span
-        >
+        ></div>
         <span
           style="
             font-size: 10px;
@@ -381,8 +384,10 @@
           height: 90px;
         "
       >
-        <span style="font-weight: 700; color: #fff; text-align: center"
-          >{{ opp2.name }}
+        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 4px; gap: 6px;">
+          <img *ngIf="opp2.avatar" [src]="opp2.avatar" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+          <span style="font-weight: 700; color: #fff; text-align: center"
+            >{{ opp2.name }}
           <span style="font-weight: normal">{{
             opp2.isBot
               ? t(
@@ -398,7 +403,7 @@
           ><br /><span style="color: #4caf50; font-size: 10px"
             >{{ t('game.coins') }} {{ gameState?.accumulatedPoints?.[opp2.id] || 0 }}</span
           ></span
-        >
+        ></div>
         <span
           style="
             font-size: 10px;
@@ -762,12 +767,14 @@
         </div>
       }
       <div style="display: flex; align-items: center; gap: 8px">
-        <strong style="color: #fff"
-          >{{ t('game.me') }}
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img *ngIf="myPlayer?.avatar" [src]="myPlayer?.avatar" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+          <strong style="color: #fff"
+            >{{ t('game.me') }}
           <span style="color: #4caf50; margin-left: 6px; font-weight: normal"
             >{{ t('game.coins') }} {{ gameState?.accumulatedPoints?.[myPlayerId] || 0 }}</span
           ></strong
-        >
+        ></div>
         @if (gameState?.dealerIndex === gameState?.players?.findIndex((p) => p.id === myPlayerId)) {
           <span
             style="

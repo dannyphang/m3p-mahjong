@@ -16,10 +16,12 @@ export interface Tile {
 export interface Player {
   id: string;
   name: string;
-  isBot: boolean;
   isReady: boolean;
+  isBot?: boolean;
+  difficulty?: 'easy' | 'normal' | 'hard';
   passedOut?: boolean;
   burned?: boolean;
+  avatar?: string;
 }
 
 export interface Meld {
@@ -131,7 +133,8 @@ export class GameService {
       this.socket?.emit('joinRoom', {
         name: this.playerName(),
         roomId: this.roomId(),
-        gameType
+        gameType,
+        avatar: this.authService.currentProfile?.avatar || null
       });
     });
 

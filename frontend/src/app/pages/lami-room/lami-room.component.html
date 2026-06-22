@@ -226,7 +226,8 @@
         [style.borderLeftColor]="getPlayerColor(p.id)"
         style="border-left-width: 8px"
       >
-        <div class="avatar-icon">👤</div>
+        <div class="avatar-icon" *ngIf="!p.avatar">👤</div>
+        <img class="avatar-img" *ngIf="p.avatar" [src]="p.avatar" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
         <div class="avatar-info">
           <div class="name">{{ p.name }}</div>
           <div style="display: flex; align-items: center; gap: 5px">
@@ -287,7 +288,8 @@
           [style.borderLeftColor]="getPlayerColor(myId)"
           style="border-left-width: 8px"
         >
-          <div class="avatar-icon">😎</div>
+          <div class="avatar-icon" *ngIf="!myPlayer?.avatar">😎</div>
+          <img class="avatar-img" *ngIf="myPlayer?.avatar" [src]="myPlayer?.avatar" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
           <div class="avatar-info">
             <div class="name">{{ gameService.playerName() }}</div>
             <div

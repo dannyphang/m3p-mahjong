@@ -94,19 +94,20 @@ class LamiGameState {
     };
   }
 
-  addPlayer(name, socketId, isBot = false, initialCoins = 1000) {
+  addPlayer(name, socketId, isBot = false, initialCoins = 1000, avatar = null) {
     // Check if player is reconnecting
     const existingPlayer = this.players.find(p => p.name === name && !p.isBot);
     if (existingPlayer && existingPlayer.isConnected === false) {
       existingPlayer.socketId = socketId;
       existingPlayer.isConnected = true;
+      if (avatar) existingPlayer.avatar = avatar;
       this.addLog({ key: 'log.joined', params: { name: name + ' (Reconnected)' } });
       return existingPlayer;
     }
 
     if (this.players.length >= 4) return null;
     const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
-    const player = { id, name, socketId, isBot, isReady: isBot, hasBrokenIce: false, burned: false, isConnected: true };
+    const player = { id, name, socketId, isBot, isReady: isBot, hasBrokenIce: false, burned: false, isConnected: true, avatar };
     this.players.push(player);
     
     this.hands[id] = [];
