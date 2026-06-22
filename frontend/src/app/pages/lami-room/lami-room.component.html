@@ -185,7 +185,7 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 12px; margin-top: 10px;">
+      <div style="display: flex; gap: 12px; margin-top: 10px">
         <button
           *ngIf="isHost"
           (click)="startGame()"
@@ -207,7 +207,7 @@
           *ngIf="myPlayer?.isReady"
           (click)="toggleReady()"
           class="btn-secondary"
-          style="flex: 1; font-size: 20px; padding: 15px; margin-top: 0;"
+          style="flex: 1; font-size: 20px; padding: 15px; margin-top: 0"
         >
           {{ t('lobby.cancelReady') }}
         </button>
@@ -544,11 +544,93 @@
         </div>
       </div>
       <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px">
-        <button (click)="showGameOver = false" class="btn-secondary" style="padding: 10px 20px">
-          {{ t('lami.viewTable') }}
-        </button>
         <button (click)="restartGame()" class="btn-primary" style="padding: 10px 20px">
           {{ t('gameover.readyNextGame') }}
+        </button>
+        <button
+          (click)="showGameOver = false"
+          class="btn-secondary"
+          style="padding: 10px 20px; margin-top: 0"
+        >
+          {{ t('lami.viewTable') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connect Options Modal -->
+  <div *ngIf="showConnectOptions" class="lobby-overlay" style="z-index: 1000">
+    <div class="glass-card" style="text-align: center; max-width: 500px">
+      <h2 style="margin-top: 0; color: #ffd700">Place Joker</h2>
+      <p style="margin-bottom: 25px; color: #eee; font-size: 1.1em">
+        Where would you like to place the Joker in the sequence?
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 15px; align-items: center">
+        <!-- Place at Front Preview -->
+        <button
+          (click)="confirmConnect('start')"
+          class="btn-primary public-meld glass-panel"
+          style="
+            padding: 15px;
+            height: auto;
+            width: 100%;
+            border: 2px solid transparent;
+            transition: border 0.2s;
+            background: rgba(0, 0, 0, 0.4);
+          "
+          onmouseover="this.style.borderColor = 'var(--gold-primary)'"
+          onmouseout="this.style.borderColor = 'transparent'"
+        >
+          <div style="margin-bottom: 10px; font-weight: bold; color: #ffd700">Place at Front</div>
+          <div class="meld-tiles" style="justify-content: center; flex-wrap: wrap">
+            <app-lami-tile
+              *ngFor="let t of previewStartMeld"
+              [number]="t.type === 'joker' && t.representedValue ? t.representedValue : t.value"
+              [color]="t.type === 'joker' ? 'purple' : $any(t.suit)"
+              [small]="true"
+              [isNew]="t.isNew"
+              [isJoker]="t.type === 'joker'"
+              [newColor]="t.newFromPlayer ? getPlayerColor(t.newFromPlayer) : null"
+            ></app-lami-tile>
+          </div>
+        </button>
+
+        <!-- Place at Back Preview -->
+        <button
+          (click)="confirmConnect('end')"
+          class="btn-primary public-meld glass-panel"
+          style="
+            padding: 15px;
+            height: auto;
+            width: 100%;
+            border: 2px solid transparent;
+            transition: border 0.2s;
+            background: rgba(0, 0, 0, 0.4);
+          "
+          onmouseover="this.style.borderColor = 'var(--gold-primary)'"
+          onmouseout="this.style.borderColor = 'transparent'"
+        >
+          <div style="margin-bottom: 10px; font-weight: bold; color: #ffd700">Place at Back</div>
+          <div class="meld-tiles" style="justify-content: center; flex-wrap: wrap">
+            <app-lami-tile
+              *ngFor="let t of previewEndMeld"
+              [number]="t.type === 'joker' && t.representedValue ? t.representedValue : t.value"
+              [color]="t.type === 'joker' ? 'purple' : $any(t.suit)"
+              [small]="true"
+              [isNew]="t.isNew"
+              [isJoker]="t.type === 'joker'"
+              [newColor]="t.newFromPlayer ? getPlayerColor(t.newFromPlayer) : null"
+            ></app-lami-tile>
+          </div>
+        </button>
+
+        <button
+          (click)="cancelConnect()"
+          class="btn-secondary"
+          style="padding: 12px; margin-top: 10px; width: 50%"
+        >
+          Cancel
         </button>
       </div>
     </div>

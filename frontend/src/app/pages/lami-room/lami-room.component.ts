@@ -89,6 +89,20 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     return this.playerColors[idx % this.playerColors.length];
   }
 
+  showConnectOptions = false;
+  pendingConnectMeldId: string | null = null;
+  pendingConnectMeld: any = null;
+
+  get previewStartMeld() {
+    if (!this.pendingConnectMeld) return [];
+    return [...this.selectedTiles, ...this.pendingConnectMeld.tiles];
+  }
+
+  get previewEndMeld() {
+    if (!this.pendingConnectMeld) return [];
+    return [...this.pendingConnectMeld.tiles, ...this.selectedTiles];
+  }
+
   isMeldValidTarget(meld: any): boolean {
     if (this.selectedTiles.length === 0 || this.state?.status !== 'PLAYING') return false;
     if (this.state?.players[this.state?.currentTurn]?.id !== this.myId) return false;
@@ -100,16 +114,36 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   handleMeldClick(meld: any) {
     if (!this.isMeldValidTarget(meld)) return;
 
-    let position: 'start' | 'end' = 'end';
-    if (canConnectMeld(meld, this.selectedTiles, 'end', this.state?.publicMelds || [])) {
-      position = 'end';
-    } else if (canConnectMeld(meld, this.selectedTiles, 'start', this.state?.publicMelds || [])) {
-      position = 'start';
-    } else {
-      return;
-    }
+    const validEnd = canConnectMeld(meld, this.selectedTiles, 'end', this.state?.publicMelds || []);
+    const validStart = canConnectMeld(meld, this.selectedTiles, 'start', this.state?.publicMelds || []);
 
-    this.connectMeld(meld.id, position);
+    if (meld.type === 'set' || (validEnd && !validStart)) {
+      this.connectMeld(meld.id, 'end');
+    } else if (validStart && !validEnd) {
+      this.connectMeld(meld.id, 'start');
+    } else if (validStart && validEnd) {
+      const hasJoker = this.selectedTiles.some(t => t.type === 'joker');
+      if (hasJoker) {
+        this.pendingConnectMeldId = meld.id;
+        this.pendingConnectMeld = meld;
+        this.showConnectOptions = true;
+      } else {
+        this.connectMeld(meld.id, 'end');
+      }
+    }
+  }
+
+  confirmConnect(position: 'start' | 'end') {
+    if (this.pendingConnectMeldId) {
+      this.connectMeld(this.pendingConnectMeldId, position);
+    }
+    this.cancelConnect();
+  }
+
+  cancelConnect() {
+    this.pendingConnectMeldId = null;
+    this.pendingConnectMeld = null;
+    this.showConnectOptions = false;
   }
 
   get state() {

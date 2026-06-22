@@ -1602,9 +1602,11 @@ io.on('connection', (socket) => {
       room.players.forEach(p => {
         p.isReady = p.isBot; // bots stay ready
         room.hands[p.id] = [];
-        room.exposed[p.id] = [];
-        room.flowers[p.id] = [];
-        room.discards[p.id] = [];
+        if (room.gameType !== 'lami') {
+          room.exposed[p.id] = [];
+          room.flowers[p.id] = [];
+          room.discards[p.id] = [];
+        }
       });
       room.addLog({ key: 'log.roomReset' });
     }
