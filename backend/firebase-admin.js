@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
@@ -7,7 +8,17 @@ const path = require('path');
 let app;
 const serviceAccountPath = path.join(__dirname, 'service-account.json');
 
-if (fs.existsSync(serviceAccountPath)) {
+if (process.env.FIREBASE_PRIVATE_KEY) {
+  // Use .env variables if available
+  app = initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      // Replace literal \n in string with actual newlines
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    })
+  });
+} else if (fs.existsSync(serviceAccountPath)) {
   // Use local service account key if it exists
   const serviceAccount = require(serviceAccountPath);
   app = initializeApp({
