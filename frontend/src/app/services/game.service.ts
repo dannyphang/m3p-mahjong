@@ -53,9 +53,12 @@ export interface GameState {
   accumulatedPoints: { [key: string]: number };
   rankings?: any;
   rates?: {
-    win: number;
-    joker: number;
-    ace: number;
+    win?: number;
+    joker?: number;
+    ace?: number;
+    base?: number;
+    limit?: number;
+    fei?: number;
   };
   settings: {
     enableTimer: boolean;
@@ -263,9 +266,29 @@ export class GameService {
     }
   }
 
+  updateSettings(settings: any) {
+    if (this.socket) {
+      this.socket.emit('updateSettings', {
+        roomId: this.roomId(),
+        playerId: this.myPlayerId(),
+        settings
+      });
+    }
+  }
+
   updateLamiRates(rates: { win?: number, joker?: number, ace?: number }) {
     if (this.socket) {
       this.socket.emit('lamiUpdateRates', {
+        roomId: this.roomId(),
+        playerId: this.myPlayerId(),
+        rates
+      });
+    }
+  }
+
+  updateMahjongRates(rates: { base?: number, limit?: number, fei?: number }) {
+    if (this.socket) {
+      this.socket.emit('mahjongUpdateRates', {
         roomId: this.roomId(),
         playerId: this.myPlayerId(),
         rates

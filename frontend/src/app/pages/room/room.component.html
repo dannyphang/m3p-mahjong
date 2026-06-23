@@ -10,23 +10,7 @@
       [class.pos-right]="anim.playerId === getRemainingPlayerPosition(1)?.id"
     >
       <div class="action-animation-text" [ngClass]="anim.type">
-        {{
-          anim.type === 'pong'
-            ? '碰 PONG!'
-            : anim.type === 'kong'
-              ? '杠 KONG!'
-              : anim.type === 'chow'
-                ? '吃 CHOW!'
-                : anim.type === 'buhua'
-                  ? '补花 BU HUA!'
-                  : anim.type === 'draw'
-                    ? '摸牌 DRAW!'
-                    : anim.type === 'hu'
-                      ? '胡 HU!'
-                      : anim.type === 'discard'
-                        ? '打牌 DISCARD!'
-                        : ''
-        }}
+        {{ t('anim.' + anim.type) }}
       </div>
       @if (anim.tile) {
         <div
@@ -152,6 +136,26 @@
                   border: 1px solid var(--glass-border);
                 "
               />
+            }
+          </div>
+          <div style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+            <h4 style="margin: 0 0 10px 0; color: var(--gold-primary);">{{ t('mahjong.coinRates') }}</h4>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+              <label style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 12px; color: #a0a0ab;">{{ t('mahjong.rateBase') }}</span>
+                <input type="number" [value]="gameState?.rates?.base || 10" (change)="updateMahjongRates('base', $event)" [disabled]="!isHost" min="1" max="100" style="width: 70px; padding: 8px 12px; font-size: 16px; font-weight: 600; font-family: inherit; border-radius: 8px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255, 215, 0, 0.3); outline: none; transition: border-color 0.2s;" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 12px; color: #a0a0ab;">{{ t('mahjong.rateLimit') }}</span>
+                <input type="number" [value]="gameState?.rates?.limit || 120" (change)="updateMahjongRates('limit', $event)" [disabled]="!isHost" min="5" max="500" style="width: 70px; padding: 8px 12px; font-size: 16px; font-weight: 600; font-family: inherit; border-radius: 8px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255, 215, 0, 0.3); outline: none; transition: border-color 0.2s;" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 12px; color: #a0a0ab;">{{ t('mahjong.rateFei') }}</span>
+                <input type="number" [value]="gameState?.rates?.fei || 10" (change)="updateMahjongRates('fei', $event)" [disabled]="!isHost" min="1" max="100" style="width: 70px; padding: 8px 12px; font-size: 16px; font-weight: 600; font-family: inherit; border-radius: 8px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255, 215, 0, 0.3); outline: none; transition: border-color 0.2s;" />
+              </label>
+            </div>
+            @if (!isHost) {
+              <div style="font-size: 12px; color: #a0a0ab; margin-top: 8px;">{{ t('lami.hostModifyOnly') }}</div>
             }
           </div>
         </div>

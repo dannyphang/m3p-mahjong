@@ -1,6 +1,12 @@
 export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
   en: {
     // Lobby
+    'login.title': 'M3P MAHJONG',
+    'login.subtitle': 'Malaysian 3-Player Mahjong',
+    'login.playerName': 'Player Name',
+    'login.roomCode': 'Room Code',
+    'login.joinCreate': 'Join / Create Room',
+    'login.goToLami': 'Go to Lami Lobby',
     'lobby.title': 'M3P MAHJONG',
     'lobby.subtitle': 'Malaysia 3-Player Mahjong',
     'lobby.playerName': 'Player Name',
@@ -24,18 +30,16 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'lobby.cancelReady': 'Cancel Ready',
     'lobby.waitingForOthers': 'Waiting for others...',
     'lobby.you': '(You)',
-    
+
     // Header
     'header.table': 'Table:',
     'header.round': 'Round:',
     'header.dealer': 'Dealer:',
     'header.lianZhuang': '(Lian Zhuang x',
     'header.wallTiles': 'Wall Tiles:',
-    'header.scoringGuide': '📖 Scoring Guide',
-    'header.showNarrator': '🎙️ Show Narrator',
-    'header.hideNarrator': '🎙️ Hide Narrator',
+    'header.scoringGuide': 'Scoring Guide',
     'header.narratorTitle': 'Game Narrator',
-    
+
     // In-game Status
     'game.publicPoints': 'Public Points:',
     'game.flower': 'Flower:',
@@ -64,13 +68,13 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'game.upgradeKong': 'Upgrade Kong',
     'game.concealedKong': 'Concealed Kong',
     'game.replace': '(Replace ',
-    
+
     // Winds
     'wind.东': 'East',
     'wind.南': 'South',
     'wind.西': 'West',
     'wind.北': 'North',
-    
+
     // Modals & Options
     'action.pong': 'PONG',
     'action.kong': 'KONG',
@@ -83,7 +87,7 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'action.pass': 'PASS',
     'action.selfKong': 'SELF KONG',
     'action.replaceJoker': 'REPLACE JOKER',
-    
+
     // Game Over
     'gameover.winner': '🏆 WINNER!',
     'gameover.loser': 'LOSER',
@@ -97,7 +101,7 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'gameover.wins': 'Wins!',
     'gameover.fanBreakdown': 'Fan Breakdown:',
     'gameover.totalFan': 'Total Fan',
-    
+
     // Scoring Guide
     'scoring.title': 'M3P Mahjong Scoring Guide',
     'scoring.close': 'Close',
@@ -105,7 +109,7 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'scoring.colName': 'Combo Name',
     'scoring.colDesc': 'Description',
     'scoring.example': 'Example Pattern:',
-    
+
     // Lami Guide
     'lami.rulesTitle': 'Lami Rules & Guide',
     'lami.rule1.title': '1. Breaking the Ice',
@@ -182,10 +186,67 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'log.lami.burned': '{name} is BURNED (OUT) for playing an invalid first meld!',
     'log.lami.pass': '{name} passed and drew a card.',
     'log.lami.draw': 'Game ends in a DRAW! No more valid moves.',
-    'log.lami.win': '{name} has played all tiles and won the game!'
+    'log.lami.win': '{name} has played all tiles and won the game!',
+
+    // Stats & Header Menu
+    'mahjong.coinRates': 'Coin Rates',
+    'mahjong.rateBase': 'Base (per Fan)',
+    'mahjong.rateLimit': 'Limit (10 Fan)',
+    'mahjong.rateFei': 'Fei Diff',
+
+    // Animations
+    'anim.pong': 'PONG!',
+    'anim.kong': 'KONG!',
+    'anim.chow': 'CHOW!',
+    'anim.buhua': 'BU HUA!',
+    'anim.draw': 'DRAW!',
+    'anim.hu': 'HU!',
+    'anim.discard': 'DISCARD!',
+
+    'menu.playground': 'Playground',
+    'menu.backToLobby': 'Back to Lobby',
+    'menu.statistics': 'Statistics',
+    'menu.switchLang': '切换到中文',
+    'menu.narratorOn': 'Turn Narrator On',
+    'menu.narratorOff': 'Turn Narrator Off',
+    'menu.music': 'Music',
+    'menu.sfx': 'Sound Effects',
+    'menu.logout': 'Logout 🚪',
+
+    'stats.title': '{name}\'s Statistics',
+    'stats.mahjong': 'Mahjong',
+    'stats.lami': 'Lami',
+    'stats.gamesPlayed': 'Games Played',
+    'stats.wins': 'Wins',
+    'stats.winRate': 'Win Rate',
+    'stats.totalFanWon': 'Total Fan Won',
+    'stats.avgFanPerWin': 'Average Fan Per Win',
+    'stats.currentWinStreak': 'Current Win Streak',
+    'stats.highestWinStreak': 'Highest Win Streak',
+    'stats.highestCoinWin': 'Highest Coin Win',
+    'stats.highestCoinLose': 'Highest Coin Lose',
+    'stats.netCoins': 'Net Coins Profit/Loss',
+    'stats.avgCoins': 'Average Coins Per Match',
+    'stats.baoCount': 'Bao (10-Fan) Count',
+    'stats.winType': 'Win Type (Self / Discard)',
+    'stats.contractPenalty': 'Contract Penalty (放包)',
+    'stats.gameOutRate': 'Game Out Rate',
+    'stats.1stCount': '大哥 (1st) Count',
+    'stats.2ndCount': '二哥 (2nd) Count',
+    'stats.3rdCount': '小哥 (3rd) Count',
+    'stats.burntCount': 'Burnt (烧烟) Count',
+    'stats.7CardLucky': '7-Card Lucky Game',
+    'stats.4AcesCombo': '4 Different Aces Combo',
+    'stats.avgDeadwood': 'Average Deadwood'
   },
   zh: {
     // Lobby
+    'login.title': 'M3P MAHJONG',
+    'login.subtitle': '大马三人麻将',
+    'login.playerName': '玩家名称',
+    'login.roomCode': '房间号',
+    'login.joinCreate': '加入 / 创建房间',
+    'login.goToLami': '前往拉米大厅',
     'lobby.title': 'M3P MAHJONG',
     'lobby.subtitle': '大马三人麻将',
     'lobby.playerName': '玩家名称',
@@ -209,18 +270,16 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'lobby.cancelReady': '取消准备',
     'lobby.waitingForOthers': '等待其他玩家...',
     'lobby.you': '(你)',
-    
+
     // Header
     'header.table': '桌号:',
     'header.round': '局数:',
     'header.dealer': '庄家:',
     'header.lianZhuang': '(连庄 x',
     'header.wallTiles': '牌墙剩余:',
-    'header.scoringGuide': '📖 番数表',
-    'header.showNarrator': '🎙️ 显示旁白',
-    'header.hideNarrator': '🎙️ 隐藏旁白',
+    'header.scoringGuide': '番数表',
     'header.narratorTitle': '游戏旁白',
-    
+
     // In-game Status
     'game.publicPoints': '公共分数:',
     'game.flower': '花:',
@@ -249,13 +308,13 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'game.upgradeKong': '加杠',
     'game.concealedKong': '暗杠',
     'game.replace': '(替换 ',
-    
+
     // Winds
     'wind.东': '东风',
     'wind.南': '南风',
     'wind.西': '西风',
     'wind.北': '北风',
-    
+
     // Actions
     'action.pong': '碰',
     'action.kong': '杠',
@@ -268,7 +327,7 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'action.pass': '过',
     'action.selfKong': '暗杠/加杠',
     'action.replaceJoker': '飞牌换花',
-    
+
     // Game Over
     'gameover.winner': '🏆 胜利!',
     'gameover.loser': '失败',
@@ -282,7 +341,7 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'gameover.wins': '胜利!',
     'gameover.fanBreakdown': '番数计算:',
     'gameover.totalFan': '总番数',
-    
+
     // Scoring Guide
     'scoring.title': '大马三人麻将 - 番数表',
     'scoring.close': '关闭',
@@ -290,7 +349,7 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'scoring.colName': '牌型名称',
     'scoring.colDesc': '牌型说明',
     'scoring.example': '牌型示例:',
-    
+
     // Lami Guide
     'lami.rulesTitle': 'Lami 规则与指南',
     'lami.rule1.title': '1. 破冰 (Breaking the Ice)',
@@ -367,6 +426,57 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'log.lami.burned': '{name} 烧烟 (OUT)！因为第一手出的牌不合法！',
     'log.lami.pass': '{name} 跳过本回合并摸了一张牌。',
     'log.lami.draw': '所有人都无法出牌。本局平局 (和局)！',
-    'log.lami.win': '{name} 出完了所有牌，赢得了本局游戏！'
+    'log.lami.win': '{name} 出完了所有牌，赢得了本局游戏！',
+
+    // Stats & Header Menu
+    'mahjong.coinRates': '金币费率',
+    'mahjong.rateBase': '底分 (每番)',
+    'mahjong.rateLimit': '封顶 (10番)',
+    'mahjong.rateFei': '飞牌差价',
+
+    // Animations
+    'anim.pong': '碰!',
+    'anim.kong': '杠!',
+    'anim.chow': '吃!',
+    'anim.buhua': '补花!',
+    'anim.draw': '摸牌!',
+    'anim.hu': '胡!',
+    'anim.discard': '打牌!',
+
+    'menu.playground': '游戏大厅',
+    'menu.backToLobby': '返回大厅',
+    'menu.statistics': '统计数据',
+    'menu.switchLang': 'Switch to English',
+    'menu.narratorOn': '开启旁白',
+    'menu.narratorOff': '关闭旁白',
+    'menu.music': '音乐',
+    'menu.sfx': '音效',
+    'menu.logout': '登出 🚪',
+
+    'stats.title': '{name} 的统计数据',
+    'stats.mahjong': '麻将',
+    'stats.lami': 'Lami',
+    'stats.gamesPlayed': '游戏场数',
+    'stats.wins': '胜场',
+    'stats.winRate': '胜率',
+    'stats.totalFanWon': '总赢番数',
+    'stats.avgFanPerWin': '平均赢局番数',
+    'stats.currentWinStreak': '当前连胜',
+    'stats.highestWinStreak': '最高连胜',
+    'stats.highestCoinWin': '单局最高赢金币',
+    'stats.highestCoinLose': '单局最高输金币',
+    'stats.netCoins': '净利润/亏损 (金币)',
+    'stats.avgCoins': '场均金币盈亏',
+    'stats.baoCount': '爆番 (10番) 次数',
+    'stats.winType': '胜局类型 (自摸 / 放铳)',
+    'stats.contractPenalty': '放包次数',
+    'stats.gameOutRate': '清牌胜率 (Game Out)',
+    'stats.1stCount': '大哥 (第1输家) 次数',
+    'stats.2ndCount': '二哥 (第2输家) 次数',
+    'stats.3rdCount': '小哥 (第3输家) 次数',
+    'stats.burntCount': '烧烟次数',
+    'stats.7CardLucky': '天胡 (7张同牌) 次数',
+    'stats.4AcesCombo': '4张A组合次数',
+    'stats.avgDeadwood': '平均剩余手牌点数 (死木)'
   }
 };

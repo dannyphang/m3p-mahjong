@@ -27,10 +27,7 @@
         <span style="font-size: 10px; opacity: 0.7; margin-left: 4px;">▼</span>
       </div>
 
-      <!-- Full-screen invisible overlay to handle click-outside -->
       @if (showAccountMenu) {
-        <div (click)="showAccountMenu = false" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1001;"></div>
-        
         <!-- Account Dropdown Menu -->
         <div style="position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(30, 19, 12, 0.95); border: 1px solid var(--gold-secondary); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; z-index: 1002; min-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); backdrop-filter: blur(10px);">
           
@@ -44,16 +41,16 @@
 
           @if (!gameState) {
             <button (click)="togglePlayground(); showAccountMenu = false" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-              <span style="font-size: 16px;">🎮</span> {{ isPlayground ? 'Back to Lobby' : 'Playground' }}
+              <span style="font-size: 16px;">🎮</span> {{ isPlayground ? t('menu.backToLobby') : t('menu.playground') }}
             </button>
           }
           
           <button (click)="goToStats(); showAccountMenu = false" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-            <span style="font-size: 16px;">📊</span> Statistics
+            <span style="font-size: 16px;">📊</span> {{ t('menu.statistics') }}
           </button>
           
           <button (click)="toggleLanguage(); showAccountMenu = false" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-            <span style="font-size: 16px;">🌐</span> {{ currentLanguage === 'zh' ? 'Switch to English' : '切换到中文' }}
+            <span style="font-size: 16px;">🌐</span> {{ t('menu.switchLang') }}
           </button>
           
           <button (click)="showScoringGuide = true; showAccountMenu = false" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
@@ -61,13 +58,13 @@
           </button>
           
           <button (click)="toggleNarrator()" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-            <span style="font-size: 16px; opacity: {{ showNarrator ? 1 : 0.5 }}">🎙️</span> {{ showNarrator ? 'Turn Narrator Off' : 'Turn Narrator On' }}
+            <span style="font-size: 16px; opacity: {{ showNarrator ? 1 : 0.5 }}">🎙️</span> {{ showNarrator ? t('menu.narratorOff') : t('menu.narratorOn') }}
           </button>
           
           <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="font-size: 14px; color: white; display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 16px; opacity: {{ isBgmMuted ? 0.5 : 1 }}">🎵</span> Music
+                <span style="font-size: 16px; opacity: {{ isBgmMuted ? 0.5 : 1 }}">🎵</span> {{ t('menu.music') }}
               </span>
               <button (click)="toggleBgm()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; padding: 0;">
                 {{ isBgmMuted ? '🔇' : '🔊' }}
@@ -79,7 +76,7 @@
           <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="font-size: 14px; color: white; display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 16px; opacity: {{ isSfxMuted ? 0.5 : 1 }}">🔊</span> Sound Effects
+                <span style="font-size: 16px; opacity: {{ isSfxMuted ? 0.5 : 1 }}">🔊</span> {{ t('menu.sfx') }}
               </span>
               <button (click)="toggleSfx()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; padding: 0;">
                 {{ isSfxMuted ? '🔇' : '🔊' }}
@@ -89,7 +86,7 @@
           </div>
 
           <button (click)="logout(); showAccountMenu = false" style="background: rgba(255, 68, 68, 0.15); border: 1px solid rgba(255, 68, 68, 0.3); border-radius: 8px; color: #ff6b6b; cursor: pointer; font-size: 14px; font-weight: bold; padding: 10px; margin-top: 4px; transition: all 0.2s ease; width: 100%;" onmouseover="this.style.background='rgba(255, 68, 68, 0.25)'" onmouseout="this.style.background='rgba(255, 68, 68, 0.15)'">
-            Logout 🚪
+            {{ t('menu.logout') }}
           </button>
           
         </div>

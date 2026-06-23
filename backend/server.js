@@ -103,7 +103,7 @@ const PORT = process.env.PORT || 3000;
 const rooms = {};
 
 // Bot names
-const BOT_NAMES = ['Mahjong Master', 'Uncle Lim', 'Auntie Tan', 'M3P Legend', 'Kopi Kia'];
+const BOT_NAMES = ['Mahjong Master', 'Uncle Lim', 'Auntie Tan', 'Mahjong Legend', 'Kopi Kia', 'Aunty Lau', 'LengZai Phang', 'Doraemon'];
 
 class GameState {
   constructor(roomId) {
@@ -145,6 +145,13 @@ class GameState {
       minimumFan: 5,
       enableTimer: false,
       timerDuration: 10
+    };
+    
+    // Coin rates
+    this.rates = {
+      base: 10, // 10 coins per fan
+      limit: 120, // 10-fan limit payout
+      fei: 10 // fei/joker difference payout
     };
   }
 
@@ -1099,9 +1106,8 @@ class GameState {
     this.addLog({ key: 'log.hu', params: { name: winner.name, fan: scoreResult.totalFan } });
 
     // Calculate coin adjustments
-    // Base rate: 1 Fan = 1 coin, up to 9 Fan = 9 coins. 10 Fan (limit) = 12 coins.
-    let baseCoins = scoreResult.totalFan;
-    if (baseCoins >= 10) baseCoins = 12;
+    let baseCoins = scoreResult.totalFan * (this.rates?.base ?? 1);
+    if (scoreResult.totalFan >= 10) baseCoins = (this.rates?.limit ?? 12);
     
     const settlements = {};
 
@@ -1150,9 +1156,10 @@ class GameState {
         const p1 = this.players[i].id;
         const p2 = this.players[j].id;
         const diff = totalFeis[p1] - totalFeis[p2];
-        if (diff !== 0) {
-          feiSettlements[p1] += diff;
-          feiSettlements[p2] -= diff;
+        const diffPayout = diff * (this.rates?.fei ?? 1);
+        if (diffPayout !== 0) {
+          feiSettlements[p1] += diffPayout;
+          feiSettlements[p2] -= diffPayout;
         }
       }
     }
@@ -1462,6 +1469,16 @@ io.on('connection', (socket) => {
       if (room.players[0] && room.players[0].id === playerId) {
         room.rates = { ...room.rates, ...rates };
         room.broadcastState(io);
+      }
+    }
+  });
+
+  socket.on('mahjongUpdateRates', ({ roomId, playerId, rates }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'mahjong' && room.status === 'WAITING') {
+      if (room.players[0] && room.players[0].id === playerId) {
+        room.rates = { ...room.rates, ...rates };
+        room.broadcastState();
       }
     }
   });

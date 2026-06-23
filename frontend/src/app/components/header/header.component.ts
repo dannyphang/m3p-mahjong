@@ -1,4 +1,4 @@
-import { Component, inject, NgZone } from '@angular/core';
+import { Component, inject, NgZone, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameService } from '../../services/game.service';
 import { AudioService } from '../../services/audio.service';
@@ -28,6 +28,14 @@ export class HeaderComponent {
   showVolumeSlider = false;
   showAccountMenu = false;
   appVersion = APP_VERSION;
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (this.showAccountMenu && !target.closest('.global-actions')) {
+      this.showAccountMenu = false;
+    }
+  }
 
   get currentLanguage() {
     return this.gameService.currentLanguage();

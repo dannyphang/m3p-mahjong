@@ -2,6 +2,8 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { GameService } from '../../services/game.service';
+import { TRANSLATIONS } from '../../i18n';
 
 @Component({
   selector: 'app-stats',
@@ -11,8 +13,24 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './stats.component.css',
 })
 export class StatsComponent {
-  private router = inject(Router);
-  public authService = inject(AuthService);
+  authService = inject(AuthService);
+  gameService = inject(GameService);
+  router = inject(Router);
+
+  get currentLanguage() {
+    return this.gameService.currentLanguage();
+  }
+
+  t(key: string, params?: Record<string, any>): string {
+    const lang = this.currentLanguage;
+    let str = TRANSLATIONS[lang as keyof typeof TRANSLATIONS]?.[key] || key;
+    if (params) {
+      Object.keys(params).forEach(k => {
+        str = str.replace(`{${k}}`, params[k]);
+      });
+    }
+    return str;
+  }
 
   goHome() {
     this.router.navigate(['/']);

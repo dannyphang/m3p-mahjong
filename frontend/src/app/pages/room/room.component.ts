@@ -269,6 +269,18 @@ export class RoomComponent implements AfterViewChecked, OnInit {
     this.gameService.pendingClaim.set(true);
   }
 
+  updateSettings(settings: { minimumFan?: number; enableTimer?: boolean; timerDuration?: number }) {
+    this.gameService.updateSettings(settings);
+  }
+
+  updateMahjongRates(type: 'base' | 'limit' | 'fei', event: Event) {
+    const input = event.target as HTMLInputElement;
+    const newRate = parseInt(input.value, 10);
+    if (!isNaN(newRate)) {
+      this.gameService.updateMahjongRates({ [type]: newRate });
+    }
+  }
+
   declareSelfHu() {
     this.gameService.socket?.emit('declareSelfHu', {
       roomId: this.gameService.roomId(),

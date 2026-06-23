@@ -2,13 +2,13 @@
   <div class="table-watermark"></div>
 
   <button (click)="goHome()" class="back-btn">
-    🚪 Back to Lobby
+    🚪 {{ t('menu.backToLobby') }}
   </button>
 
   <div class="stats-content" *ngIf="authService.userProfile$ | async as profile">
     <div class="profile-header">
       <img [src]="profile.avatar" alt="Avatar" class="profile-avatar" />
-      <h1 class="profile-name">{{ profile.name }}'s Statistics</h1>
+      <h2 style="margin: 0; font-size: 24px;">{{ t('stats.title', { name: profile.name }) }}</h2>
       <div class="total-coins">💰 {{ profile.coins }}</div>
     </div>
 
@@ -17,58 +17,58 @@
       <div class="stat-card glass-panel">
         <div class="card-header">
           <span class="game-icon">🀄</span>
-          <h2>Mahjong</h2>
+          <h2>{{ t('stats.mahjong') }}</h2>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Games Played</span>
+          <span class="stat-label">{{ t('stats.gamesPlayed') }}</span>
           <span class="stat-value">{{ profile.stats.mahjong?.totalGamesPlayed || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Wins</span>
-          <span class="stat-value">{{ profile.stats.mahjong?.totalWins || 0 }}</span>
+          <span class="stat-label">{{ t('stats.wins') }}</span>
+          <span class="stat-value highlight">{{ profile.stats.mahjong?.totalWins || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Win Rate</span>
+          <span class="stat-label">{{ t('stats.winRate') }}</span>
           <span class="stat-value highlight">{{ getWinRate(profile.stats.mahjong?.totalWins || 0, profile.stats.mahjong?.totalGamesPlayed || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Average Fan Per Win</span>
+          <span class="stat-label">{{ t('stats.avgFanPerWin') }}</span>
           <span class="stat-value">{{ getAverageFan(profile.stats.mahjong?.totalFanWon || 0, profile.stats.mahjong?.totalWins || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Bao (10-Fan) Count</span>
+          <span class="stat-label">{{ t('stats.baoCount') }}</span>
           <span class="stat-value">{{ profile.stats.mahjong?.baoCount || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Win Type (Self / Discard)</span>
+          <span class="stat-label">{{ t('stats.winType') }}</span>
           <span class="stat-value">{{ getWinTypeSplit(profile.stats.mahjong?.selfPickWins || 0, profile.stats.mahjong?.discardWins || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Contract Penalty (放包)</span>
+          <span class="stat-label">{{ t('stats.contractPenalty') }}</span>
           <span class="stat-value">{{ profile.stats.mahjong?.contractPenaltyCount || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Current Win Streak</span>
+          <span class="stat-label">{{ t('stats.currentWinStreak') }}</span>
           <span class="stat-value">{{ profile.stats.mahjong?.currentWinStreak || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Highest Win Streak</span>
+          <span class="stat-label">{{ t('stats.highestWinStreak') }}</span>
           <span class="stat-value">{{ profile.stats.mahjong?.highestWinStreak || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Highest Coin Win</span>
+          <span class="stat-label">{{ t('stats.highestCoinWin') }}</span>
           <span class="stat-value">{{ profile.stats.mahjong?.highestCoinWin || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Highest Coin Lose</span>
+          <span class="stat-label">{{ t('stats.highestCoinLose') }}</span>
           <span class="stat-value">{{ profile.stats.mahjong?.highestCoinLose || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Net Coins Profit/Loss</span>
+          <span class="stat-label">{{ t('stats.netCoins') }}</span>
           <span class="stat-value" [class.highlight]="getNetCoins(profile.stats.mahjong?.totalCoinsGained || 0, profile.stats.mahjong?.totalCoinsLost || 0) > 0" [class.danger]="getNetCoins(profile.stats.mahjong?.totalCoinsGained || 0, profile.stats.mahjong?.totalCoinsLost || 0) < 0">{{ getNetCoins(profile.stats.mahjong?.totalCoinsGained || 0, profile.stats.mahjong?.totalCoinsLost || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Average Coins Per Match</span>
+          <span class="stat-label">{{ t('stats.avgCoins') }}</span>
           <span class="stat-value">{{ getAverageCoins(profile.stats.mahjong?.totalCoinsGained || 0, profile.stats.mahjong?.totalCoinsLost || 0, profile.stats.mahjong?.totalGamesPlayed || 0) }}</span>
         </div>
       </div>
@@ -77,74 +77,74 @@
       <div class="stat-card glass-panel">
         <div class="card-header">
           <span class="game-icon">🃏</span>
-          <h2>Lami</h2>
+          <h2>{{ t('stats.lami') }}</h2>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Games Played</span>
+          <span class="stat-label">{{ t('stats.gamesPlayed') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.totalGamesPlayed || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Wins</span>
-          <span class="stat-value">{{ profile.stats.lami?.totalWins || 0 }}</span>
+          <span class="stat-label">{{ t('stats.wins') }}</span>
+          <span class="stat-value highlight">{{ profile.stats.lami?.totalWins || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Win Rate</span>
+          <span class="stat-label">{{ t('stats.winRate') }}</span>
           <span class="stat-value highlight">{{ getWinRate(profile.stats.lami?.totalWins || 0, profile.stats.lami?.totalGamesPlayed || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Game Out Rate</span>
+          <span class="stat-label">{{ t('stats.gameOutRate') }}</span>
           <span class="stat-value highlight">{{ getGameOutRate(profile.stats.lami?.gamesWonByClear || 0, profile.stats.lami?.totalWins || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">大哥 (1st) Count</span>
+          <span class="stat-label">{{ t('stats.1stCount') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.brotherhood1st || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">二哥 (2nd) Count</span>
+          <span class="stat-label">{{ t('stats.2ndCount') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.brotherhood2nd || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">小哥 (3rd) Count</span>
+          <span class="stat-label">{{ t('stats.3rdCount') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.brotherhood3rd || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Current Win Streak</span>
+          <span class="stat-label">{{ t('stats.currentWinStreak') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.currentWinStreak || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Highest Win Streak</span>
+          <span class="stat-label">{{ t('stats.highestWinStreak') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.highestWinStreak || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Highest Coin Win</span>
+          <span class="stat-label">{{ t('stats.highestCoinWin') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.highestCoinWin || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Highest Coin Lose</span>
+          <span class="stat-label">{{ t('stats.highestCoinLose') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.highestCoinLose || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Net Coins Profit/Loss</span>
+          <span class="stat-label">{{ t('stats.netCoins') }}</span>
           <span class="stat-value" [class.highlight]="getNetCoins(profile.stats.lami?.totalCoinsGained || 0, profile.stats.lami?.totalCoinsLost || 0) > 0" [class.danger]="getNetCoins(profile.stats.lami?.totalCoinsGained || 0, profile.stats.lami?.totalCoinsLost || 0) < 0">{{ getNetCoins(profile.stats.lami?.totalCoinsGained || 0, profile.stats.lami?.totalCoinsLost || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Average Coins Per Match</span>
+          <span class="stat-label">{{ t('stats.avgCoins') }}</span>
           <span class="stat-value">{{ getAverageCoins(profile.stats.lami?.totalCoinsGained || 0, profile.stats.lami?.totalCoinsLost || 0, profile.stats.lami?.totalGamesPlayed || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Burnt (烧烟) Count</span>
+          <span class="stat-label">{{ t('stats.burntCount') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.burntCount || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">7-Card Lucky Game</span>
+          <span class="stat-label">{{ t('stats.7CardLucky') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.lucky7CardCount || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">4 Different Aces Combo</span>
+          <span class="stat-label">{{ t('stats.4AcesCombo') }}</span>
           <span class="stat-value">{{ profile.stats.lami?.fourAcesCount || 0 }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Average Deadwood</span>
+          <span class="stat-label">{{ t('stats.avgDeadwood') }}</span>
           <span class="stat-value">{{ getAverageDeadwoodPoints(profile.stats.lami?.totalDeadwoodPoints || 0, profile.stats.lami?.deadwoodGamesCount || 0) }}</span>
         </div>
       </div>
