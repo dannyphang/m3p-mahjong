@@ -21,17 +21,28 @@
   user-select: none;
 }
 
+html,
 body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   background-color: #0c0907;
   color: var(--text-light);
-  overflow: hidden;
-  height: 100vh;
-  height: 100dvh;
-  width: 100vw;
   touch-action: manipulation;
   -webkit-overflow-scrolling: touch;
 }
 
+body {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+app-root,
 app-home,
 app-room,
 app-playground,
@@ -46,13 +57,13 @@ app-lami-room {
 .mahjong-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  width: 100vw;
+  width: 100%;
+  height: 100%;
   background: var(--table-bg);
   border: 20px solid #2a110a;
   border-radius: 12px;
-  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8),
+  box-shadow:
+    inset 0 0 50px rgba(0, 0, 0, 0.8),
     0 10px 30px rgba(0, 0, 0, 0.5);
   position: relative;
 }
@@ -257,6 +268,10 @@ app-lami-room {
   border-color: var(--gold-primary) !important;
 }
 
+body.is-dragging-global .mj-tile.new-drawn-tile {
+  animation: none !important;
+}
+
 @keyframes draw-pulse {
   0% {
     box-shadow:
@@ -405,7 +420,10 @@ app-lami-room {
 
 body.is-dragging-global .center-board {
   background: rgba(255, 215, 0, 0.15) !important;
-  box-shadow: 0 0 40px rgba(255, 215, 0, 0.5), 0 15px 35px rgba(0, 0, 0, 0.7), inset 0 0 25px rgba(255, 215, 0, 0.3) !important;
+  box-shadow:
+    0 0 40px rgba(255, 215, 0, 0.5),
+    0 15px 35px rgba(0, 0, 0, 0.7),
+    inset 0 0 25px rgba(255, 215, 0, 0.3) !important;
   border-color: rgba(255, 215, 0, 0.8) !important;
 }
 
@@ -813,8 +831,8 @@ body.is-dragging-global .center-board {
 @media (max-width: 1180px) {
   /* Smaller Tiles */
   .mj-tile {
-    width: 34px !important;
-    height: 46px !important;
+    width: 28px !important;
+    height: 38px !important;
     border-width: 1px 1px 2px 1px !important;
   }
   .mj-tile-small {
@@ -834,16 +852,16 @@ body.is-dragging-global .center-board {
     height: 40px;
   }
   .brand {
-    font-size: 14px;
+    font-size: 12px;
   }
   .room-info {
-    font-size: 10px;
+    font-size: 8px;
   }
 
   /* Table Layout Redesign - Scale down instead of moving */
   .center-board {
     width: 320px !important;
-    height: 220px !important;
+    height: 180px !important;
     padding: 8px !important;
     border-width: 2px !important;
   }
@@ -867,11 +885,13 @@ body.is-dragging-global .center-board {
 
   .player-left {
     left: 5px !important;
+    padding-inline: 10px;
     /* top: 220px !important; */
   }
 
   .player-right {
     right: 5px !important;
+    padding-inline: 10px;
     /* top: 220px !important; */
   }
 
@@ -940,5 +960,16 @@ body.is-dragging-global .center-board {
         0 4px 8px rgba(255, 215, 0, 0.4);
       transform: scale(1.02) translateY(-2px);
     }
+  }
+
+  .action-btn {
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    font-size: 10px;
+    padding: 6px 12px !important;
   }
 }

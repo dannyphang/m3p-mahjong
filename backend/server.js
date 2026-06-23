@@ -174,7 +174,7 @@ class GameState {
     this.players.forEach(p => {
       if (p.id !== playerId) {
         if (!targetId || p.id === targetId) {
-          let actualAmount = amount;
+          let actualAmount = amount * (this.rates?.base ?? 1);
 
           if (actualAmount > 0) {
             this.accumulatedPoints[p.id] -= actualAmount;

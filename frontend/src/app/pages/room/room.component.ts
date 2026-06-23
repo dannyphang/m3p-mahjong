@@ -11,7 +11,8 @@ import { Router } from '@angular/router';
   selector: 'app-room',
   standalone: true,
   imports: [CommonModule, FormsModule, DragDropModule],
-  templateUrl: './room.component.html'
+  templateUrl: './room.component.html',
+  styleUrl: './room.component.css'
 })
 export class RoomComponent implements AfterViewChecked, OnInit {
   gameService = inject(GameService);
