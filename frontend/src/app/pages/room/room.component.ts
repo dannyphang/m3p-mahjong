@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, AfterViewChecked, effect, signal, OnInit } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, AfterViewChecked, effect, signal, OnInit, Renderer2 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -136,6 +136,16 @@ export class RoomComponent implements AfterViewChecked, OnInit {
       roomId: this.gameService.roomId(),
       playerId: playerId
     });
+  }
+
+  renderer = inject(Renderer2);
+
+  onTileDragStart() {
+    this.renderer.addClass(document.body, 'is-dragging-global');
+  }
+
+  onTileDragEnd() {
+    this.renderer.removeClass(document.body, 'is-dragging-global');
   }
 
   toggleTimerStatus(event: any) {
@@ -425,5 +435,27 @@ export class RoomComponent implements AfterViewChecked, OnInit {
     if (!state) return false;
     const myIdx = state.players.findIndex((p: any) => p.id === this.myPlayerId);
     return state.currentTurn === myIdx;
+  }
+
+  getLocalizedFanName(name: string): string {
+    const lang = this.gameService.currentLanguage();
+    
+    if (name.includes('已炖百搭飞牌')) {
+      const match = name.match(/\((.*?)\)/);
+      const count = match ? match[1] : '';
+      return lang === 'zh' ? `已炖百搭飞牌 (${count})` : `Exposed Jokers (${count})`;
+    }
+    if (name.includes('动物牌:')) {
+      const animal = name.split(':')[1].trim();
+      const animalEn: any = {'猫': 'Cat', '鼠': 'Mouse', '鸡': 'Rooster', '蜈蚣': 'Centipede'};
+      return lang === 'zh' ? name : `Animal: ${animalEn[animal] || animal}`;
+    }
+
+    const match = name.match(/^(.*?)\s*\((.*?)\)$/);
+    if (match) {
+      return lang === 'zh' ? match[1].trim() : match[2].trim();
+    }
+    
+    return name;
   }
 }

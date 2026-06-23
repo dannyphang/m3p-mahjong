@@ -901,6 +901,8 @@
           <div
             class="mj-tile"
             cdkDrag
+            (cdkDragStarted)="onTileDragStart()"
+            (cdkDragEnded)="onTileDragEnd()"
             [class.selected]="selectedTileIndex === idx"
             [class.new-drawn-tile]="
               tile.key === gameState?.lastDrawnTile?.tile?.key &&
@@ -1220,7 +1222,7 @@
               <div>
                 @for (f of details.scoreResult?.breakdown; track $index) {
                   <div class="score-row">
-                    <span class="detail-name">{{ f.name }}</span>
+                    <span class="detail-name">{{ getLocalizedFanName(f.name) }}</span>
                     <span class="detail-fan">+{{ f.fan }} {{ t('gameover.fan') }}</span>
                   </div>
                 }
@@ -1236,7 +1238,7 @@
           @if (details.allHands) {
             <div style="margin-bottom: 24px; padding-top: 16px; border-top: 1px solid #333">
               <h4 style="color: var(--gold-primary); margin-bottom: 12px; font-size: 14px">
-                Players' Final Hands & Feis:
+                {{ t('gameover.playersFinalHands') }}
               </h4>
               @for (p of gameState?.players; track p.id) {
                 <div
@@ -1257,7 +1259,7 @@
                   >
                     <span style="color: #fff">{{ p.name }}</span>
                     <span style="color: #fdd835"
-                      >Total Feis: {{ details.totalFeis?.[p.id] || 0 }}</span
+                      >{{ t('gameover.totalFeis') }}: {{ details.totalFeis?.[p.id] || 0 }}</span
                     >
                   </div>
                   <div style="display: flex; gap: 2px; flex-wrap: wrap">
@@ -1278,7 +1280,7 @@
           <!-- Settlements coins exchanges -->
           <div style="margin-bottom: 24px; border-top: 1px solid #333; padding-top: 16px">
             <h4 style="color: var(--gold-primary); margin-bottom: 8px; font-size: 14px">
-              Settlements Ledger:
+              {{ t('gameover.settlementsLedger') }}
             </h4>
             @for (p of gameState?.players; track p.id) {
               <div class="score-row">
@@ -1298,7 +1300,7 @@
                       ? '+'
                       : ''
                   }}{{ (details.settlements?.[p.id] || 0) + (details.feiSettlements?.[p.id] || 0) }}
-                  Coins
+                  {{ t('lami.coins') }}
                 </strong>
               </div>
             }

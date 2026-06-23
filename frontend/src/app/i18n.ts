@@ -101,6 +101,9 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'gameover.wins': 'Wins!',
     'gameover.fanBreakdown': 'Fan Breakdown:',
     'gameover.totalFan': 'Total Fan',
+    'gameover.playersFinalHands': 'Players\' Final Hands & Feis:',
+    'gameover.totalFeis': 'Total Feis',
+    'gameover.settlementsLedger': 'Settlements Ledger:',
 
     // Scoring Guide
     'scoring.title': 'M3P Mahjong Scoring Guide',
@@ -341,6 +344,9 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'gameover.wins': '胜利!',
     'gameover.fanBreakdown': '番数计算:',
     'gameover.totalFan': '总番数',
+    'gameover.playersFinalHands': '玩家最终牌型与飞牌:',
+    'gameover.totalFeis': '总飞牌',
+    'gameover.settlementsLedger': '结算明细:',
 
     // Scoring Guide
     'scoring.title': '大马三人麻将 - 番数表',
