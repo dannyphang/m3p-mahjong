@@ -74,4 +74,25 @@ export class StatsComponent {
     const dRate = Math.round((d / total) * 100);
     return `${spRate}% / ${dRate}%`;
   }
+
+  selectedTab: 'mahjong' | 'lami' = 'mahjong';
+
+  setTab(tab: 'mahjong' | 'lami') {
+    this.selectedTab = tab;
+  }
+
+  getWinRateValue(wins: number, played: number): number {
+    if (!played || played === 0) return 0;
+    return Math.round((wins / played) * 100);
+  }
+
+  getCircleDashArray(): string {
+    const circumference = 2 * Math.PI * 45; // r=45
+    return `${circumference} ${circumference}`;
+  }
+
+  getCircleDashOffset(rate: number): number {
+    const circumference = 2 * Math.PI * 45; // r=45
+    return circumference - (rate / 100) * circumference;
+  }
 }

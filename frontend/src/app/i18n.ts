@@ -240,7 +240,16 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'stats.burntCount': 'Burnt (烧烟) Count',
     'stats.7CardLucky': '7-Card Lucky Game',
     'stats.4AcesCombo': '4 Different Aces Combo',
-    'stats.avgDeadwood': 'Average Deadwood'
+    'stats.avgDeadwood': 'Average Deadwood',
+    'stats.bestWin': 'BEST WIN 🏆',
+    'stats.worstLoss': 'WORST LOSS 📉',
+    'stats.totalNet': 'TOTAL NET',
+    'stats.coinsPerGame': 'COINS / GAME',
+    'stats.streaksAndPenalties': 'STREAKS & PENALTIES',
+    'stats.handDetails': 'HAND DETAILS',
+    'stats.rankingsEarned': 'RANKINGS EARNED',
+    'stats.jokerRounds': 'Joker Rounds',
+    'stats.winner': 'Winner (赢家)'
   },
   zh: {
     // Lobby
@@ -483,6 +492,15 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'stats.burntCount': '烧烟次数',
     'stats.7CardLucky': '天胡 (7张同牌) 次数',
     'stats.4AcesCombo': '4张A组合次数',
-    'stats.avgDeadwood': '平均剩余手牌点数 (死木)'
+    'stats.avgDeadwood': '平均剩余手牌点数 (死木)',
+    'stats.bestWin': '最佳赢局 🏆',
+    'stats.worstLoss': '最惨败局 📉',
+    'stats.totalNet': '总净利润',
+    'stats.coinsPerGame': '场均金币',
+    'stats.streaksAndPenalties': '连胜与惩罚',
+    'stats.handDetails': '牌局详情',
+    'stats.rankingsEarned': '获得排名',
+    'stats.jokerRounds': '飞牌回合数',
+    'stats.winner': '赢家 (Winner)'
   }
 };

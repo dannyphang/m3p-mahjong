@@ -37,9 +37,11 @@ export interface UserProfile {
       brotherhood1st?: number;
       brotherhood2nd?: number;
       brotherhood3rd?: number;
+      brotherhood4th?: number;
       burntCount?: number;
       lucky7CardCount?: number;
       fourAcesCount?: number;
+      jokerRounds?: number;
       totalDeadwoodPoints?: number;
       deadwoodGamesCount?: number;
       totalCoinsGained?: number;
