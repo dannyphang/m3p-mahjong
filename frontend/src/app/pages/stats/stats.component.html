@@ -32,8 +32,20 @@
           <span class="stat-value highlight">{{ getWinRate(profile.stats.mahjong?.totalWins || 0, profile.stats.mahjong?.totalGamesPlayed || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Total Fan Won</span>
-          <span class="stat-value">{{ profile.stats.mahjong?.totalFanWon || 0 }}</span>
+          <span class="stat-label">Average Fan Per Win</span>
+          <span class="stat-value">{{ getAverageFan(profile.stats.mahjong?.totalFanWon || 0, profile.stats.mahjong?.totalWins || 0) }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Bao (10-Fan) Count</span>
+          <span class="stat-value">{{ profile.stats.mahjong?.baoCount || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Win Type (Self / Discard)</span>
+          <span class="stat-value">{{ getWinTypeSplit(profile.stats.mahjong?.selfPickWins || 0, profile.stats.mahjong?.discardWins || 0) }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Contract Penalty (放包)</span>
+          <span class="stat-value">{{ profile.stats.mahjong?.contractPenaltyCount || 0 }}</span>
         </div>
         <div class="stat-row">
           <span class="stat-label">Current Win Streak</span>
@@ -50,6 +62,14 @@
         <div class="stat-row">
           <span class="stat-label">Highest Coin Lose</span>
           <span class="stat-value">{{ profile.stats.mahjong?.highestCoinLose || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Net Coins Profit/Loss</span>
+          <span class="stat-value" [class.highlight]="getNetCoins(profile.stats.mahjong?.totalCoinsGained || 0, profile.stats.mahjong?.totalCoinsLost || 0) > 0" [class.danger]="getNetCoins(profile.stats.mahjong?.totalCoinsGained || 0, profile.stats.mahjong?.totalCoinsLost || 0) < 0">{{ getNetCoins(profile.stats.mahjong?.totalCoinsGained || 0, profile.stats.mahjong?.totalCoinsLost || 0) }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Average Coins Per Match</span>
+          <span class="stat-value">{{ getAverageCoins(profile.stats.mahjong?.totalCoinsGained || 0, profile.stats.mahjong?.totalCoinsLost || 0, profile.stats.mahjong?.totalGamesPlayed || 0) }}</span>
         </div>
       </div>
 
@@ -72,8 +92,20 @@
           <span class="stat-value highlight">{{ getWinRate(profile.stats.lami?.totalWins || 0, profile.stats.lami?.totalGamesPlayed || 0) }}</span>
         </div>
         <div class="stat-row">
-          <span class="stat-label">Total Fan Won</span>
-          <span class="stat-value">{{ profile.stats.lami?.totalFanWon || 0 }}</span>
+          <span class="stat-label">Game Out Rate</span>
+          <span class="stat-value highlight">{{ getGameOutRate(profile.stats.lami?.gamesWonByClear || 0, profile.stats.lami?.totalWins || 0) }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">大哥 (1st) Count</span>
+          <span class="stat-value">{{ profile.stats.lami?.brotherhood1st || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">二哥 (2nd) Count</span>
+          <span class="stat-value">{{ profile.stats.lami?.brotherhood2nd || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">小哥 (3rd) Count</span>
+          <span class="stat-value">{{ profile.stats.lami?.brotherhood3rd || 0 }}</span>
         </div>
         <div class="stat-row">
           <span class="stat-label">Current Win Streak</span>
@@ -90,6 +122,30 @@
         <div class="stat-row">
           <span class="stat-label">Highest Coin Lose</span>
           <span class="stat-value">{{ profile.stats.lami?.highestCoinLose || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Net Coins Profit/Loss</span>
+          <span class="stat-value" [class.highlight]="getNetCoins(profile.stats.lami?.totalCoinsGained || 0, profile.stats.lami?.totalCoinsLost || 0) > 0" [class.danger]="getNetCoins(profile.stats.lami?.totalCoinsGained || 0, profile.stats.lami?.totalCoinsLost || 0) < 0">{{ getNetCoins(profile.stats.lami?.totalCoinsGained || 0, profile.stats.lami?.totalCoinsLost || 0) }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Average Coins Per Match</span>
+          <span class="stat-value">{{ getAverageCoins(profile.stats.lami?.totalCoinsGained || 0, profile.stats.lami?.totalCoinsLost || 0, profile.stats.lami?.totalGamesPlayed || 0) }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Burnt (烧烟) Count</span>
+          <span class="stat-value">{{ profile.stats.lami?.burntCount || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">7-Card Lucky Game</span>
+          <span class="stat-value">{{ profile.stats.lami?.lucky7CardCount || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">4 Different Aces Combo</span>
+          <span class="stat-value">{{ profile.stats.lami?.fourAcesCount || 0 }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Average Deadwood</span>
+          <span class="stat-value">{{ getAverageDeadwoodPoints(profile.stats.lami?.totalDeadwoodPoints || 0, profile.stats.lami?.deadwoodGamesCount || 0) }}</span>
         </div>
       </div>
     </div>

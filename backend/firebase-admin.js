@@ -34,7 +34,7 @@ if (process.env.FIREBASE_PRIVATE_KEY) {
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-async function updatePlayerStats(uid, gameType, netCoins, isWin, fanWon) {
+async function updatePlayerStats(uid, gameType, netCoins, isWin, extraStats = {}) {
   if (!uid) return;
   try {
     const userRef = db.collection('users').doc(uid);
@@ -45,7 +45,7 @@ async function updatePlayerStats(uid, gameType, netCoins, isWin, fanWon) {
       
       const data = doc.data();
       const type = gameType === 'lami' ? 'lami' : 'mahjong';
-      const currentStats = data.stats?.[type] || { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 };
+      const currentStats = data.stats?.[type] || { totalGamesPlayed: 0, totalWins: 0 };
       
       const updates = {
         coins: (data.coins || 0) + netCoins,
@@ -71,11 +71,26 @@ async function updatePlayerStats(uid, gameType, netCoins, isWin, fanWon) {
       
       updates[`stats.${type}.totalGamesPlayed`] = currentStats.totalGamesPlayed + 1;
       updates[`stats.${type}.totalWins`] = currentStats.totalWins + (isWin ? 1 : 0);
-      updates[`stats.${type}.totalFanWon`] = currentStats.totalFanWon + (fanWon || 0);
       updates[`stats.${type}.currentWinStreak`] = newCurrentWinStreak;
       updates[`stats.${type}.highestWinStreak`] = newHighestWinStreak;
       updates[`stats.${type}.highestCoinWin`] = newHighestCoinWin;
       updates[`stats.${type}.highestCoinLose`] = newHighestCoinLose;
+      
+      // Update new coin gained/lost totals
+      let totalCoinsGained = currentStats.totalCoinsGained || 0;
+      let totalCoinsLost = currentStats.totalCoinsLost || 0;
+      if (netCoins > 0) totalCoinsGained += netCoins;
+      if (netCoins < 0) totalCoinsLost += Math.abs(netCoins);
+      updates[`stats.${type}.totalCoinsGained`] = totalCoinsGained;
+      updates[`stats.${type}.totalCoinsLost`] = totalCoinsLost;
+
+      // Handle all other extraStats dynamically
+      for (const [key, val] of Object.entries(extraStats)) {
+        if (typeof val === 'number') {
+           const prevVal = currentStats[key] || 0;
+           updates[`stats.${type}.${key}`] = prevVal + val;
+        }
+      }
 
       transaction.update(userRef, updates);
     });

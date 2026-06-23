@@ -28,14 +28,14 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-async function updatePlayerStats(playerId, netCoins, isWin, fanWon) {
+async function updatePlayerStats(playerId, netCoins, isWin, extraStats = {}) {
   if (!playerId || playerId.startsWith('bot-')) return;
   try {
     const sockets = await io.fetchSockets();
     const playerSocket = sockets.find(s => s.id === playerId);
     if (!playerSocket || !playerSocket.user) return; // Guest or unauthenticated
 
-    await dbUpdatePlayerStats(playerSocket.user.uid, 'mahjong', netCoins, isWin, fanWon);
+    await dbUpdatePlayerStats(playerSocket.user.uid, 'mahjong', netCoins, isWin, extraStats);
   } catch (err) {
     console.error('Failed to update stats for player', playerId, err);
   }
@@ -108,6 +108,7 @@ const BOT_NAMES = ['Mahjong Master', 'Uncle Lim', 'Auntie Tan', 'M3P Legend', 'K
 class GameState {
   constructor(roomId) {
     this.roomId = roomId;
+    this.gameType = 'mahjong';
     this.players = []; // { id, name, socketId, isBot: false, isReady: false }
     this.deck = [];
     this.discardedFlowers = []; // Global discarded flowers history
@@ -1196,8 +1197,16 @@ class GameState {
     this.players.forEach(p => {
       const netCoins = settlements[p.id] + feiSettlements[p.id];
       const isWin = p.id === winnerId;
-      const fanWon = isWin ? scoreResult.totalFan : 0;
-      updatePlayerStats(p.id, netCoins, isWin, fanWon);
+      const extraStats = {};
+      
+      if (isWin) {
+        extraStats.totalFanWon = scoreResult.totalFan;
+        if (scoreResult.totalFan >= 10) extraStats.baoCount = 1;
+        if (isSelfDraw || isTianHu || isDiHu) extraStats.selfPickWins = 1;
+        else extraStats.discardWins = 1;
+      }
+
+      updatePlayerStats(p.id, netCoins, isWin, extraStats);
     });
   }
 
@@ -1255,7 +1264,7 @@ class GameState {
     // Firebase: Update Stats
     this.players.forEach(p => {
       const netCoins = feiSettlements[p.id] || 0;
-      updatePlayerStats(p.id, netCoins, false, 0);
+      updatePlayerStats(p.id, netCoins, false, {});
     });
   }
 
@@ -1315,6 +1324,12 @@ io.on('connection', (socket) => {
         room = new GameState(roomId);
       }
       rooms[roomId] = room;
+    } else {
+      const expectedGameType = gameType === 'lami' ? 'lami' : 'mahjong';
+      if (room.gameType !== expectedGameType) {
+        socket.emit('errorMsg', `Room ${roomId} is a ${room.gameType === 'lami' ? 'Lami' : 'Mahjong'} room. You cannot join it from this game mode.`);
+        return;
+      }
     }
 
     const maxPlayers = room.gameType === 'lami' ? 4 : 3;

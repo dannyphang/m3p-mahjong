@@ -4,14 +4,14 @@ const { updatePlayerStats: dbUpdatePlayerStats } = require('./firebase-admin');
 
 const LAMI_SUIT_EMOJI = { red: '♥', blue: '♠', green: '♣', yellow: '♦' };
 
-async function updateLamiPlayerStats(io, playerId, netCoins, isWin, fanWon) {
+async function updateLamiPlayerStats(io, playerId, netCoins, isWin, extraStats = {}) {
   if (!playerId || playerId.startsWith('bot-')) return;
   try {
     const sockets = await io.fetchSockets();
     const playerSocket = sockets.find(s => s.id === playerId);
     if (!playerSocket || !playerSocket.user) return; // Guest or unauthenticated
 
-    await dbUpdatePlayerStats(playerSocket.user.uid, 'lami', netCoins, isWin, fanWon);
+    await dbUpdatePlayerStats(playerSocket.user.uid, 'lami', netCoins, isWin, extraStats);
   } catch (err) {
     console.error('Failed to update stats for lami player', playerId, err);
   }
@@ -528,9 +528,42 @@ class LamiGameState {
     this.players.forEach(p => {
       roundBreakdown[p.id].total = roundBreakdown[p.id].base + roundBreakdown[p.id].jokerAce;
       
-      // Update Firebase stats
       const isWin = p.id === actualWinnerId;
-      updateLamiPlayerStats(io, p.id, roundBreakdown[p.id].total, isWin, 0);
+      const extraStats = {};
+
+      if (isWin) {
+        if (this.hands[p.id].length === 0) extraStats.gamesWonByClear = 1;
+        else extraStats.gamesWonByPoints = 1;
+
+        if (this.hands[p.id].length === 20 && this.checkSevenIdentical(this.hands[p.id])) {
+          extraStats.lucky7CardCount = 1;
+        }
+      } else {
+        extraStats.totalDeadwoodPoints = roundBreakdown[p.id].handPoints;
+        extraStats.deadwoodGamesCount = 1;
+      }
+
+      if (p.id === losers[0]?.id) extraStats.brotherhood1st = 1;
+      else if (p.id === losers[1]?.id) extraStats.brotherhood2nd = 1;
+      else if (p.id === losers[2]?.id) extraStats.brotherhood3rd = 1;
+
+      if (p.burned) extraStats.burntCount = 1;
+
+      const bonusInfo = this.calculatePublicJokerAceBonus(p.id);
+      // Recalculate setsOf4 to see if they got 4 aces
+      const aceCounts = { red: 0, blue: 0, green: 0, yellow: 0 };
+      this.publicMelds.forEach(m => {
+        m.tiles.forEach(t => {
+          if (t.placedBy === p.id && t.value === 1 && t.type !== 'joker') {
+            aceCounts[t.suit] = (aceCounts[t.suit] || 0) + 1;
+          }
+        });
+      });
+      const setsOf4 = Math.min(aceCounts.red, aceCounts.blue, aceCounts.green, aceCounts.yellow);
+      if (setsOf4 > 0) extraStats.fourAcesCount = setsOf4;
+
+      // Update Firebase stats
+      updateLamiPlayerStats(io, p.id, roundBreakdown[p.id].total, isWin, extraStats);
     });
 
     // Save rankings for frontend dashboard

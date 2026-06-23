@@ -18,15 +18,32 @@ export interface UserProfile {
       highestWinStreak?: number;
       highestCoinWin?: number;
       highestCoinLose?: number;
+      baoCount?: number;
+      selfPickWins?: number;
+      discardWins?: number;
+      contractPenaltyCount?: number;
+      totalCoinsGained?: number;
+      totalCoinsLost?: number;
     };
     lami?: {
       totalGamesPlayed: number;
       totalWins: number;
-      totalFanWon: number;
       currentWinStreak?: number;
       highestWinStreak?: number;
       highestCoinWin?: number;
       highestCoinLose?: number;
+      gamesWonByClear?: number;
+      gamesWonByPoints?: number;
+      brotherhood1st?: number;
+      brotherhood2nd?: number;
+      brotherhood3rd?: number;
+      burntCount?: number;
+      lucky7CardCount?: number;
+      fourAcesCount?: number;
+      totalDeadwoodPoints?: number;
+      deadwoodGamesCount?: number;
+      totalCoinsGained?: number;
+      totalCoinsLost?: number;
     };
   };
 }
@@ -93,7 +110,7 @@ export class AuthService {
       coins: 10000,
       stats: { 
         mahjong: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 },
-        lami: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 }
+        lami: { totalGamesPlayed: 0, totalWins: 0 }
       }
     };
     
@@ -120,7 +137,7 @@ export class AuthService {
           if (data.stats && typeof data.stats.totalGamesPlayed === 'number') {
             data.stats = {
               mahjong: { ...data.stats },
-              lami: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 }
+              lami: { totalGamesPlayed: 0, totalWins: 0 }
             };
             updateDoc(userDocRef, { stats: data.stats }).catch(e => console.error('Migration failed', e));
           }
