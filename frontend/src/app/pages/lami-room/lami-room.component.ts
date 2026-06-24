@@ -54,6 +54,17 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
         return newLocalHand;
       });
     }, { allowSignalWrites: true });
+
+    effect(() => {
+      const state = this.gameStateSignal();
+      if (!state) return;
+      
+      if (state.status === 'GAME_OVER' && this.lastStatus !== 'GAME_OVER') {
+        this.gameOverSnapshot = JSON.parse(JSON.stringify(state));
+        this.showGameOver = true;
+      }
+      this.lastStatus = state.status;
+    });
   }
 
   gameStateSignal = this.gameService.gameState;
@@ -79,6 +90,7 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   showGameOver = false;
   showLamiGuide = false;
+  gameOverSnapshot: any = null;
   private lastStatus = '';
 
   playerColors = ['#ffeb3b', '#4fc3f7', '#81c784', '#ff8a65', '#ba68c8'];
@@ -247,7 +259,8 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   getSortedHandForDisplay(playerId: string) {
-    const hand = this.state?.hands[playerId] || [];
+    const sourceState = this.gameOverSnapshot || this.state;
+    const hand = sourceState?.hands?.[playerId] || [];
     const suitOrder: Record<string, number> = { red: 1, blue: 2, green: 3, yellow: 4 };
     return [...hand].sort((a, b) => {
       if (a.type === 'joker' && b.type === 'joker') return 0;
@@ -481,6 +494,7 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
       playerId: this.myId
     });
     this.showGameOver = false;
+    this.gameOverSnapshot = null;
   }
 
   selectedBotDifficulty: 'easy' | 'normal' | 'hard' = 'easy';

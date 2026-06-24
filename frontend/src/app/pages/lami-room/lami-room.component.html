@@ -157,10 +157,10 @@
         <div class="out-badge" *ngIf="p.passedOut || p.burned">{{ t('lami.out') }}</div>
 
         <div class="opponent-avatar">
-          <div class="avatar-icon" *ngIf="!p.avatar">
+          <div class="avatar-icon" *ngIf="!p.avatar" [style.border]="'2px solid ' + getPlayerColor(p.id)">
             <i class="pi pi-user"></i>
           </div>
-          <img class="avatar-img" *ngIf="p.avatar" [src]="p.avatar" alt="Avatar" />
+          <img class="avatar-img" *ngIf="p.avatar" [src]="p.avatar" alt="Avatar" [style.border-color]="getPlayerColor(p.id)" />
         </div>
         <div class="opponent-name">{{ p.name }}</div>
         <div class="opponent-stats">
@@ -228,21 +228,27 @@
     </div>
 
     <!-- My Player Area (Bottom Strip) -->
-    <div class="my-player-zone">
+    <div class="my-player-zone" [class.active-turn]="state.players[state.currentTurn]?.id === myId">
       <div class="my-info-bar">
         <div class="my-info-left">
           <div class="my-avatar-wrap">
-            <div class="avatar-icon" *ngIf="!myPlayer?.avatar"><i class="pi pi-user"></i></div>
+            <div class="avatar-icon" *ngIf="!myPlayer?.avatar" [style.border]="'2px solid ' + getPlayerColor(myId)"><i class="pi pi-user"></i></div>
             <img
               class="avatar-img"
               *ngIf="myPlayer?.avatar"
               [src]="myPlayer?.avatar"
               alt="Avatar"
+              [style.border-color]="getPlayerColor(myId)"
             />
             <div class="active-dot" *ngIf="state.players[state.currentTurn]?.id === myId"></div>
           </div>
           <div class="my-info-text">
-            <div class="my-name">{{ gameService.playerName() }}</div>
+            <div class="my-name">
+              {{ gameService.playerName() }}
+              <span *ngIf="state.players[state.currentTurn]?.id === myId" class="my-turn-badge">
+                YOUR TURN
+              </span>
+            </div>
             <div class="my-coins">
               <i class="pi pi-wallet icon-11"></i>
               {{ state.accumulatedPoints[myId] }}
@@ -297,36 +303,36 @@
 
   <!-- Game Over Area -->
   <div
-    *ngIf="state.status === 'GAME_OVER' && showGameOver && !myPlayer?.isReady"
+    *ngIf="showGameOver && gameOverSnapshot"
     class="lobby-overlay lobby-overlay-z"
   >
     <div class="glass-card gameover-card">
       <h2 class="lobby-title">{{ t('lami.gameOver') }}</h2>
       <div class="players-list no-scrollbar gameover-players-list">
         <div
-          *ngFor="let p of state.players"
+          *ngFor="let p of gameOverSnapshot.players"
           class="player-card gameover-player-card"
         >
           <div
-            *ngIf="state.rankings?.winner === p.id"
+            *ngIf="gameOverSnapshot.rankings?.winner === p.id"
             class="badge-rank badge-winner"
           >
             {{ t('lami.rank.winner') }}
           </div>
           <div
-            *ngIf="state.rankings?.xiaoGe === p.id"
+            *ngIf="gameOverSnapshot.rankings?.xiaoGe === p.id"
             class="badge-rank badge-xiaoge"
           >
             {{ t('lami.rank.xiaoge') }}
           </div>
           <div
-            *ngIf="state.rankings?.erGe === p.id"
+            *ngIf="gameOverSnapshot.rankings?.erGe === p.id"
             class="badge-rank badge-erge"
           >
             {{ t('lami.rank.erge') }}
           </div>
           <div
-            *ngIf="state.rankings?.daGe === p.id"
+            *ngIf="gameOverSnapshot.rankings?.daGe === p.id"
             class="badge-rank badge-dage"
           >
             {{ t('lami.rank.dage') }}
@@ -338,39 +344,39 @@
               <div class="gameover-player-stats">
                 <span
                   >{{ t('lami.stat.handPoints') }}:
-                  {{ state.rankings?.breakdown?.[p.id]?.handPoints || 0 }}</span
+                  {{ gameOverSnapshot.rankings?.breakdown?.[p.id]?.handPoints || 0 }}</span
                 >
                 |
                 <span
                   >{{ t('lami.stat.jokersPlaced') }}:
-                  {{ state.rankings?.breakdown?.[p.id]?.publicJokers || 0 }}</span
+                  {{ gameOverSnapshot.rankings?.breakdown?.[p.id]?.publicJokers || 0 }}</span
                 >
                 |
                 <span
                   >{{ t('lami.stat.acesPlaced') }}:
-                  {{ state.rankings?.breakdown?.[p.id]?.publicAces || 0 }}</span
+                  {{ gameOverSnapshot.rankings?.breakdown?.[p.id]?.publicAces || 0 }}</span
                 >
               </div>
             </div>
             <div class="text-right">
               <div class="gameover-coins-value">
-                {{ state.accumulatedPoints[p.id] }} {{ t('lami.coins') }}
+                {{ gameOverSnapshot.accumulatedPoints[p.id] }} {{ t('lami.coins') }}
               </div>
               <div class="gameover-round-points-wrap">
                 <span
                   [style.color]="
-                    (state.rankings?.breakdown?.[p.id]?.total || 0) >= 0 ? '#4caf50' : '#e57373'
+                    (gameOverSnapshot.rankings?.breakdown?.[p.id]?.total || 0) >= 0 ? '#4caf50' : '#e57373'
                   "
                   class="gameover-round-total"
                 >
                   {{ t('lami.stat.thisRound') }}:
-                  {{ (state.rankings?.breakdown?.[p.id]?.total || 0) > 0 ? '+' : ''
-                  }}{{ state.rankings?.breakdown?.[p.id]?.total || 0 }}
+                  {{ (gameOverSnapshot.rankings?.breakdown?.[p.id]?.total || 0) > 0 ? '+' : ''
+                  }}{{ gameOverSnapshot.rankings?.breakdown?.[p.id]?.total || 0 }}
                 </span>
                 <span class="gameover-round-breakdown"
-                  >({{ t('lami.stat.base') }}: {{ state.rankings?.breakdown?.[p.id]?.base || 0 }},
+                  >({{ t('lami.stat.base') }}: {{ gameOverSnapshot.rankings?.breakdown?.[p.id]?.base || 0 }},
                   {{ t('lami.stat.jokerAce') }}:
-                  {{ state.rankings?.breakdown?.[p.id]?.jokerAce || 0 }})</span
+                  {{ gameOverSnapshot.rankings?.breakdown?.[p.id]?.jokerAce || 0 }})</span
                 >
               </div>
             </div>
