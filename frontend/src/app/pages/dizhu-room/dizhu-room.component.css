@@ -1,0 +1,540 @@
+/* frontend/src/app/pages/dizhu-room/dizhu-room.component.css */
+
+.dizhu-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: radial-gradient(circle, #1a4a1a 0%, #0d2a0d 100%);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  overflow: hidden;
+}
+
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.room-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.badge.info {
+  background: linear-gradient(135deg, #ff9800, #f44336);
+  border: none;
+}
+
+.btn-quit {
+  background: rgba(244, 67, 54, 0.2);
+  border: 1px solid rgba(244, 67, 54, 0.4);
+  color: #ff8a80;
+  padding: 6px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn-quit:hover {
+  background: rgba(244, 67, 54, 0.4);
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.board-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  position: relative;
+}
+
+.bottom-cards-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.bottom-cards-section h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cards-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Poker Card Styles */
+.poker-card {
+  width: 75px;
+  height: 105px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px;
+  color: #000;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.poker-card.hearts, .poker-card.diamonds {
+  color: #e53935;
+}
+
+.poker-card.spades, .poker-card.clubs {
+  color: #212121;
+}
+
+.poker-card.joker {
+  color: #7e57c2;
+  border: 2px solid #7e57c2;
+}
+
+.poker-card.back {
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+  border: 3px solid #fff;
+  color: transparent;
+}
+
+.poker-card .card-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.poker-card .card-suit {
+  font-size: 1.5rem;
+  align-self: flex-end;
+  line-height: 1;
+}
+
+.poker-card.small {
+  width: 50px;
+  height: 70px;
+  padding: 4px;
+  border-radius: 5px;
+}
+
+.poker-card.small .card-val {
+  font-size: 0.95rem;
+}
+
+.poker-card.small .card-suit {
+  font-size: 1.05rem;
+}
+
+.poker-card.selected {
+  transform: translateY(-15px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4), 0 0 0 3px #ffeb3b;
+}
+
+/* Play table center layout */
+.play-table {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+  padding: 0 40px;
+}
+
+.opponent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 15px;
+  border-radius: 12px;
+  width: 140px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.player-avatar {
+  position: relative;
+}
+
+.avatar-circle {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.15rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.player-avatar.active .avatar-circle {
+  border-color: #4caf50;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+  animation: pulse 1.5s infinite;
+}
+
+.crown {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.4rem;
+}
+
+.player-meta {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.85rem;
+}
+
+.player-meta .name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.role-badge {
+  background: #3f51b5;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+.role-badge.landlord {
+  background: #ffc107;
+  color: #000;
+  font-weight: 600;
+}
+
+.role-badge.small {
+  padding: 1px 6px;
+  font-size: 0.7rem;
+}
+
+.table-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+}
+
+.table-message {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.played-by {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+/* Player Deck (bottom area) */
+.player-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 15px 20px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.action-panel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 45px;
+}
+
+.waiting-actions, .bidding-actions, .playing-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-action {
+  padding: 8px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-action.ready {
+  background: #1976d2;
+  color: #fff;
+}
+
+.btn-action.ready.active {
+  background: #4caf50;
+}
+
+.btn-action.add-bot {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-action.start {
+  background: #e65100;
+  color: #fff;
+}
+
+.btn-action.bid {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-action.bid.premium {
+  background: #ffb300;
+  color: #000;
+}
+
+.btn-action.play {
+  background: #4caf50;
+  color: #fff;
+}
+
+.btn-action.pass {
+  background: #f44336;
+  color: #fff;
+}
+
+.btn-action.clear {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.turn-status-text {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.my-hand-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cards-row.playable {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  padding: 25px 40px 15px 0;
+  min-height: 140px;
+  overflow-x: visible;
+}
+
+.cards-row.playable .poker-card {
+  margin-right: -42px; /* Overlap effect */
+  position: relative;
+  z-index: 1;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cards-row.playable .poker-card:hover {
+  z-index: 100;
+  transform: translateY(-12px);
+}
+
+.cards-row.playable .poker-card.selected {
+  z-index: 90;
+  transform: translateY(-22px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4), 0 0 0 3px #ffeb3b;
+}
+
+/* Logs sidebar */
+.logs-sidebar {
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.logs-sidebar h3 {
+  padding: 15px;
+  margin: 0;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.logs-container {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.log-message {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 5px;
+  line-height: 1.4;
+  word-break: break-all;
+  border-left: 3px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Modals overlays */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.glass-card.modal-card {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 30px;
+  width: 450px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.modal-title {
+  margin-top: 0;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+}
+
+.spring-banner {
+  background: linear-gradient(135deg, #e91e63, #ff4081);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+  animation: pulse 1s infinite alternate;
+}
+
+.settlement-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 5px;
+}
+
+.settlement-table {
+  width: 100%;
+  margin-top: 15px;
+  border-collapse: collapse;
+}
+
+.settlement-table th, .settlement-table td {
+  padding: 8px;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.settlement-table th {
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.settlement-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.win-coins {
+  color: #4caf50;
+  font-weight: 700;
+}
+
+.lose-coins {
+  color: #f44336;
+  font-weight: 700;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

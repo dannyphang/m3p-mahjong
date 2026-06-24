@@ -1,0 +1,32 @@
+<div class="lobby-overlay">
+  <div class="glass-card" style="min-width: 400px">
+    <h1 class="lobby-title">{{ t('dizhu.lobbyTitle') }}</h1>
+    <p class="lobby-desc">{{ t('dizhu.lobbySubtitle') }}</p>
+
+    <div class="form-group">
+      <label>{{ t('lobby.playerName') }}</label>
+      <input
+        type="text"
+        [(ngModel)]="playerName"
+        (keyup.enter)="joinRoom()"
+        [placeholder]="t('lobby.playerNamePlaceholder')"
+        class="form-input"
+        autofocus
+      />
+    </div>
+
+    <div class="form-group">
+      <label>{{ t('lobby.roomId') }}</label>
+      <input type="text" [(ngModel)]="roomId" (keyup.enter)="joinRoom()" class="form-input" />
+    </div>
+
+    <div class="button-group" style="gap: 10px; display: flex">
+      <button (click)="joinRoom()" class="btn-primary" style="flex: 1">
+        {{ t('dizhu.joinRoom') }}
+      </button>
+      <button (click)="backToMain()" class="btn-secondary" style="flex: 1">
+        {{ t('dizhu.backToMain') }}
+      </button>
+    </div>
+  </div>
+</div>

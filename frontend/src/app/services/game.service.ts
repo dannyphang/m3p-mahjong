@@ -52,6 +52,11 @@ export interface GameState {
   logs: any[];
   accumulatedPoints: { [key: string]: number };
   rankings?: any;
+  bombsCount?: number;
+  bottomCards?: any[];
+  lastPlayedHand?: any;
+  highestBid?: number;
+  landlordId?: string | null;
   rates?: {
     win?: number;
     joker?: number;

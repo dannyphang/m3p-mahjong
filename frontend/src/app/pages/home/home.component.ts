@@ -58,6 +58,10 @@ export class HomeComponent {
     this.router.navigate(['/lami-lobby']);
   }
 
+  navigateToDizhuLobby() {
+    this.router.navigate(['/dizhu-lobby']);
+  }
+
   t(key: string): string {
     const lang = this.gameService.currentLanguage();
     return TRANSLATIONS[lang as keyof typeof TRANSLATIONS]?.[key] || key;

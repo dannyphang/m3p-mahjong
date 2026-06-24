@@ -1,0 +1,218 @@
+<div class="dizhu-container" *ngIf="state">
+  <!-- Top Header bar -->
+  <div class="header-bar">
+    <div class="room-info">
+      <span>{{ t('dizhu.roomTitle') }}<strong>{{ roomId }}</strong></span>
+      <span class="badge">{{ t('dizhu.rateBase') }}: {{ state.rates?.base }}</span>
+      <span class="badge" *ngIf="(state.highestBid || 0) > 0">{{ t('dizhu.points') }}: {{ state.highestBid }}x</span>
+      <span class="badge info" *ngIf="(state.bombsCount || 0) > 0">💥 {{ t('dizhu.multiplier') }}: 2<sup>{{ state.bombsCount }}</sup>x</span>
+    </div>
+    <div class="actions">
+      <button (click)="quitRoom()" class="btn-quit">{{ t('room.quit') }}</button>
+    </div>
+  </div>
+
+  <!-- Main Game Area -->
+  <div class="game-grid">
+    <div class="board-area">
+      <!-- Top: 3 landlord bottom cards -->
+      <div class="bottom-cards-section">
+        <h3>{{ t('dizhu.bottomCards') }}</h3>
+        <div class="cards-row small">
+          <div *ngFor="let card of state.bottomCards" 
+               [class]="'poker-card small ' + (card.type === 'back' ? 'back' : card.suit)">
+            <ng-container *ngIf="card.type !== 'back'">
+              <span class="card-val">{{ card.display }}</span>
+              <span class="card-suit">{{ getSuitSymbol(card.suit) }}</span>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Board: Table cards play area and opponents -->
+      <div class="play-table">
+        <!-- Left Opponent -->
+        <div class="opponent left" *ngFor="let opp of getOpponents() | slice:1:2">
+          <div class="player-avatar" [class.active]="opp.isTurn">
+            <span class="crown" *ngIf="opp.isLandlord">👑</span>
+            <div class="avatar-circle">{{ opp.name.substring(0,2) }}</div>
+          </div>
+          <div class="player-meta">
+            <div class="name">{{ opp.name }}</div>
+            <div class="coins">💰 {{ state.accumulatedPoints[opp.id] }}</div>
+            <div class="cards-count">🎴 {{ opp.cardCount }}</div>
+            <span class="role-badge" [class.landlord]="opp.isLandlord">
+              {{ opp.isLandlord ? t('dizhu.landlord') : t('dizhu.farmer') }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Center Area: Last played cards -->
+        <div class="table-center">
+          <div class="last-hand" *ngIf="state.lastPlayedHand">
+            <div class="played-by">
+              {{ state.players[state.currentTurn]?.id === state.lastPlayedHand.playerId ? 'Playing' : 'Last played by ' + (state.players[0].id === state.lastPlayedHand.playerId ? 'You' : '') }}
+            </div>
+            <div class="cards-row">
+              <div *ngFor="let card of state.lastPlayedHand.cards" [class]="'poker-card ' + card.suit">
+                <span class="card-val">{{ card.display }}</span>
+                <span class="card-suit">{{ getSuitSymbol(card.suit) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="table-message" *ngIf="!state.lastPlayedHand && state.status === 'PLAYING'">
+            <span>★ Free Play Turn ★</span>
+          </div>
+          <div class="table-message" *ngIf="state.status === 'BIDDING'">
+            <span>Bidding Landlord Stage</span>
+          </div>
+        </div>
+
+        <!-- Right Opponent -->
+        <div class="opponent right" *ngFor="let opp of getOpponents() | slice:0:1">
+          <div class="player-avatar" [class.active]="opp.isTurn">
+            <span class="crown" *ngIf="opp.isLandlord">👑</span>
+            <div class="avatar-circle">{{ opp.name.substring(0,2) }}</div>
+          </div>
+          <div class="player-meta">
+            <div class="name">{{ opp.name }}</div>
+            <div class="coins">💰 {{ state.accumulatedPoints[opp.id] }}</div>
+            <div class="cards-count">🎴 {{ opp.cardCount }}</div>
+            <span class="role-badge" [class.landlord]="opp.isLandlord">
+              {{ opp.isLandlord ? t('dizhu.landlord') : t('dizhu.farmer') }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Controls and Player hand -->
+      <div class="player-deck">
+        <!-- Action Control Panel -->
+        <div class="action-panel">
+          <!-- WAITING FOR START -->
+          <ng-container *ngIf="state.status === 'WAITING'">
+            <div class="waiting-actions">
+              <button *ngIf="!myPlayer?.isReady" (click)="toggleReady()" class="btn-action ready">{{ t('lobby.getReady') }}</button>
+              <button *ngIf="myPlayer?.isReady" (click)="toggleReady()" class="btn-action ready active">{{ t('lobby.cancelReady') }}</button>
+              <button *ngIf="isHost && state.players.length < 3" (click)="addBot()" class="btn-action add-bot">{{ t('lobby.addBot') }}</button>
+              <button *ngIf="isHost && isAllReady" (click)="startGame()" class="btn-action start">{{ t('room.startGame') }}</button>
+            </div>
+          </ng-container>
+
+          <!-- BIDDING LANDLORD STAGE -->
+          <ng-container *ngIf="state.status === 'BIDDING' && isMyTurn">
+            <div class="bidding-actions">
+              <button (click)="bid(1)" [disabled]="(state.highestBid || 0) >= 1" class="btn-action bid">{{ t('dizhu.bid1') }}</button>
+              <button (click)="bid(2)" [disabled]="(state.highestBid || 0) >= 2" class="btn-action bid">{{ t('dizhu.bid2') }}</button>
+              <button (click)="bid(3)" class="btn-action bid premium">{{ t('dizhu.bid3') }}</button>
+              <button (click)="bid(0)" class="btn-action pass">{{ t('dizhu.pass') }}</button>
+            </div>
+          </ng-container>
+
+          <!-- GAME PLAYING STAGE -->
+          <ng-container *ngIf="state.status === 'PLAYING' && isMyTurn">
+            <div class="playing-actions">
+              <button (click)="playCards()" [disabled]="selectedCards().length === 0" class="btn-action play">{{ t('dizhu.play') }}</button>
+              <button (click)="pass()" [disabled]="!state.lastPlayedHand" class="btn-action pass">{{ t('dizhu.pass') }}</button>
+              <button (click)="clearSelection()" [disabled]="selectedCards().length === 0" class="btn-action clear">{{ t('dizhu.clear') }}</button>
+            </div>
+          </ng-container>
+
+          <!-- Status Indicator when not my turn -->
+          <div class="turn-status-text" *ngIf="state.status !== 'WAITING' && !isMyTurn">
+            Waiting for other players...
+          </div>
+        </div>
+
+        <!-- Player cards -->
+        <div class="my-hand-container">
+          <div class="hand-header">
+            <span>Your Hand ({{ myHand().length }} cards)</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <button (click)="sortHand()" class="btn-secondary" style="padding: 4px 10px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; color: #fff; cursor: pointer;">
+                {{ t('game.sortHand') }}
+              </button>
+              <span class="role-badge" *ngIf="state.landlordId" [class.landlord]="state.landlordId === myId">
+                {{ state.landlordId === myId ? t('dizhu.landlord') : t('dizhu.farmer') }}
+              </span>
+            </div>
+          </div>
+          <div class="cards-row playable"
+               cdkDropList
+               cdkDropListOrientation="horizontal"
+               (cdkDropListDropped)="onCdkDrop($event)">
+            <div *ngFor="let card of myHand()" 
+                 cdkDrag
+                 (click)="toggleCardSelection(card)"
+                 [class]="'poker-card ' + card.suit + (isCardSelected(card) ? ' selected' : '')">
+              <span class="card-val">{{ card.display }}</span>
+              <span class="card-suit">{{ getSuitSymbol(card.suit) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side: Narrator log feed -->
+    <div class="logs-sidebar">
+      <h3>{{ t('header.narratorTitle') }}</h3>
+      <div class="logs-container" #logsContainer>
+        <div *ngFor="let log of state.logs" class="log-message">
+          {{ formatLog(log) }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Settlement Modal -->
+  <div class="modal-overlay" *ngIf="showGameOver && state.rankings">
+    <div class="glass-card modal-card animate-fade-in">
+      <h2 class="modal-title">🏆 {{ t('dizhu.gameOver') }}</h2>
+      <div class="spring-banner" *ngIf="state.rankings.isSpring">🌸 SPRING! Multipliers Doubled! 🌸</div>
+
+      <div class="settlement-details">
+        <div class="stats-row">
+          <span>Winner:</span>
+          <strong>{{ state.rankings.winner === myId ? 'You' : state.players[0].name }}</strong>
+        </div>
+        <div class="stats-row">
+          <span>Base Win:</span>
+          <strong>{{ state.rates?.base }} Coins</strong>
+        </div>
+        <div class="stats-row">
+          <span>Multiplier:</span>
+          <strong>{{ state.rankings.multiplier }}x</strong>
+        </div>
+
+        <table class="settlement-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Role</th>
+              <th>Cards Left</th>
+              <th>Settlement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let detail of state.rankings.details">
+              <td>{{ detail.name }} {{ detail.id === myId ? t('lobby.you') : '' }}</td>
+              <td>
+                <span class="role-badge small" [class.landlord]="detail.isLandlord">
+                  {{ detail.isLandlord ? t('dizhu.landlord') : t('dizhu.farmer') }}
+                </span>
+              </td>
+              <td>{{ detail.cardsLeft }}</td>
+              <td [class.win-coins]="detail.coinsChange > 0" [class.lose-coins]="detail.coinsChange < 0">
+                {{ detail.coinsChange > 0 ? '+' : '' }}{{ detail.coinsChange }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions">
+        <button (click)="restartGame()" class="btn-primary">{{ t('gameover.playAgain') }}</button>
+      </div>
+    </div>
+  </div>
+</div>
