@@ -1,11 +1,59 @@
-<header class="game-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative; z-index: 1000;">
-  <a (click)="goHome()" class="brand" style="flex: 1; text-align: left; margin: 0; text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: baseline;">
-    🀄 {{ t('lobby.title') }} <span style="font-size: 12px; color: #aaa; margin-left: 8px; font-weight: normal; font-family: monospace;">v{{ appVersion }}</span>
+<header
+  class="game-header"
+  style="
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    z-index: 1000;
+  "
+>
+  <a
+    (click)="goHome()"
+    class="brand"
+    style="
+      flex: 1;
+      text-align: left;
+      margin: 0;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: baseline;
+    "
+  >
+    🀄 {{ t('lobby.title') }}
+    <span
+      style="
+        font-size: 12px;
+        color: #aaa;
+        margin-left: 8px;
+        font-weight: normal;
+        font-family: monospace;
+      "
+      >v{{ appVersion }}</span
+    >
   </a>
-  
-  <div style="flex: 2; text-align: center; display: flex; justify-content: center;">
-    @if (gameState) {
-      <div class="room-info" style="margin: 0;">
+
+  <div
+    style="
+      flex: 2;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    "
+  >
+    @if (isLamiRoom && lamiState) {
+      <span style="lami-header">Lami</span>
+      <span class="header-pill"
+        ><i class="pi pi-table" style="font-size: 10px"></i> {{ lamiState.roomId }}</span
+      >
+      <span class="header-pill header-pill-gold">Round {{ lamiState.roundNumber || 1 }}</span>
+    } @else if (gameState) {
+      <div class="room-info" style="margin: 0">
         {{ t('header.table') }} <strong>{{ gameState.roomId }}</strong> | {{ t('header.round') }}
         <strong>{{ gameState.roundNumber || 0 }}</strong> | {{ t('header.dealer') }}
         <strong>{{ gameState.players[gameState.dealerIndex || 0]?.name }}</strong>
@@ -18,82 +66,341 @@
     }
   </div>
 
-  <div class="global-actions" style="flex: 1; text-align: right; display: flex; justify-content: flex-end; align-items: center; position: relative;">
+  <div
+    class="global-actions"
+    style="
+      text-align: right;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+    "
+  >
+    @if (isLamiRoom && lamiState) {
+      <button (click)="quitLami()" class="lami-hud-btn lami-hud-quit">
+        <i class="pi pi-sign-out"></i> {{ t('room.quit') }}
+      </button>
+    }
     @if (authService.userProfile$ | async; as profile) {
       <!-- Clickable Account Box -->
-      <div (click)="showAccountMenu = !showAccountMenu" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 20px; cursor: pointer; transition: background 0.2s; user-select: none;" onmouseover="this.style.background='rgba(0,0,0,0.5)'" onmouseout="this.style.background='rgba(0,0,0,0.3)'">
-        <img [src]="profile.avatar" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;" />
-        <span style="font-weight: bold; font-size: 14px;">{{ profile.name }}</span>
-        <span style="font-size: 10px; opacity: 0.7; margin-left: 4px;">▼</span>
+      <div
+        (click)="showAccountMenu = !showAccountMenu"
+        style="
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(0, 0, 0, 0.3);
+          padding: 4px 12px;
+          border-radius: 20px;
+          cursor: pointer;
+          transition: background 0.2s;
+          user-select: none;
+        "
+        onmouseover="this.style.background = 'rgba(0,0,0,0.5)'"
+        onmouseout="this.style.background = 'rgba(0,0,0,0.3)'"
+      >
+        <img
+          [src]="profile.avatar"
+          alt="Avatar"
+          style="width: 24px; height: 24px; border-radius: 50%"
+        />
+        <span style="font-weight: bold; font-size: 14px">{{ profile.name }}</span>
+        <span style="font-size: 10px; opacity: 0.7; margin-left: 4px">▼</span>
       </div>
 
       @if (showAccountMenu) {
         <!-- Account Dropdown Menu -->
-        <div style="position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(30, 19, 12, 0.95); border: 1px solid var(--gold-secondary); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; z-index: 1002; min-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); backdrop-filter: blur(10px);">
-          
-          <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px;">
-            <img [src]="profile.avatar" alt="Avatar" style="width: 48px; height: 48px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3);" />
-            <div style="display: flex; flex-direction: column; text-align: left;">
-              <span style="font-weight: bold; font-size: 16px; color: white;">{{ profile.name }}</span>
-              <span style="color: #ffd700; font-size: 13px; margin-top: 2px;">💰 {{ profile.coins }}</span>
+        <div
+          style="
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: rgba(30, 19, 12, 0.95);
+            border: 1px solid var(--gold-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1002;
+            min-width: 220px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            max-height: calc(100vh - 110px);
+            overflow-y: auto;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+              padding-bottom: 12px;
+            "
+          >
+            <img
+              [src]="profile.avatar"
+              alt="Avatar"
+              style="
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+              "
+            />
+            <div style="display: flex; flex-direction: column; text-align: left">
+              <span style="font-weight: bold; font-size: 16px; color: white">{{
+                profile.name
+              }}</span>
+              <span style="color: #ffd700; font-size: 13px; margin-top: 2px"
+                >💰 {{ profile.coins }}</span
+              >
             </div>
           </div>
 
           @if (!gameState) {
-            <button (click)="togglePlayground(); showAccountMenu = false" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-              <span style="font-size: 16px;">🎮</span> {{ isPlayground ? t('menu.backToLobby') : t('menu.playground') }}
+            <button
+              (click)="togglePlayground(); showAccountMenu = false"
+              style="
+                background: rgba(255, 255, 255, 0.05);
+                border: none;
+                border-radius: 8px;
+                color: white;
+                cursor: pointer;
+                text-align: left;
+                padding: 8px 12px;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                transition: background 0.2s;
+              "
+              onmouseover="this.style.background = 'rgba(255,255,255,0.1)'"
+              onmouseout="this.style.background = 'rgba(255,255,255,0.05)'"
+            >
+              <span style="font-size: 16px">🎮</span>
+              {{ isPlayground ? t('menu.backToLobby') : t('menu.playground') }}
             </button>
           }
-          
-          <button (click)="goToStats(); showAccountMenu = false" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-            <span style="font-size: 16px;">📊</span> {{ t('menu.statistics') }}
+
+          <button
+            (click)="goToStats(); showAccountMenu = false"
+            style="
+              background: rgba(255, 255, 255, 0.05);
+              border: none;
+              border-radius: 8px;
+              color: white;
+              cursor: pointer;
+              text-align: left;
+              padding: 8px 12px;
+              font-size: 14px;
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              transition: background 0.2s;
+            "
+            onmouseover="this.style.background = 'rgba(255,255,255,0.1)'"
+            onmouseout="this.style.background = 'rgba(255,255,255,0.05)'"
+          >
+            <span style="font-size: 16px">📊</span> {{ t('menu.statistics') }}
           </button>
-          
-          <button (click)="toggleLanguage(); showAccountMenu = false" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-            <span style="font-size: 16px;">🌐</span> {{ t('menu.switchLang') }}
+
+          <button
+            (click)="toggleLanguage(); showAccountMenu = false"
+            style="
+              background: rgba(255, 255, 255, 0.05);
+              border: none;
+              border-radius: 8px;
+              color: white;
+              cursor: pointer;
+              text-align: left;
+              padding: 8px 12px;
+              font-size: 14px;
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              transition: background 0.2s;
+            "
+            onmouseover="this.style.background = 'rgba(255,255,255,0.1)'"
+            onmouseout="this.style.background = 'rgba(255,255,255,0.05)'"
+          >
+            <span style="font-size: 16px">🌐</span> {{ t('menu.switchLang') }}
           </button>
-          
-          <button (click)="showScoringGuide = true; showAccountMenu = false" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-            <span style="font-size: 16px;">📖</span> {{ isLamiRoom ? t('lami.rulesTitle') : t('header.scoringGuide') }}
+
+          <button
+            (click)="showScoringGuide = true; showAccountMenu = false"
+            style="
+              background: rgba(255, 255, 255, 0.05);
+              border: none;
+              border-radius: 8px;
+              color: white;
+              cursor: pointer;
+              text-align: left;
+              padding: 8px 12px;
+              font-size: 14px;
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              transition: background 0.2s;
+            "
+            onmouseover="this.style.background = 'rgba(255,255,255,0.1)'"
+            onmouseout="this.style.background = 'rgba(255,255,255,0.05)'"
+          >
+            <span style="font-size: 16px">📖</span>
+            {{ isLamiRoom ? t('lami.rulesTitle') : t('header.scoringGuide') }}
           </button>
-          
-          <button (click)="toggleNarrator()" style="background: rgba(255, 255, 255, 0.05); border: none; border-radius: 8px; color: white; cursor: pointer; text-align: left; padding: 8px 12px; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-            <span style="font-size: 16px; opacity: {{ showNarrator ? 1 : 0.5 }}">🎙️</span> {{ showNarrator ? t('menu.narratorOff') : t('menu.narratorOn') }}
+
+          <button
+            (click)="toggleNarrator()"
+            style="
+              background: rgba(255, 255, 255, 0.05);
+              border: none;
+              border-radius: 8px;
+              color: white;
+              cursor: pointer;
+              text-align: left;
+              padding: 8px 12px;
+              font-size: 14px;
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              transition: background 0.2s;
+            "
+            onmouseover="this.style.background = 'rgba(255,255,255,0.1)'"
+            onmouseout="this.style.background = 'rgba(255,255,255,0.05)'"
+          >
+            <span style="font-size: 16px; opacity: {{ showNarrator ? 1 : 0.5 }}">🎙️</span>
+            {{ showNarrator ? t('menu.narratorOff') : t('menu.narratorOn') }}
           </button>
-          
-          <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 14px; color: white; display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 16px; opacity: {{ isBgmMuted ? 0.5 : 1 }}">🎵</span> {{ t('menu.music') }}
+
+          <div
+            style="
+              background: rgba(255, 255, 255, 0.05);
+              border-radius: 8px;
+              padding: 8px 12px;
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            "
+          >
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span
+                style="font-size: 14px; color: white; display: flex; align-items: center; gap: 12px"
+              >
+                <span style="font-size: 16px; opacity: {{ isBgmMuted ? 0.5 : 1 }}">🎵</span>
+                {{ t('menu.music') }}
               </span>
-              <button (click)="toggleBgm()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; padding: 0;">
+              <button
+                (click)="toggleBgm()"
+                style="
+                  background: transparent;
+                  border: none;
+                  color: white;
+                  cursor: pointer;
+                  font-size: 16px;
+                  display: flex;
+                  align-items: center;
+                  padding: 0;
+                "
+              >
                 {{ isBgmMuted ? '🔇' : '🔊' }}
               </button>
             </div>
-            <input type="range" min="0" max="1" step="0.05" [ngModel]="isBgmMuted ? 0 : bgmVolume" (input)="onBgmVolumeChange($event)" style="width: 100%; cursor: pointer; height: 4px; accent-color: var(--gold-primary);" />
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              [ngModel]="isBgmMuted ? 0 : bgmVolume"
+              (input)="onBgmVolumeChange($event)"
+              style="width: 100%; cursor: pointer; height: 4px; accent-color: var(--gold-primary)"
+            />
           </div>
 
-          <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 14px; color: white; display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 16px; opacity: {{ isSfxMuted ? 0.5 : 1 }}">🔊</span> {{ t('menu.sfx') }}
+          <div
+            style="
+              background: rgba(255, 255, 255, 0.05);
+              border-radius: 8px;
+              padding: 8px 12px;
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            "
+          >
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span
+                style="font-size: 14px; color: white; display: flex; align-items: center; gap: 12px"
+              >
+                <span style="font-size: 16px; opacity: {{ isSfxMuted ? 0.5 : 1 }}">🔊</span>
+                {{ t('menu.sfx') }}
               </span>
-              <button (click)="toggleSfx()" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; padding: 0;">
+              <button
+                (click)="toggleSfx()"
+                style="
+                  background: transparent;
+                  border: none;
+                  color: white;
+                  cursor: pointer;
+                  font-size: 16px;
+                  display: flex;
+                  align-items: center;
+                  padding: 0;
+                "
+              >
                 {{ isSfxMuted ? '🔇' : '🔊' }}
               </button>
             </div>
-            <input type="range" min="0" max="1" step="0.05" [ngModel]="isSfxMuted ? 0 : sfxVolume" (input)="onSfxVolumeChange($event)" style="width: 100%; cursor: pointer; height: 4px; accent-color: var(--gold-primary);" />
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              [ngModel]="isSfxMuted ? 0 : sfxVolume"
+              (input)="onSfxVolumeChange($event)"
+              style="width: 100%; cursor: pointer; height: 4px; accent-color: var(--gold-primary)"
+            />
           </div>
 
-          <button (click)="logout(); showAccountMenu = false" style="background: rgba(255, 68, 68, 0.15); border: 1px solid rgba(255, 68, 68, 0.3); border-radius: 8px; color: #ff6b6b; cursor: pointer; font-size: 14px; font-weight: bold; padding: 10px; margin-top: 4px; transition: all 0.2s ease; width: 100%;" onmouseover="this.style.background='rgba(255, 68, 68, 0.25)'" onmouseout="this.style.background='rgba(255, 68, 68, 0.15)'">
+          <button
+            (click)="logout(); showAccountMenu = false"
+            style="
+              background: rgba(255, 68, 68, 0.15);
+              border: 1px solid rgba(255, 68, 68, 0.3);
+              border-radius: 8px;
+              color: #ff6b6b;
+              cursor: pointer;
+              font-size: 14px;
+              font-weight: bold;
+              padding: 10px;
+              margin-top: 4px;
+              transition: all 0.2s ease;
+              width: 100%;
+            "
+            onmouseover="this.style.background = 'rgba(255, 68, 68, 0.25)'"
+            onmouseout="this.style.background = 'rgba(255, 68, 68, 0.15)'"
+          >
             {{ t('menu.logout') }}
           </button>
-          
         </div>
       }
     } @else {
       <!-- Fallback when not logged in -->
-      <button (click)="toggleLanguage()" style="background: transparent; border: 1px solid var(--gold-secondary); border-radius: 4px; color: var(--gold-primary); cursor: pointer; font-weight: bold; padding: 2px 6px; font-size: 16px;">
+      <button
+        (click)="toggleLanguage()"
+        style="
+          background: transparent;
+          border: 1px solid var(--gold-secondary);
+          border-radius: 4px;
+          color: var(--gold-primary);
+          cursor: pointer;
+          font-weight: bold;
+          padding: 2px 6px;
+          font-size: 16px;
+        "
+      >
         🌐
       </button>
     }
@@ -104,6 +411,9 @@
   @if (isLamiRoom) {
     <app-lami-guide [lang]="currentLanguage" (close)="showScoringGuide = false"></app-lami-guide>
   } @else {
-    <app-scoring-guide [lang]="currentLanguage" (close)="showScoringGuide = false"></app-scoring-guide>
+    <app-scoring-guide
+      [lang]="currentLanguage"
+      (close)="showScoringGuide = false"
+    ></app-scoring-guide>
   }
 }

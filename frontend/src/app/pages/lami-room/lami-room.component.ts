@@ -78,6 +78,7 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   meldOptions: any[][] = [];
 
   showGameOver = false;
+  showLamiGuide = false;
   private lastStatus = '';
 
   playerColors = ['#ffeb3b', '#4fc3f7', '#81c784', '#ff8a65', '#ba68c8'];
@@ -530,5 +531,15 @@ export class LamiRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     // Update the local hand state
     this.myHand.set(hand);
+  }
+
+  /** Return an array of N items so ngFor can render N red bars */
+  getCardBars(count: number): any[] {
+    return Array(Math.min(count, 8)).fill(0);
+  }
+
+  /** Format just the body text of a log (without name prefix) */
+  formatLogBody(log: any): string {
+    return this.formatLog(log);
   }
 }

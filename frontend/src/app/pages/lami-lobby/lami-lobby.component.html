@@ -20,29 +20,13 @@
       <input type="text" [(ngModel)]="roomId" (keyup.enter)="joinRoom()" class="form-input" />
     </div>
 
-    <div class="button-group" style="gap: 10px; margin-bottom: 20px">
+    <div class="button-group" style="gap: 10px; display: flex">
       <button (click)="joinRoom()" class="btn-primary" style="flex: 1">
         {{ t('lami.joinRoom') }}
       </button>
       <button (click)="backToMain()" class="btn-secondary" style="flex: 1">
         {{ t('lami.backToMain') }}
       </button>
-    </div>
-
-    <!-- Sample Tiles Display -->
-    <div style="margin-top: 30px; text-align: center">
-      <h3 style="color: #eee; margin-bottom: 10px">{{ t('lami.tilePreview') }}</h3>
-      <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap">
-        <app-lami-tile [number]="1" color="red"></app-lami-tile>
-        <app-lami-tile [number]="10" color="blue"></app-lami-tile>
-        <app-lami-tile [number]="11" color="red"></app-lami-tile>
-        <!-- This shows J (Jack) with Hearts -->
-        <app-lami-tile [number]="13" color="green"></app-lami-tile>
-        <!-- This shows K with Spades -->
-        <app-lami-tile number="joker" color="red"></app-lami-tile>
-        <!-- This shows the Joker -->
-        <app-lami-tile [number]="7" color="green" [isBack]="true"></app-lami-tile>
-      </div>
     </div>
   </div>
 </div>

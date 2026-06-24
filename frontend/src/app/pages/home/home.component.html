@@ -1,5 +1,5 @@
 <div class="lobby-overlay">
-  <div class="glass-card" style="min-width: 400px;">
+  <div class="glass-card" style="min-width: 400px">
     <h1 class="lobby-title">{{ t('lobby.title') }}</h1>
     <p class="lobby-desc">{{ t('lobby.subtitle') }}</p>
 
@@ -20,9 +20,15 @@
       <input type="text" [(ngModel)]="roomId" (keyup.enter)="joinRoom()" class="form-input" />
     </div>
 
-    <div class="button-group" style="display: flex; flex-direction: column; gap: 10px;">
+    <div class="button-group" style="display: flex; gap: 10px">
       <button (click)="joinRoom()" class="btn-primary">{{ t('lobby.joinRoom') }}</button>
-      <button (click)="navigateToLamiLobby()" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">{{ t('login.goToLami') }}</button>
+      <button
+        (click)="navigateToLamiLobby()"
+        class="btn-secondary"
+        style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2)"
+      >
+        {{ t('login.goToLami') }}
+      </button>
     </div>
   </div>
 </div>

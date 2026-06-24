@@ -15,7 +15,8 @@ import { APP_VERSION } from '../../../environments/version';
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, ScoringGuideComponent, LamiGuideComponent, FormsModule, RouterModule],
-  templateUrl: './header.component.html'
+  templateUrl: './header.component.html',
+  styleUrl: './header.component.scss'
 })
 export class HeaderComponent {
   gameService = inject(GameService);
@@ -71,6 +72,20 @@ export class HeaderComponent {
 
   get gameState() {
     return this.gameService.gameState();
+  }
+
+  /** Lami game state — available when on lami-room route */
+  get lamiState() {
+    const s = this.gameService.gameState();
+    // gameState is set for both mahjong and lami; differentiate by URL
+    return this.isLamiRoom ? s : null;
+  }
+
+  quitLami() {
+    if (confirm('Are you sure you want to quit the room?')) {
+      this.gameService.disconnect();
+      this.router.navigate(['/']);
+    }
   }
 
   t(key: string, params?: Record<string, any>): string {
