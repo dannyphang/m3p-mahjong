@@ -44,7 +44,7 @@ async function updatePlayerStats(uid, gameType, netCoins, isWin, extraStats = {}
       if (!doc.exists) return;
       
       const data = doc.data();
-      const type = gameType === 'lami' ? 'lami' : 'mahjong';
+      const type = gameType === 'lami' ? 'lami' : gameType === 'dizhu' ? 'dizhu' : 'mahjong';
       const currentStats = data.stats?.[type] || { totalGamesPlayed: 0, totalWins: 0 };
       
       const updates = {
@@ -88,7 +88,11 @@ async function updatePlayerStats(uid, gameType, netCoins, isWin, extraStats = {}
       for (const [key, val] of Object.entries(extraStats)) {
         if (typeof val === 'number') {
            const prevVal = currentStats[key] || 0;
-           updates[`stats.${type}.${key}`] = prevVal + val;
+           if (key === 'highestMultiplier' || key === 'maxBombsSingleGame') {
+             updates[`stats.${type}.${key}`] = Math.max(prevVal, val);
+           } else {
+             updates[`stats.${type}.${key}`] = prevVal + val;
+           }
         }
       }
 

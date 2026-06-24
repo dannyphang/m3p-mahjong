@@ -20,6 +20,9 @@
         <button [class.active]="selectedTab === 'lami'" (click)="setTab('lami')">
           🃏 {{ t('stats.lami') }}
         </button>
+        <button [class.active]="selectedTab === 'dizhu'" (click)="setTab('dizhu')">
+          ⚔️ {{ t('stats.dizhu') }}
+        </button>
       </div>
     </div>
 
@@ -110,6 +113,92 @@
           <div class="stat-row">
             <span class="label">{{ t('stats.avgFanPerWin') }}</span>
             <span class="value">{{ getAverageFan(profile.stats.mahjong?.totalFanWon || 0, profile.stats.mahjong?.totalWins || 0) }}</span>
+          </div>
+        </div>
+
+        <div class="stat-card detail" style="grid-column: span 2;">
+          <div class="card-title">{{ t('stats.comboAchievements') }}</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px;">
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.tianHuCount') }}</span>
+              <span class="value pos">{{ profile.stats.mahjong?.tianHuCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.diHuCount') }}</span>
+              <span class="value pos">{{ profile.stats.mahjong?.diHuCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.fourJokersCount') }}</span>
+              <span class="value accent">{{ profile.stats.mahjong?.fourJokersCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.robbingKongCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.robbingKongCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.seasonsSetCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.seasonsSetCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.gentlemenSetCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.gentlemenSetCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.greatFourWindsCount') }}</span>
+              <span class="value accent">{{ profile.stats.mahjong?.greatFourWindsCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.littleFourWindsCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.littleFourWindsCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.greatThreeDragonsCount') }}</span>
+              <span class="value accent">{{ profile.stats.mahjong?.greatThreeDragonsCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.littleThreeDragonsCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.littleThreeDragonsCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.allCircleCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.allCircleCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.allHonorsCount') }}</span>
+              <span class="value accent">{{ profile.stats.mahjong?.allHonorsCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.huaShangCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.huaShangCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.gangShangCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.gangShangCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.hiddenTreasureCount') }}</span>
+              <span class="value accent">{{ profile.stats.mahjong?.hiddenTreasureCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.pongPongHandCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.pongPongHandCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.sevenPairsCount') }}</span>
+              <span class="value accent">{{ profile.stats.mahjong?.sevenPairsCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.pingHuCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.pingHuCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.eighteenArhatsCount') }}</span>
+              <span class="value accent">{{ profile.stats.mahjong?.eighteenArhatsCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.noFlowersCount') }}</span>
+              <span class="value">{{ profile.stats.mahjong?.noFlowersCount || 0 }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -208,6 +297,162 @@
           <div class="stat-row">
             <span class="label">{{ t('stats.4AcesCombo') }}</span>
             <span class="value">{{ profile.stats.lami?.fourAcesCount || 0 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIZHU STATS -->
+    <div class="stats-grid" *ngIf="selectedTab === 'dizhu'">
+      <!-- Hero Card -->
+      <div class="stat-card hero-card">
+        <div class="win-rate-ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="45"></circle>
+            <circle class="ring-progress" cx="50" cy="50" r="45"
+              [style.stroke-dasharray]="getCircleDashArray()"
+              [style.stroke-dashoffset]="getCircleDashOffset(getWinRateValue(profile.stats.dizhu?.totalWins || 0, profile.stats.dizhu?.totalGamesPlayed || 0))">
+            </circle>
+          </svg>
+          <div class="ring-text">
+            <span class="rate">{{ getWinRateValue(profile.stats.dizhu?.totalWins || 0, profile.stats.dizhu?.totalGamesPlayed || 0) }}%</span>
+            <span class="label">{{ t('stats.winRate') }}</span>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-row">
+            <span class="label">{{ t('stats.gamesPlayed') }}</span>
+            <span class="value">{{ profile.stats.dizhu?.totalGamesPlayed || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.wins') }} (赢家)</span>
+            <span class="value pos">{{ profile.stats.dizhu?.totalWins || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.netCoins') }}</span>
+            <span class="value" [class.pos]="getNetCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0) > 0" [class.neg]="getNetCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0) < 0">
+              {{ getNetCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0) > 0 ? '+' : '' }}{{ getNetCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Cards -->
+      <div class="mini-cards">
+        <div class="stat-card mini">
+          <div class="value accent">{{ profile.stats.dizhu?.highestCoinWin || 0 }}</div>
+          <div class="label">{{ t('stats.bestWin') }}</div>
+        </div>
+        <div class="stat-card mini">
+          <div class="value neg">{{ profile.stats.dizhu?.highestCoinLose || 0 }}</div>
+          <div class="label">{{ t('stats.worstLoss') }}</div>
+        </div>
+        <div class="stat-card mini">
+          <div class="value" [class.pos]="getNetCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0) > 0" [class.neg]="getNetCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0) < 0">
+            {{ getNetCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0) > 0 ? '+' : '' }}{{ getNetCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0) }}
+          </div>
+          <div class="label">{{ t('stats.totalNet') }}</div>
+        </div>
+        <div class="stat-card mini">
+          <div class="value accent">{{ getAverageCoins(profile.stats.dizhu?.totalCoinsGained || 0, profile.stats.dizhu?.totalCoinsLost || 0, profile.stats.dizhu?.totalGamesPlayed || 0) }}</div>
+          <div class="label">{{ t('stats.coinsPerGame') }}</div>
+        </div>
+      </div>
+
+      <!-- Detail Cards -->
+      <div class="detail-cards">
+        <!-- Card 1: Core Metrics -->
+        <div class="stat-card detail">
+          <div class="card-title">{{ t('stats.coreMetrics') }}</div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.landlordWinRate') }}</span>
+            <span class="value accent">{{ getWinRate(profile.stats.dizhu?.landlordWins || 0, profile.stats.dizhu?.landlordGames || 0) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.peasantWinRate') }}</span>
+            <span class="value accent">{{ getWinRate(profile.stats.dizhu?.farmerWins || 0, profile.stats.dizhu?.farmerGames || 0) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.landlordChoiceRate') }}</span>
+            <span class="value">{{ getDizhuChoiceRate(profile.stats.dizhu?.landlordChoiceAttempts || 0, profile.stats.dizhu?.totalGamesPlayed || 0) }}</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Multiplier & Bombs -->
+        <div class="stat-card detail">
+          <div class="card-title">{{ t('stats.multiplierAndBombs') }}</div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.highestMultiplier') }}</span>
+            <span class="value accent">{{ profile.stats.dizhu?.highestMultiplier || 1 }}x</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.maxBombsSingleGame') }}</span>
+            <span class="value">{{ profile.stats.dizhu?.maxBombsSingleGame || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.rocketCount') }}</span>
+            <span class="value">{{ profile.stats.dizhu?.rocketCount || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.showCardsWinRate') }}</span>
+            <span class="value text-muted">{{ t('stats.notSupported') }}</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Special Accomplishments -->
+        <div class="stat-card detail">
+          <div class="card-title">{{ t('stats.accomplishments') }}</div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.springCount') }}</span>
+            <span class="value pos">{{ profile.stats.dizhu?.springCount || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.antiSpringCount') }}</span>
+            <span class="value pos">{{ profile.stats.dizhu?.antiSpringCount || 0 }}</span>
+          </div>
+        </div>
+
+        <!-- Card 4: Technical Stats -->
+        <div class="stat-card detail">
+          <div class="card-title">{{ t('stats.technicalStats') }}</div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.avgRemainingCardsLost') }}</span>
+            <span class="value">{{ getDizhuRemainingCards(profile.stats.dizhu?.remainingCardsLostSum || 0, profile.stats.dizhu?.lostGamesCount || 0) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.helpTeammateSuccessRate') }}</span>
+            <span class="value text-muted">{{ t('stats.notSupported') }}</span>
+          </div>
+        </div>
+
+        <!-- Card 5: Card Pattern Achievements -->
+        <div class="stat-card detail" style="grid-column: span 2;">
+          <div class="card-title">{{ t('stats.cardPatternAchievements') }}</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px;">
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.airplaneCount') }}</span>
+              <span class="value accent">{{ profile.stats.dizhu?.airplaneCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.bombPlayedCount') }}</span>
+              <span class="value pos">{{ profile.stats.dizhu?.bombPlayedCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.tripleOneCount') }}</span>
+              <span class="value">{{ profile.stats.dizhu?.tripleOneCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.triplePairCount') }}</span>
+              <span class="value">{{ profile.stats.dizhu?.triplePairCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.quadTwoCount') }}</span>
+              <span class="value accent">{{ profile.stats.dizhu?.quadTwoCount || 0 }}</span>
+            </div>
+            <div class="stat-row" style="border: none; padding: 0;">
+              <span class="label">{{ t('stats.rocketCount') }}</span>
+              <span class="value pos">{{ profile.stats.dizhu?.rocketCount || 0 }}</span>
+            </div>
           </div>
         </div>
       </div>

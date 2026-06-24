@@ -24,6 +24,26 @@ export interface UserProfile {
       contractPenaltyCount?: number;
       totalCoinsGained?: number;
       totalCoinsLost?: number;
+      robbingKongCount?: number;
+      fourJokersCount?: number;
+      tianHuCount?: number;
+      diHuCount?: number;
+      seasonsSetCount?: number;
+      gentlemenSetCount?: number;
+      greatFourWindsCount?: number;
+      littleFourWindsCount?: number;
+      greatThreeDragonsCount?: number;
+      littleThreeDragonsCount?: number;
+      allCircleCount?: number;
+      allHonorsCount?: number;
+      huaShangCount?: number;
+      gangShangCount?: number;
+      hiddenTreasureCount?: number;
+      pongPongHandCount?: number;
+      sevenPairsCount?: number;
+      pingHuCount?: number;
+      eighteenArhatsCount?: number;
+      noFlowersCount?: number;
     };
     lami?: {
       totalGamesPlayed: number;
@@ -45,6 +65,33 @@ export interface UserProfile {
       deadwoodGamesCount?: number;
       totalCoinsGained?: number;
       totalCoinsLost?: number;
+    };
+    dizhu?: {
+      totalGamesPlayed: number;
+      totalWins: number;
+      currentWinStreak?: number;
+      highestWinStreak?: number;
+      highestCoinWin?: number;
+      highestCoinLose?: number;
+      totalCoinsGained?: number;
+      totalCoinsLost?: number;
+      landlordGames?: number;
+      landlordWins?: number;
+      farmerGames?: number;
+      farmerWins?: number;
+      landlordChoiceAttempts?: number;
+      maxBombsSingleGame?: number;
+      rocketCount?: number;
+      highestMultiplier?: number;
+      springCount?: number;
+      antiSpringCount?: number;
+      lostGamesCount?: number;
+      remainingCardsLostSum?: number;
+      airplaneCount?: number;
+      tripleOneCount?: number;
+      triplePairCount?: number;
+      quadTwoCount?: number;
+      bombPlayedCount?: number;
     };
   };
 }
@@ -111,7 +158,8 @@ export class AuthService {
       coins: 10000,
       stats: { 
         mahjong: { totalGamesPlayed: 0, totalWins: 0, totalFanWon: 0 },
-        lami: { totalGamesPlayed: 0, totalWins: 0 }
+        lami: { totalGamesPlayed: 0, totalWins: 0 },
+        dizhu: { totalGamesPlayed: 0, totalWins: 0 }
       }
     };
     

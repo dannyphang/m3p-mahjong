@@ -119,6 +119,16 @@ class DizhuGameState {
       return existingPlayer;
     }
 
+    if (!isBot && this.players.length >= 3) {
+      const botIdx = this.players.findIndex(p => p.isBot);
+      if (botIdx !== -1) {
+        const botId = this.players[botIdx].id;
+        this.players.splice(botIdx, 1);
+        delete this.hands[botId];
+        delete this.accumulatedPoints[botId];
+      }
+    }
+
     if (this.players.length >= 3) return null;
     const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
     const player = { id, name, socketId, isBot, isReady: isBot, isConnected: true, avatar };
@@ -135,7 +145,13 @@ class DizhuGameState {
     const idx = this.players.findIndex(p => p.socketId === socketId);
     if (idx !== -1) {
       const p = this.players[idx];
-      p.isConnected = false;
+      if (this.status === 'WAITING' || this.status === 'GAME_OVER') {
+        this.players.splice(idx, 1);
+        delete this.hands[p.id];
+        delete this.accumulatedPoints[p.id];
+      } else {
+        p.isConnected = false;
+      }
       this.addLog({ key: 'log.left', params: { name: p.name } });
 
       const activeHumans = this.players.filter(pl => !pl.isBot && pl.isConnected);
@@ -162,10 +178,25 @@ class DizhuGameState {
     this.bombsCount = 0;
     this.landlordCardsPlayedCount = 0;
     this.farmerCardsPlayedCount = {};
+    this.landlordPlayCount = 0;
+    this.playerBombsPlayedCount = {};
+    this.playerRocketsPlayedCount = {};
+    this.playerAirplanesPlayedCount = {};
+    this.playerTripleOnesPlayedCount = {};
+    this.playerTriplePairsPlayedCount = {};
+    this.playerQuadsPlayedCount = {};
+    this.hasBidded = {};
 
     this.players.forEach(p => {
       this.hands[p.id] = this.deck.splice(0, 17).sort((a, b) => a.rank - b.rank);
       this.farmerCardsPlayedCount[p.id] = 0;
+      this.playerBombsPlayedCount[p.id] = 0;
+      this.playerRocketsPlayedCount[p.id] = 0;
+      this.playerAirplanesPlayedCount[p.id] = 0;
+      this.playerTripleOnesPlayedCount[p.id] = 0;
+      this.playerTriplePairsPlayedCount[p.id] = 0;
+      this.playerQuadsPlayedCount[p.id] = 0;
+      this.hasBidded[p.id] = false;
     });
 
     // 3 cards left for the bottom deck
@@ -198,6 +229,10 @@ class DizhuGameState {
     // Validate bid
     if (bidValue < 0 || bidValue > 3) return false;
     if (bidValue !== 0 && bidValue <= this.highestBid) return false;
+
+    if (bidValue > 0) {
+      this.hasBidded[playerId] = true;
+    }
 
     this.bids[playerId] = bidValue;
     this.bidCount++;
@@ -281,21 +316,35 @@ class DizhuGameState {
     // Count towards springs
     if (playerId === this.landlordId) {
       this.landlordCardsPlayedCount += cardsToPlay.length;
+      this.landlordPlayCount++;
     } else {
       this.farmerCardsPlayedCount[playerId] = (this.farmerCardsPlayedCount[playerId] || 0) + cardsToPlay.length;
     }
 
     const parsed = parseHand(cardsToPlay);
     // Double for bomb or rocket
-    if (parsed.type === 'bomb' || parsed.type === 'rocket') {
+    if (parsed.type === 'bomb') {
       this.bombsCount++;
+      this.playerBombsPlayedCount[playerId] = (this.playerBombsPlayedCount[playerId] || 0) + 1;
       this.addLog({ key: 'log.dizhu.bombPlayed', params: { name: currentPlayer.name } });
+    } else if (parsed.type === 'rocket') {
+      this.bombsCount++;
+      this.playerRocketsPlayedCount[playerId] = (this.playerRocketsPlayedCount[playerId] || 0) + 1;
+      this.addLog({ key: 'log.dizhu.bombPlayed', params: { name: currentPlayer.name } });
+    } else if (parsed.type === 'plane_wings' || parsed.type === 'triple_straight') {
+      this.playerAirplanesPlayedCount[playerId] = (this.playerAirplanesPlayedCount[playerId] || 0) + 1;
+    } else if (parsed.type === 'triple_one') {
+      this.playerTripleOnesPlayedCount[playerId] = (this.playerTripleOnesPlayedCount[playerId] || 0) + 1;
+    } else if (parsed.type === 'triple_pair') {
+      this.playerTriplePairsPlayedCount[playerId] = (this.playerTriplePairsPlayedCount[playerId] || 0) + 1;
+    } else if (parsed.type === 'quad_two') {
+      this.playerQuadsPlayedCount[playerId] = (this.playerQuadsPlayedCount[playerId] || 0) + 1;
     }
 
-    this.lastPlayedHand = { playerId, cards: cardsToPlay };
+    this.lastPlayedHand = { playerId, cards: parsed.cards };
     this.passCount = 0; // reset passes
 
-    this.addLog({ key: 'log.dizhu.playHand', params: { name: currentPlayer.name, type: parsed.type, cards: formatDizhuCardsForLog(cardsToPlay) } });
+    this.addLog({ key: 'log.dizhu.playHand', params: { name: currentPlayer.name, type: parsed.type, cards: formatDizhuCardsForLog(parsed.cards) } });
 
     // Check Game Over
     if (playerHand.length === 0) {
@@ -342,27 +391,23 @@ class DizhuGameState {
       // Landlord won. Check if any farmer played any card.
       const totalFarmerPlays = Object.values(this.farmerCardsPlayedCount).reduce((a, b) => a + b, 0);
       if (totalFarmerPlays === 0) isSpring = true;
-    } else {
-      // Farmers won. Check if landlord played only their initial single hand of card(s) once.
-      // Wait, landlord only plays 1 hand means landlordCardsPlayedCount equals the number of cards in their first play.
-      // But they starts the game. If they played exactly 1 time (which we can check, but simpler: let's track the count).
-      // Let's assume landlord only played once. Since landlord cards played is just the length of their first hand, and nothing else.
-      // Wait, we can track landlord turns played: if landlord played exactly 1 hand, then yes.
-      // Let's keep it simple: if landlordCardsPlayedCount is very small or if we can track landlordTurnCount.
-      // Let's just double checks count. If landlord played exactly 1 turn. We'll simplify: if landlords played less than 20 cards and played exactly once.
-      // Let's count turns played by landlord. We can assume if landlordCardsPlayedCount equals cards in their first hand and nothing more.
-      // For simplicity, let's say if landlords played 1 hand and no more. Let's make it the default spring factor.
+    }
+    // Anti-spring calculation
+    let isAntiSpring = false;
+    if (!landlordWon && this.landlordPlayCount === 1) {
+      isAntiSpring = true;
     }
 
-    const multiplier = Math.pow(2, this.bombsCount) * (isSpring ? 2 : 1) * this.highestBid;
+    const multiplier = Math.pow(2, this.bombsCount) * ((isSpring || isAntiSpring) ? 2 : 1) * this.highestBid;
     const baseWinAmount = this.rates.base * multiplier;
 
     // Landlord wins double / loses double
     const winScores = {};
-    const rankings = { winner: winnerId, landlordWon, isSpring, multiplier, details: [] };
+    const rankings = { winner: winnerId, landlordWon, isSpring, isAntiSpring, multiplier, details: [] };
 
     this.players.forEach(p => {
       let net = 0;
+      const isWinner = p.id === winnerId;
       if (landlordWon) {
         if (p.id === this.landlordId) {
           net = baseWinAmount * 2;
@@ -388,10 +433,27 @@ class DizhuGameState {
       });
       
       // Update stats in firebase
-      updateDizhuPlayerStats(io, p.id, net, net > 0, {
-        isLandlord: p.id === this.landlordId,
-        isSpring,
-        bombsCount: this.bombsCount
+      const isPlayerLandlord = p.id === this.landlordId;
+      const isWin = isWinner || (!isPlayerLandlord && !landlordWon) || (isPlayerLandlord && landlordWon);
+      
+      updateDizhuPlayerStats(io, p.id, net, isWin, {
+        landlordGames: isPlayerLandlord ? 1 : 0,
+        landlordWins: (isPlayerLandlord && isWin) ? 1 : 0,
+        farmerGames: !isPlayerLandlord ? 1 : 0,
+        farmerWins: (!isPlayerLandlord && isWin) ? 1 : 0,
+        landlordChoiceAttempts: this.hasBidded[p.id] ? 1 : 0,
+        maxBombsSingleGame: this.playerBombsPlayedCount[p.id] || 0,
+        rocketCount: this.playerRocketsPlayedCount[p.id] || 0,
+        highestMultiplier: multiplier,
+        springCount: (isPlayerLandlord && isSpring) ? 1 : 0,
+        antiSpringCount: (!isPlayerLandlord && isAntiSpring) ? 1 : 0,
+        lostGamesCount: !isWin ? 1 : 0,
+        remainingCardsLostSum: !isWin ? this.hands[p.id].length : 0,
+        airplaneCount: this.playerAirplanesPlayedCount[p.id] || 0,
+        tripleOneCount: this.playerTripleOnesPlayedCount[p.id] || 0,
+        triplePairCount: this.playerTriplePairsPlayedCount[p.id] || 0,
+        quadTwoCount: this.playerQuadsPlayedCount[p.id] || 0,
+        bombPlayedCount: this.playerBombsPlayedCount[p.id] || 0
       });
     });
 

@@ -71,6 +71,10 @@ export class DizhuRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     return s;
   }
 
+  get showNarrator() {
+    return this.gameService.showNarrator();
+  }
+
   get myId() {
     return this.playerIdSignal();
   }
@@ -209,6 +213,14 @@ export class DizhuRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   pass() {
     this.gameService.socket?.emit('dizhuPass', { roomId: this.roomId, playerId: this.myId });
     this.clearSelection();
+  }
+
+  getPlayerName(playerId: string): string {
+    if (playerId === this.myId) {
+      return this.t('lobby.you');
+    }
+    const p = this.state?.players?.find((x: any) => x.id === playerId);
+    return p ? p.name : playerId;
   }
 
   getSuitSymbol(suit: string | undefined): string {

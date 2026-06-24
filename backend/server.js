@@ -1212,6 +1212,32 @@ class GameState {
         if (scoreResult.totalFan >= 10) extraStats.baoCount = 1;
         if (isSelfDraw || isTianHu || isDiHu) extraStats.selfPickWins = 1;
         else extraStats.discardWins = 1;
+
+        if (scoreResult.breakdown) {
+          scoreResult.breakdown.forEach(combo => {
+            const name = combo.name || '';
+            if (name.includes('抢杠') || name.includes('Robbing')) extraStats.robbingKongCount = 1;
+            if (name.includes('四飞') || name.includes('Four Jokers')) extraStats.fourJokersCount = 1;
+            if (name.includes('天胡') || name.includes('Heavenly')) extraStats.tianHuCount = 1;
+            if (name.includes('地胡') || name.includes('Earthly')) extraStats.diHuCount = 1;
+            if (name.includes('四季') || name.includes('Seasons')) extraStats.seasonsSetCount = 1;
+            if (name.includes('四君子') || name.includes('Gentlemen')) extraStats.gentlemenSetCount = 1;
+            if (name.includes('大四喜') || name.includes('Great Four Winds')) extraStats.greatFourWindsCount = 1;
+            if (name.includes('小四喜') || name.includes('Little Four Winds')) extraStats.littleFourWindsCount = 1;
+            if (name.includes('大三元') || name.includes('Great Three Dragons')) extraStats.greatThreeDragonsCount = 1;
+            if (name.includes('小三元') || name.includes('Little Three Dragons')) extraStats.littleThreeDragonsCount = 1;
+            if (name.includes('全筒子') || name.includes('All Circle')) extraStats.allCircleCount = 1;
+            if (name.includes('字一色') || name.includes('All Honors')) extraStats.allHonorsCount = 1;
+            if (name.includes('花上') || name.includes('Win on Flower')) extraStats.huaShangCount = 1;
+            if (name.includes('杠上') || name.includes('Win on Kong')) extraStats.gangShangCount = 1;
+            if (name.includes('坎坎胡') || name.includes('Hidden Treasure')) extraStats.hiddenTreasureCount = 1;
+            if (name.includes('碰碰胡') || name.includes('Pong-Pong')) extraStats.pongPongHandCount = 1;
+            if (name.includes('七星对子') || name.includes('Seven Pairs')) extraStats.sevenPairsCount = 1;
+            if (name.includes('平胡') || name.includes('Ping Hu')) extraStats.pingHuCount = 1;
+            if (name.includes('十八罗汉') || name.includes('Eighteen Arhats')) extraStats.eighteenArhatsCount = 1;
+            if (name.includes('无花') || name.includes('邋遢胡') || name.includes('No Flowers')) extraStats.noFlowersCount = 1;
+          });
+        }
       }
 
       updatePlayerStats(p.id, netCoins, isWin, extraStats);
@@ -1349,8 +1375,11 @@ io.on('connection', (socket) => {
     const isReconnecting = room.players.some(p => p.name === name && !p.isBot && p.isConnected === false);
     
     if (room.players.length >= maxPlayers && !isReconnecting) {
-      socket.emit('errorMsg', 'Room is already full.');
-      return;
+      const hasBot = room.players.some(p => p.isBot);
+      if (!hasBot) {
+        socket.emit('errorMsg', 'Room is already full.');
+        return;
+      }
     }
 
     socket.join(roomId);

@@ -105,6 +105,16 @@ class LamiGameState {
       return existingPlayer;
     }
 
+    if (!isBot && this.players.length >= 4) {
+      const botIdx = this.players.findIndex(p => p.isBot);
+      if (botIdx !== -1) {
+        const botId = this.players[botIdx].id;
+        this.players.splice(botIdx, 1);
+        delete this.hands[botId];
+        delete this.accumulatedPoints[botId];
+      }
+    }
+
     if (this.players.length >= 4) return null;
     const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
     const player = { id, name, socketId, isBot, isReady: isBot, hasBrokenIce: false, burned: false, isConnected: true, avatar };

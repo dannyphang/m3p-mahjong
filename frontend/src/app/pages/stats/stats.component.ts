@@ -65,6 +65,16 @@ export class StatsComponent {
     return Math.round(this.getNetCoins(gained, lost) / played);
   }
 
+  getDizhuChoiceRate(attempts: number, played: number): string {
+    if (!played || played === 0) return '0%';
+    return Math.round(((attempts || 0) / played) * 100) + '%';
+  }
+
+  getDizhuRemainingCards(sum: number, lostCount: number): string {
+    if (!lostCount || lostCount === 0) return '0.0';
+    return ((sum || 0) / lostCount).toFixed(1);
+  }
+
   getWinTypeSplit(selfPick: number, discard: number): string {
     const sp = selfPick || 0;
     const d = discard || 0;
@@ -75,9 +85,9 @@ export class StatsComponent {
     return `${spRate}% / ${dRate}%`;
   }
 
-  selectedTab: 'mahjong' | 'lami' = 'mahjong';
+  selectedTab: 'mahjong' | 'lami' | 'dizhu' = 'mahjong';
 
-  setTab(tab: 'mahjong' | 'lami') {
+  setTab(tab: 'mahjong' | 'lami' | 'dizhu') {
     this.selectedTab = tab;
   }
 

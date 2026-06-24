@@ -144,6 +144,23 @@ export class HeaderComponent {
     return this.router.url.includes('lami');
   }
 
+  get isDizhuRoom() {
+    return this.router.url.includes('dizhu');
+  }
+
+  get dizhuState() {
+    const s = this.gameService.gameState();
+    return this.isDizhuRoom ? s : null;
+  }
+
+  get dizhuMultiplier(): number {
+    const s = this.dizhuState;
+    if (!s) return 0;
+    const bid = s.highestBid || 0;
+    const bombs = s.bombsCount || 0;
+    return bid * Math.pow(2, bombs);
+  }
+
   ngZone = inject(NgZone);
 
   async logout() {
