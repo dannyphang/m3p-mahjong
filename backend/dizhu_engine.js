@@ -305,10 +305,9 @@ function parseHandAll(cards, wildcardRank) {
   if (normalCards.length === 0) {
     ranksToTry = [wildcardRank];
   } else {
-    const normalRanks = normalCards.map(c => c.rank);
-    const minR = Math.max(3, Math.min(...normalRanks) - 4);
-    const maxR = Math.min(15, Math.max(...normalRanks) + 4);
-    for (let r = minR; r <= maxR; r++) {
+    // ponytail: use full 3-15 range to allow wildcards to form triples/quads far from their wings.
+    // 13^4 is max 28,561 branches, fast enough in JS.
+    for (let r = 3; r <= 15; r++) {
       ranksToTry.push(r);
     }
   }

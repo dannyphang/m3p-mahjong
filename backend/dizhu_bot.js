@@ -66,14 +66,22 @@ function handleBotPlay(state, io, difficulty) {
   // If free play, start a new combination
   if (!state.lastPlayedHand) {
     const play = selectInitialPlay(hand, difficulty);
-    state.playCards(botId, play, io);
+    const success = state.playCards(botId, play, io);
+    if (!success) {
+      // ponytail: Fallback to lowest single if AI generates an illegal initial play
+      state.playCards(botId, [hand[0]], io);
+    }
     return;
   }
 
   // Follow the hand
   const followPlay = findFollowPlay(hand, state.lastPlayedHand, difficulty, state);
   if (followPlay && followPlay.length > 0) {
-    state.playCards(botId, followPlay, io);
+    const success = state.playCards(botId, followPlay, io);
+    if (!success) {
+      // ponytail: Fallback to pass if AI generates an illegal follow play
+      state.pass(botId, io);
+    }
   } else {
     state.pass(botId, io);
   }
@@ -579,6 +587,10 @@ function findFollowPlayLaizi(hand, targetHand, difficulty, state, wildcardRank) 
     if (excludedRanks.has(P)) return null;
     const native = normalCounts[P] || [];
     const neededWildcards = neededSize - native.length;
+    // ponytail: A combination made entirely of wildcards acts as its natural rank.
+    if (native.length === 0 && neededWildcards > 0 && P !== wildcardRank) {
+      return null;
+    }
     if (neededWildcards >= 0 && neededWildcards <= availableWildcards.length) {
       return [...native, ...availableWildcards.slice(0, neededWildcards)];
     }
