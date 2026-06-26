@@ -1,4 +1,4 @@
-import { Component, inject, NgZone, HostListener } from '@angular/core';
+import { Component, inject, NgZone, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameService } from '../../services/game.service';
 import { AudioService } from '../../services/audio.service';
@@ -29,6 +29,36 @@ export class HeaderComponent {
   showVolumeSlider = false;
   showAccountMenu = false;
   appVersion = APP_VERSION;
+  
+  private lastMultiplier = 0;
+  animateMultiplier = false;
+
+  constructor() {
+    effect(() => {
+      const s = this.gameService.gameState();
+      if (!s) {
+        this.lastMultiplier = 0;
+        this.animateMultiplier = false;
+        return;
+      }
+      
+      const bid = s.highestBid || 0;
+      const bombs = s.bombsCount || 0;
+      const current = bid * Math.pow(2, bombs);
+
+      if (current > this.lastMultiplier) {
+        if (this.lastMultiplier > 0) {
+          this.animateMultiplier = true;
+          setTimeout(() => {
+            this.animateMultiplier = false;
+          }, 1000);
+        }
+        this.lastMultiplier = current;
+      } else if (current < this.lastMultiplier) {
+        this.lastMultiplier = current;
+      }
+    });
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {

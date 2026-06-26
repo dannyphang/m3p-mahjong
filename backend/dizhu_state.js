@@ -59,8 +59,9 @@ class DizhuGameState {
     
     this.logs = [];
     this.accumulatedPoints = {}; // playerId -> net points (coins)
-    this.settings = { enableTimer: false };
+    this.settings = { enableTimer: false, mode: 'classic' };
     this.rates = { base: 10 }; // base rate per score point
+    this.wildcardRank = null;
   }
 
   addLog(msg) {
@@ -105,11 +106,18 @@ class DizhuGameState {
       accumulatedPoints: this.accumulatedPoints,
       settings: this.settings,
       rates: this.rates,
-      rankings: this.rankings
+      rankings: this.rankings,
+      wildcardRank: this.wildcardRank
     };
   }
 
-  addPlayer(name, socketId, isBot = false, initialCoins = 1000, avatar = null) {
+  addPlayer(name, socketId, isBot = false, difficulty = 'normal', initialCoins = 1000, avatar = null) {
+    if (!isBot) {
+      avatar = initialCoins;
+      initialCoins = typeof difficulty === 'number' ? difficulty : 1000;
+      difficulty = 'normal';
+    }
+
     const existingPlayer = this.players.find(p => p.name === name && !p.isBot);
     if (existingPlayer && existingPlayer.isConnected === false) {
       existingPlayer.socketId = socketId;
@@ -131,7 +139,7 @@ class DizhuGameState {
 
     if (this.players.length >= 3) return null;
     const id = isBot ? `bot_${Math.random().toString(36).substr(2, 9)}` : socketId;
-    const player = { id, name, socketId, isBot, isReady: isBot, isConnected: true, avatar };
+    const player = { id, name, socketId, isBot, difficulty: isBot ? difficulty : null, isReady: isBot, isConnected: true, avatar };
     this.players.push(player);
 
     this.hands[id] = [];
@@ -162,10 +170,21 @@ class DizhuGameState {
     return false;
   }
 
+  changeGameMode(mode, io) {
+    if (this.status !== 'WAITING') return false;
+    if (mode === 'classic' || mode === 'laizi') {
+      this.settings.mode = mode;
+      this.broadcastState(io);
+      return true;
+    }
+    return false;
+  }
+
   startGame(io) {
     this.status = 'BIDDING';
     this.roundNumber++;
     this.deck = shuffleDeck(createDizhuDeck());
+    this.wildcardRank = null;
 
     // Reset game parameters
     this.landlordId = null;
@@ -281,6 +300,13 @@ class DizhuGameState {
     const landlordName = this.players.find(p => p.id === landlordId).name;
     this.addLog({ key: 'log.dizhu.landlordRevealed', params: { name: landlordName, cards: formatDizhuCardsForLog(this.bottomCards) } });
 
+    if (this.settings.mode === 'laizi') {
+      // Pick a random rank from 3 to 15 (inclusive, which excludes jokers: 16 and 17)
+      this.wildcardRank = Math.floor(Math.random() * 13) + 3;
+      const rankToDisplay = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2' }[this.wildcardRank] || String(this.wildcardRank);
+      this.addLog({ key: 'log.dizhu.wildcardRolled', params: { rank: rankToDisplay } });
+    }
+
     // Landlord goes first
     this.currentTurn = this.players.findIndex(p => p.id === landlordId);
     this.broadcastState(io);
@@ -302,8 +328,7 @@ class DizhuGameState {
     }
 
     // Check if play beats last played hand
-    const lastCards = this.lastPlayedHand ? this.lastPlayedHand.cards : null;
-    if (!compareHands(lastCards, cardsToPlay)) {
+    if (!compareHands(this.lastPlayedHand, cardsToPlay, this.wildcardRank)) {
       return false; // Invalid or too small combination
     }
 
@@ -321,7 +346,23 @@ class DizhuGameState {
       this.farmerCardsPlayedCount[playerId] = (this.farmerCardsPlayedCount[playerId] || 0) + cardsToPlay.length;
     }
 
-    const parsed = parseHand(cardsToPlay);
+    const parsed = parseHand(cardsToPlay, this.wildcardRank);
+    
+    // Broadcast action animation for combos (excluding singles/pairs)
+    const animTypes = ['triple', 'triple_one', 'triple_pair', 'straight', 'double_straight', 'triple_straight', 'plane_wings', 'quad_two', 'bomb', 'rocket'];
+    if (parsed && animTypes.includes(parsed.type)) {
+      let animType = parsed.type;
+      if (animType === 'triple') {
+        animType = 'triple';
+      } else if (animType.startsWith('plane') || animType === 'triple_straight') {
+        animType = 'plane';
+      }
+      io.to(this.roomId).emit('actionAnim', {
+        type: animType,
+        playerId: playerId
+      });
+    }
+
     // Double for bomb or rocket
     if (parsed.type === 'bomb') {
       this.bombsCount++;
@@ -341,7 +382,14 @@ class DizhuGameState {
       this.playerQuadsPlayedCount[playerId] = (this.playerQuadsPlayedCount[playerId] || 0) + 1;
     }
 
-    this.lastPlayedHand = { playerId, cards: parsed.cards };
+    this.lastPlayedHand = { 
+      playerId, 
+      cards: parsed.cards,
+      type: parsed.type,
+      rank: parsed.rank,
+      wingType: parsed.wingType,
+      bombType: parsed.bombType
+    };
     this.passCount = 0; // reset passes
 
     this.addLog({ key: 'log.dizhu.playHand', params: { name: currentPlayer.name, type: parsed.type, cards: formatDizhuCardsForLog(parsed.cards) } });

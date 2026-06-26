@@ -1433,7 +1433,7 @@ io.on('connection', (socket) => {
       const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
       
       if (room.gameType === 'lami' || room.gameType === 'dizhu') {
-        room.addPlayer(botName, null, true); // initialCoins defaults to 1000
+        room.addPlayer(botName, null, true, difficulty || 'normal');
       } else {
         room.addPlayer(botName, null, true, difficulty || 'easy'); // initialCoins defaults to 100
       }
@@ -1577,6 +1577,13 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     if (room && room.gameType === 'dizhu') {
       room.pass(playerId, io);
+    }
+  });
+
+  socket.on('updateDizhuSettings', ({ roomId, mode }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'dizhu') {
+      room.changeGameMode(mode, io);
     }
   });
   // -----------------------------

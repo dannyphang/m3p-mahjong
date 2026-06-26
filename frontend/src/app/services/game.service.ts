@@ -57,6 +57,7 @@ export interface GameState {
   lastPlayedHand?: any;
   highestBid?: number;
   landlordId?: string | null;
+  wildcardRank?: number | null;
   rates?: {
     win?: number;
     joker?: number;
@@ -68,6 +69,7 @@ export interface GameState {
   settings: {
     enableTimer: boolean;
     timerDuration?: number;
+    mode?: 'classic' | 'laizi';
   };
 }
 

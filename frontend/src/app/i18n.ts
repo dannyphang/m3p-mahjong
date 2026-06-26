@@ -209,6 +209,11 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'log.dizhu.pass': '{name} passes.',
     'log.dizhu.bombPlayed': '💥 BOMB! Double multipliers!',
     'log.dizhu.gameOver': 'Game Over! {winner} won the game!',
+    'log.dizhu.wildcardRolled': '🎲 Wildcard rolled: {rank}! All cards of rank {rank} are now wildcards (except Jokers).',
+    'dizhu.modeSelect': 'Game Mode:',
+    'dizhu.modeClassic': 'Classic Mode',
+    'dizhu.modeLaizi': 'Laizi (Wildcard) Mode',
+    'dizhu.wildcardTitle': 'Wildcard',
 
     // Narrator Logs
     'log.joined': '{name} joined the room.',
@@ -244,7 +249,6 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'mahjong.rateLimit': 'Limit (10 Fan)',
     'mahjong.rateFei': 'Fei Diff',
 
-    // Animations
     'anim.pong': 'PONG!',
     'anim.kong': 'KONG!',
     'anim.chow': 'CHOW!',
@@ -252,6 +256,15 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'anim.draw': 'DRAW!',
     'anim.hu': 'HU!',
     'anim.discard': 'DISCARD!',
+    'anim.triple': 'TRIPLE!',
+    'anim.triple_one': 'THREE WITH ONE!',
+    'anim.triple_pair': 'THREE WITH TWO!',
+    'anim.straight': 'STRAIGHT!',
+    'anim.double_straight': 'CHAIN PAIRS!',
+    'anim.plane': 'AIRPLANE!',
+    'anim.quad_two': 'QUAD WITH TWO!',
+    'anim.bomb': 'BOMB!',
+    'anim.rocket': 'ROCKET!',
 
     'menu.playground': 'Playground',
     'menu.backToLobby': 'Back to Lobby',
@@ -577,6 +590,11 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'log.dizhu.pass': '{name} 不要。',
     'log.dizhu.bombPlayed': '💥 炸弹！倍率翻倍！',
     'log.dizhu.gameOver': '游戏结束！{winner} 赢得了本局！',
+    'log.dizhu.wildcardRolled': '🎲 本局翻出癞子点数：{rank}！全场所有的“{rank}”都变成了万能百搭牌（除大小王之外）。',
+    'dizhu.modeSelect': '游戏模式:',
+    'dizhu.modeClassic': '经典模式',
+    'dizhu.modeLaizi': '癞子 (百搭) 模式',
+    'dizhu.wildcardTitle': '本局癞子牌',
 
     // Stats & Header Menu
     'mahjong.coinRates': '金币费率',
@@ -584,7 +602,6 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'mahjong.rateLimit': '封顶 (10番)',
     'mahjong.rateFei': '飞牌差价',
 
-    // Animations
     'anim.pong': '碰!',
     'anim.kong': '杠!',
     'anim.chow': '吃!',
@@ -592,6 +609,15 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'anim.draw': '摸牌!',
     'anim.hu': '胡!',
     'anim.discard': '打牌!',
+    'anim.triple': '三张!',
+    'anim.triple_one': '三带一!',
+    'anim.triple_pair': '三带二!',
+    'anim.straight': '顺子!',
+    'anim.double_straight': '连对!',
+    'anim.plane': '飞机!',
+    'anim.quad_two': '四带二!',
+    'anim.bomb': '炸弹!',
+    'anim.rocket': '王炸!',
 
     'menu.playground': '游戏大厅',
     'menu.backToLobby': '返回大厅',

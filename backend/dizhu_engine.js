@@ -67,30 +67,56 @@ function isConsecutive(ranks) {
   return ranks[ranks.length - 1] <= 14; // Must not include 2 (15) or Jokers
 }
 
-function parseHand(cards) {
+const RANK_TO_VALUE = {
+  3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10',
+  11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2'
+};
+
+function parseSubstitutedHand(cards) {
   if (!cards || cards.length === 0) return null;
 
   const len = cards.length;
-  // Sort cards by rank
   const sorted = [...cards].sort((a, b) => a.rank - b.rank);
   const ranks = sorted.map(c => c.rank);
 
-  // Calculate frequencies
   const counts = {};
   for (const r of ranks) {
     counts[r] = (counts[r] || 0) + 1;
   }
 
-  const freq = { 1: [], 2: [], 3: [], 4: [] };
+  const freq = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [] };
   for (const r in counts) {
     const count = counts[r];
     const rankNum = parseInt(r);
-    freq[count].push(rankNum);
+    if (freq[count]) {
+      freq[count].push(rankNum);
+    }
   }
 
-  // Sort freq keys
   for (const k in freq) {
     freq[k].sort((a, b) => a - b);
+  }
+
+  // Check if it is a bomb first (same-rank set of size >= 4)
+  const uniqueRanks = Object.keys(counts);
+  if (uniqueRanks.length === 1 && len >= 4) {
+    const bombRank = parseInt(uniqueRanks[0]);
+    const wildcardCount = sorted.filter(c => c.isWildcard).length;
+    let bombType = 'soft_bomb';
+
+    if (len === 4) {
+      if (wildcardCount === 4) {
+        bombType = 'laizi_bomb';
+      } else if (wildcardCount === 0) {
+        bombType = 'hard_bomb';
+      } else {
+        bombType = 'soft_bomb';
+      }
+    } else {
+      bombType = 'mega_bomb';
+    }
+
+    return { type: 'bomb', bombType, rank: bombRank, cards: sorted };
   }
 
   // 1. Single
@@ -117,9 +143,6 @@ function parseHand(cards) {
 
   // 4. Triple + Single (3+1)
   if (len === 4) {
-    if (freq[4].length === 1) {
-      return { type: 'bomb', rank: freq[4][0], cards: sorted };
-    }
     if (freq[3].length === 1 && freq[1].length === 1) {
       return { type: 'triple_one', rank: freq[3][0], cards: sorted };
     }
@@ -130,7 +153,6 @@ function parseHand(cards) {
     if (freq[3].length === 1 && freq[2].length === 1) {
       return { type: 'triple_pair', rank: freq[3][0], cards: sorted };
     }
-    // Straight of length 5
     if (freq[1].length === 5 && isConsecutive(freq[1])) {
       return { type: 'straight', rank: freq[1][4], cards: sorted };
     }
@@ -160,9 +182,6 @@ function parseHand(cards) {
   }
 
   // 9. Plane with wings (飞机带翅膀)
-  // Can be R triples + R singles (e.g. 8 cards: 2 triples + 2 singles)
-  // Or R triples + R pairs (e.g. 10 cards: 2 triples + 2 pairs)
-  // Note: Quad can be split into triples or singles if needed, but standard logic checks consecutive triples.
   if (len >= 8) {
     const allTriples = [...freq[3], ...freq[4]].sort((a, b) => a - b);
     
@@ -200,26 +219,54 @@ function parseHand(cards) {
     }
   }
 
-  // 10. Quad with two (四带二)
-  // Quad + 2 singles (len = 6)
-  // Quad + 2 pairs (len = 8)
-  if (freq[4].length === 1) {
-    const quadRank = freq[4][0];
-    if (len === 6) {
-      return { type: 'quad_two', rank: quadRank, cards: sorted, wingType: 'single' };
+  // 10. Quad with two (四带二) / Wangzha with two
+  const parseWings = (wingCards) => {
+    const wLen = wingCards.length;
+    const wCounts = {};
+    for (const c of wingCards) {
+      wCounts[c.rank] = (wCounts[c.rank] || 0) + 1;
     }
-    if (len === 8) {
-      const remainingRanks = ranks.filter(r => r !== quadRank);
-      const remCounts = {};
-      for (const rr of remainingRanks) remCounts[rr] = (remCounts[rr] || 0) + 1;
-      let pairCount = 0;
-      for (const rr in remCounts) {
-        if (remCounts[rr] === 2 || remCounts[rr] === 4) {
-          pairCount += remCounts[rr] / 2;
-        }
+    const values = Object.values(wCounts).sort((a, b) => b - a);
+
+    if (wLen === 2) {
+      return 'single';
+    }
+    if (wLen === 4) {
+      if (values[0] === 4 || (values[0] === 2 && values[1] === 2)) {
+        return 'pair';
       }
-      if (pairCount === 2) {
-        return { type: 'quad_two', rank: quadRank, cards: sorted, wingType: 'pair' };
+    }
+    if (wLen === 6) {
+      if (values[0] === 6 || (values[0] === 3 && values[1] === 3)) {
+        return 'triple';
+      }
+    }
+    if (wLen === 8) {
+      if (values[0] === 8 || (values[0] === 4 && values[1] === 4)) {
+        return 'quad';
+      }
+    }
+    return null;
+  };
+
+  // A. Check Wangzha as primary
+  const hasBlackJoker = ranks.includes(16);
+  const hasRedJoker = ranks.includes(17);
+  if (hasRedJoker && hasBlackJoker && len > 2) {
+    const wingCards = sorted.filter(c => c.rank !== 16 && c.rank !== 17);
+    const wingType = parseWings(wingCards);
+    if (wingType) {
+      return { type: 'quad_two', rank: 17, cards: sorted, wingType };
+    }
+  }
+
+  // B. Check normal quad as primary
+  if (freq[4].length >= 1) {
+    for (const quadRank of freq[4]) {
+      const wingCards = sorted.filter(c => c.rank !== quadRank);
+      const wingType = parseWings(wingCards);
+      if (wingType) {
+        return { type: 'quad_two', rank: quadRank, cards: sorted, wingType };
       }
     }
   }
@@ -227,20 +274,111 @@ function parseHand(cards) {
   return null;
 }
 
-function compareHands(prev, curr) {
-  const p = parseHand(prev);
-  const c = parseHand(curr);
+function parseHandAll(cards, wildcardRank) {
+  if (!cards || cards.length === 0) return [];
 
-  if (!c) return false;
-  if (!p) return true; // Free play
+  const wildcards = [];
+  const normalCards = [];
+  for (const c of cards) {
+    if (wildcardRank && c.rank === wildcardRank) {
+      wildcards.push(c);
+    } else {
+      normalCards.push(c);
+    }
+  }
 
-  if (c.type === 'rocket') return true;
-  if (p.type === 'rocket') return false;
+  if (wildcards.length === 0) {
+    const res = parseSubstitutedHand(cards);
+    return res ? [res] : [];
+  }
 
-  if (c.type === 'bomb' && p.type !== 'bomb') return true;
-  if (p.type === 'bomb' && c.type !== 'bomb') return false;
+  // Wildcards Played Alone
+  if (cards.length === 1) {
+    const res = parseSubstitutedHand(cards);
+    return res ? [res] : [];
+  }
 
-  if (c.type === 'bomb' && p.type === 'bomb') {
+  const results = [];
+  const uniqueKeys = new Set();
+
+  let ranksToTry = [];
+  if (normalCards.length === 0) {
+    ranksToTry = [wildcardRank];
+  } else {
+    const normalRanks = normalCards.map(c => c.rank);
+    const minR = Math.max(3, Math.min(...normalRanks) - 4);
+    const maxR = Math.min(15, Math.max(...normalRanks) + 4);
+    for (let r = minR; r <= maxR; r++) {
+      ranksToTry.push(r);
+    }
+  }
+
+  function recurse(index, currentSubstituted) {
+    if (index === wildcards.length) {
+      const parsed = parseSubstitutedHand(currentSubstituted);
+      if (parsed) {
+        const key = `${parsed.type}_${parsed.bombType || ''}_${parsed.rank}_${parsed.wingType || ''}`;
+        if (!uniqueKeys.has(key)) {
+          uniqueKeys.add(key);
+          results.push(parsed);
+        }
+      }
+      return;
+    }
+
+    const card = wildcards[index];
+    for (const r of ranksToTry) {
+      const subCard = {
+        ...card,
+        rank: r,
+        value: RANK_TO_VALUE[r],
+        display: RANK_TO_VALUE[r],
+        isWildcard: true
+      };
+      recurse(index + 1, [...currentSubstituted, subCard]);
+    }
+  }
+
+  recurse(0, normalCards);
+  return results;
+}
+
+function getBombPower(h) {
+  if (!h) return -1;
+  if (h.type === 'rocket') return 999;
+  if (h.type === 'bomb') {
+    if (h.bombType === 'soft_bomb') return 1;
+    if (h.bombType === 'hard_bomb') return 2;
+    if (h.bombType === 'laizi_bomb') return 3;
+    if (h.bombType === 'mega_bomb') return 4;
+  }
+  return 0;
+}
+
+function beats(p, c) {
+  const pPower = getBombPower(p);
+  const cPower = getBombPower(c);
+
+  if (c.type === 'rocket') {
+    return p.type !== 'rocket';
+  }
+
+  if (cPower > 0 && pPower === 0) {
+    return true;
+  }
+
+  if (cPower > 0 && pPower > 0 && p.type !== 'rocket') {
+    if (cPower > pPower) {
+      return true;
+    }
+    if (cPower < pPower) {
+      return false;
+    }
+    if (c.bombType === 'mega_bomb') {
+      if (c.cards.length > p.cards.length) return true;
+      if (c.cards.length < p.cards.length) return false;
+      return c.rank > p.rank;
+    }
     return c.rank > p.rank;
   }
 
@@ -248,12 +386,55 @@ function compareHands(prev, curr) {
     return false;
   }
 
+  if (c.wingType !== p.wingType) {
+    return false;
+  }
+
   return c.rank > p.rank;
+}
+
+function parseHand(cards, wildcardRank) {
+  const parsedList = parseHandAll(cards, wildcardRank);
+  if (parsedList.length === 0) return null;
+  parsedList.sort((a, b) => {
+    const aPower = getBombPower(a);
+    const bPower = getBombPower(b);
+    if (aPower !== bPower) return bPower - aPower;
+    return b.rank - a.rank;
+  });
+  return parsedList[0];
+}
+
+function compareHands(prev, curr, wildcardRank) {
+  const currParsedList = parseHandAll(curr, wildcardRank);
+  if (currParsedList.length === 0) return false;
+  if (!prev) return true;
+
+  let p;
+  if (Array.isArray(prev)) {
+    p = parseHand(prev, wildcardRank);
+  } else if (prev && prev.cards) {
+    p = prev;
+  } else {
+    return true;
+  }
+
+  if (!p) return false;
+
+  for (const c of currParsedList) {
+    if (beats(p, c)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 module.exports = {
   createDizhuDeck,
   shuffleDeck,
   parseHand,
-  compareHands
+  compareHands,
+  parseHandAll
 };
+

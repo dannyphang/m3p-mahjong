@@ -53,7 +53,9 @@
       >
       <span class="header-pill header-pill-gold">Round {{ lamiState.roundNumber || 1 }}</span>
     } @else if (isDizhuRoom && dizhuState) {
-      <span style="font-family: inherit; font-weight: bold; color: #ffc107;">Dou Dizhu</span>
+      <span style="font-family: inherit; font-weight: bold; color: #ffc107;">
+        {{ dizhuState.settings.mode === 'laizi' ? t('dizhu.modeLaizi') : t('dizhu.modeClassic') }}
+      </span>
       <span class="header-pill"
         ><i class="pi pi-table" style="font-size: 10px"></i> {{ dizhuState.roomId }}</span
       >
@@ -62,7 +64,7 @@
         <span class="header-pill">Base: {{ dizhuState.rates?.base }}</span>
       }
       @if (dizhuState.highestBid) {
-        <span class="header-pill">Multiplier: {{ dizhuMultiplier }}x</span>
+        <span class="header-pill" [class.multiplier-grow]="animateMultiplier">Multiplier: {{ dizhuMultiplier }}x</span>
       }
     } @else if (gameState) {
       <div class="room-info" style="margin: 0">

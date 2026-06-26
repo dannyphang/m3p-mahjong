@@ -25,6 +25,7 @@ export class DizhuRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   selectedCards = signal<any[]>([]);
   showGameOver = false;
   myHand = signal<any[]>([]);
+  selectedBotDifficulty: 'easy' | 'normal' | 'hard' = 'normal';
 
   constructor() {
     effect(() => {
@@ -179,15 +180,30 @@ export class DizhuRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   addBot() {
-    this.gameService.socket?.emit('addBot', { roomId: this.roomId });
+    this.gameService.socket?.emit('addBot', { roomId: this.roomId, difficulty: this.selectedBotDifficulty });
   }
 
   removeBot(botId: string) {
     this.gameService.socket?.emit('removeBot', { roomId: this.roomId, botId });
   }
 
+  kickPlayer(playerId: string) {
+    this.gameService.socket?.emit('kickPlayer', { roomId: this.roomId, playerId });
+  }
+
   startGame() {
     this.gameService.socket?.emit('startGame', { roomId: this.roomId });
+  }
+
+  changeGameMode(mode: 'classic' | 'laizi') {
+    this.gameService.socket?.emit('updateDizhuSettings', { roomId: this.roomId, mode });
+  }
+
+  get wildcardDisplay(): string {
+    const rank = this.state?.wildcardRank;
+    if (!rank) return '';
+    const displays: Record<number, string> = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2' };
+    return displays[rank] || String(rank);
   }
 
   restartGame() {
@@ -227,6 +243,12 @@ export class DizhuRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!suit) return '';
     const symbols: Record<string, string> = { hearts: '♥', spades: '♠', clubs: '♣', diamonds: '♦', joker: '☺' };
     return symbols[suit] || '';
+  }
+
+  isWildcard(card: any): boolean {
+    if (!card) return false;
+    if (card.isWildcard) return true;
+    return !!this.state?.wildcardRank && card.rank === this.state.wildcardRank;
   }
 
   getOpponents() {
@@ -269,5 +291,20 @@ export class DizhuRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
       return a.suit.localeCompare(b.suit);
     });
     this.myHand.set(sorted);
+  }
+
+  get currentAnimation() {
+    return this.gameService.currentAnimation();
+  }
+
+  getAnimationPosition(animPlayerId: string): string {
+    if (animPlayerId === this.myId) return 'pos-bottom';
+    const opponents = this.getOpponents();
+    // Index 0 is right, Index 1 is left
+    const rightOpp = opponents[0];
+    if (rightOpp && rightOpp.id === animPlayerId) return 'pos-right';
+    const leftOpp = opponents[1];
+    if (leftOpp && leftOpp.id === animPlayerId) return 'pos-left';
+    return 'pos-bottom';
   }
 }
