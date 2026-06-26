@@ -54,7 +54,7 @@
       <span class="header-pill header-pill-gold">Round {{ lamiState.roundNumber || 1 }}</span>
     } @else if (isDizhuRoom && dizhuState) {
       <span style="font-family: inherit; font-weight: bold; color: #ffc107;">
-        {{ dizhuState.settings.mode === 'laizi' ? t('dizhu.modeLaizi') : t('dizhu.modeClassic') }}
+        {{ {'classic': t('dizhu.modeClassic'), 'laizi': t('dizhu.modeLaizi'), 'noshuffle': t('dizhu.modeNoShuffle'), 'noshuffle_laizi': t('dizhu.modeNoShuffleLaizi')}[dizhuState.settings.mode || 'classic'] || t('dizhu.modeClassic') }}
       </span>
       <span class="header-pill"
         ><i class="pi pi-table" style="font-size: 10px"></i> {{ dizhuState.roomId }}</span

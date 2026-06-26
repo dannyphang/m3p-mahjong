@@ -195,8 +195,18 @@ export class DizhuRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.gameService.socket?.emit('startGame', { roomId: this.roomId });
   }
 
-  changeGameMode(mode: 'classic' | 'laizi') {
+  changeGameMode(mode: 'classic' | 'laizi' | 'noshuffle' | 'noshuffle_laizi') {
     this.gameService.socket?.emit('updateDizhuSettings', { roomId: this.roomId, mode });
+  }
+
+  getModeLabel(): string {
+    const labels: Record<string, string> = {
+      classic: this.t('dizhu.modeClassic'),
+      laizi: this.t('dizhu.modeLaizi'),
+      noshuffle: this.t('dizhu.modeNoShuffle'),
+      noshuffle_laizi: this.t('dizhu.modeNoShuffleLaizi'),
+    };
+    return labels[this.state?.settings?.mode || 'classic'] || labels['classic'];
   }
 
   get wildcardDisplay(): string {

@@ -1,7 +1,7 @@
 // backend/dizhu_state.js
 // Game State class for Dou Dizhu (斗地主)
 
-const { createDizhuDeck, shuffleDeck, parseHand, compareHands } = require('./dizhu_engine');
+const { createDizhuDeck, shuffleDeck, parseHand, compareHands, createPackedDeck, dealInChunks } = require('./dizhu_engine');
 const { executeDizhuBotTurn } = require('./dizhu_bot');
 const { updatePlayerStats: dbUpdatePlayerStats } = require('./firebase-admin');
 
@@ -62,6 +62,8 @@ class DizhuGameState {
     this.settings = { enableTimer: false, mode: 'classic' };
     this.rates = { base: 10 }; // base rate per score point
     this.wildcardRank = null;
+    this.lastDeckOrder = null; // For no-shuffle: remembered deck from previous round
+    this.playedCardsLog = []; // For no-shuffle: cards in play order
   }
 
   addLog(msg) {
@@ -172,8 +174,11 @@ class DizhuGameState {
 
   changeGameMode(mode, io) {
     if (this.status !== 'WAITING') return false;
-    if (mode === 'classic' || mode === 'laizi') {
+    const validModes = ['classic', 'laizi', 'noshuffle', 'noshuffle_laizi'];
+    if (validModes.includes(mode)) {
       this.settings.mode = mode;
+      // Reset remembered deck when switching away from noshuffle
+      if (!mode.startsWith('noshuffle')) this.lastDeckOrder = null;
       this.broadcastState(io);
       return true;
     }
@@ -183,8 +188,8 @@ class DizhuGameState {
   startGame(io) {
     this.status = 'BIDDING';
     this.roundNumber++;
-    this.deck = shuffleDeck(createDizhuDeck());
     this.wildcardRank = null;
+    this.playedCardsLog = [];
 
     // Reset game parameters
     this.landlordId = null;
@@ -206,8 +211,27 @@ class DizhuGameState {
     this.playerQuadsPlayedCount = {};
     this.hasBidded = {};
 
+    const isNoShuffle = this.settings.mode.startsWith('noshuffle');
+
+    if (isNoShuffle) {
+      // No-shuffle: use remembered deck or packed deck for round 1
+      this.deck = this.lastDeckOrder ? [...this.lastDeckOrder] : createPackedDeck();
+      const result = dealInChunks(this.deck, this.players.length, 17, 4);
+      this.players.forEach((p, i) => {
+        this.hands[p.id] = result.hands[i].sort((a, b) => a.rank - b.rank);
+      });
+      this.bottomCards = result.remaining.slice(0, 3).sort((a, b) => a.rank - b.rank);
+      this.addLog({ key: 'log.dizhu.noShuffleDeal', params: {} });
+    } else {
+      // Classic / Laizi: standard shuffle
+      this.deck = shuffleDeck(createDizhuDeck());
+      this.players.forEach(p => {
+        this.hands[p.id] = this.deck.splice(0, 17).sort((a, b) => a.rank - b.rank);
+      });
+      this.bottomCards = this.deck.splice(0, 3).sort((a, b) => a.rank - b.rank);
+    }
+
     this.players.forEach(p => {
-      this.hands[p.id] = this.deck.splice(0, 17).sort((a, b) => a.rank - b.rank);
       this.farmerCardsPlayedCount[p.id] = 0;
       this.playerBombsPlayedCount[p.id] = 0;
       this.playerRocketsPlayedCount[p.id] = 0;
@@ -217,9 +241,6 @@ class DizhuGameState {
       this.playerQuadsPlayedCount[p.id] = 0;
       this.hasBidded[p.id] = false;
     });
-
-    // 3 cards left for the bottom deck
-    this.bottomCards = this.deck.splice(0, 3).sort((a, b) => a.rank - b.rank);
 
     // Random starting bidder
     this.currentTurn = Math.floor(Math.random() * this.players.length);
@@ -300,7 +321,7 @@ class DizhuGameState {
     const landlordName = this.players.find(p => p.id === landlordId).name;
     this.addLog({ key: 'log.dizhu.landlordRevealed', params: { name: landlordName, cards: formatDizhuCardsForLog(this.bottomCards) } });
 
-    if (this.settings.mode === 'laizi') {
+    if (this.settings.mode === 'laizi' || this.settings.mode === 'noshuffle_laizi') {
       // Pick a random rank from 3 to 15 (inclusive, which excludes jokers: 16 and 17)
       this.wildcardRank = Math.floor(Math.random() * 13) + 3;
       const rankToDisplay = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2' }[this.wildcardRank] || String(this.wildcardRank);
@@ -336,6 +357,11 @@ class DizhuGameState {
     for (const c of cardsToPlay) {
       const idx = playerHand.findIndex(h => h.id === c.id);
       playerHand.splice(idx, 1);
+    }
+
+    // Track play order for no-shuffle deck reconstruction
+    if (this.settings.mode.startsWith('noshuffle')) {
+      this.playedCardsLog.push(...cardsToPlay);
     }
 
     // Count towards springs
@@ -506,6 +532,16 @@ class DizhuGameState {
     });
 
     this.rankings = rankings;
+
+    // Build deck order for next no-shuffle round: played cards → remaining hands → bottom cards
+    if (this.settings.mode.startsWith('noshuffle')) {
+      this.lastDeckOrder = [
+        ...this.playedCardsLog,
+        ...this.players.flatMap(p => this.hands[p.id]),
+        ...this.bottomCards
+      ];
+    }
+
     this.addLog({ key: 'log.dizhu.gameOver', params: { winner: this.players.find(p => p.id === winnerId).name } });
 
     this.broadcastState(io);

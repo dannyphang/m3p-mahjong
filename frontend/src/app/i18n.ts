@@ -214,6 +214,9 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'dizhu.modeClassic': 'Classic Mode',
     'dizhu.modeLaizi': 'Laizi (Wildcard) Mode',
     'dizhu.wildcardTitle': 'Wildcard',
+    'dizhu.modeNoShuffle': 'No Shuffle Mode',
+    'dizhu.modeNoShuffleLaizi': 'No Shuffle + Laizi Mode',
+    'log.dizhu.noShuffleDeal': '🃏 No-Shuffle deal! Cards dealt in chunks.',
 
     // Narrator Logs
     'log.joined': '{name} joined the room.',
@@ -595,6 +598,9 @@ export const TRANSLATIONS: Record<'en' | 'zh', Record<string, string>> = {
     'dizhu.modeClassic': '经典模式',
     'dizhu.modeLaizi': '癞子 (百搭) 模式',
     'dizhu.wildcardTitle': '本局癞子牌',
+    'dizhu.modeNoShuffle': '不洗牌模式',
+    'dizhu.modeNoShuffleLaizi': '不洗牌癞子模式',
+    'log.dizhu.noShuffleDeal': '🃏 不洗牌发牌！牌以整墩方式发出。',
 
     // Stats & Header Menu
     'mahjong.coinRates': '金币费率',

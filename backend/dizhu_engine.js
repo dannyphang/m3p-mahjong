@@ -430,11 +430,132 @@ function compareHands(prev, curr, wildcardRank) {
   return false;
 }
 
+// ponytail: Block order is randomized but internal block structure stays intact.
+// Upgrade path: could weight block types by desired "excitement level".
+function createPackedDeck() {
+  const deck = [];
+  let idCounter = 0;
+
+  // Build all 52 regular cards grouped by rank
+  const byRank = {};
+  for (const suit of SUITS) {
+    for (const v of VALUES) {
+      const card = {
+        id: `card_${idCounter++}`,
+        suit,
+        value: v.value,
+        rank: v.rank,
+        display: v.value
+      };
+      if (!byRank[v.rank]) byRank[v.rank] = [];
+      byRank[v.rank].push(card);
+    }
+  }
+
+  const jokerBlack = { id: `card_${idCounter++}`, suit: 'joker', value: 'black_joker', rank: 16, display: '小王' };
+  const jokerRed = { id: `card_${idCounter++}`, suit: 'joker', value: 'red_joker', rank: 17, display: '大王' };
+
+  // Build structured blocks from the ranked groups
+  const blocks = [];
+  const usedRanks = new Set();
+
+  // 1. Keep 2-3 full bombs (4-of-a-kind) intact
+  const rankKeys = Object.keys(byRank).map(Number).sort((a, b) => a - b);
+  const bombCount = 2 + Math.floor(Math.random() * 2); // 2 or 3 bombs
+  const shuffledRanks = [...rankKeys].sort(() => Math.random() - 0.5);
+  let bombsMade = 0;
+  for (const r of shuffledRanks) {
+    if (bombsMade >= bombCount) break;
+    if (byRank[r].length === 4 && r <= 14) { // Don't lock 2s (rank 15) as bombs too often
+      blocks.push([...byRank[r]]);
+      usedRanks.add(r);
+      bombsMade++;
+    }
+  }
+
+  // 2. Build 1-2 straights from remaining cards
+  const straightCount = 1 + Math.floor(Math.random() * 2);
+  for (let s = 0; s < straightCount; s++) {
+    // Find a consecutive run of 5+ ranks with available cards
+    const available = rankKeys.filter(r => !usedRanks.has(r) && r <= 14);
+    if (available.length < 5) break;
+
+    // Pick a random starting point
+    const maxStart = available.length - 5;
+    const startIdx = Math.floor(Math.random() * (maxStart + 1));
+    const len = 5 + Math.floor(Math.random() * Math.min(4, available.length - startIdx - 5 + 1));
+    const straightRanks = [];
+
+    for (let i = startIdx; i < startIdx + len && i < available.length; i++) {
+      // Check consecutive
+      if (straightRanks.length > 0 && available[i] !== available[i - 1] + 1) break;
+      straightRanks.push(available[i]);
+    }
+
+    if (straightRanks.length >= 5) {
+      const straight = [];
+      for (const r of straightRanks) {
+        // Take one card of each rank for the straight
+        const card = byRank[r].pop();
+        if (card) straight.push(card);
+        if (byRank[r].length === 0) usedRanks.add(r);
+      }
+      blocks.push(straight);
+    }
+  }
+
+  // 3. Group remaining cards into pairs/triples (keep same-rank cards together)
+  for (const r of rankKeys) {
+    if (usedRanks.has(r)) continue;
+    const remaining = byRank[r];
+    if (remaining.length > 0) {
+      blocks.push([...remaining]);
+      usedRanks.add(r);
+    }
+  }
+
+  // 4. Add jokers as a pair
+  blocks.push([jokerBlack, jokerRed]);
+
+  // Shuffle block order (not card order within blocks)
+  for (let i = blocks.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [blocks[i], blocks[j]] = [blocks[j], blocks[i]];
+  }
+
+  // Flatten
+  for (const block of blocks) {
+    deck.push(...block);
+  }
+
+  return deck;
+}
+
+function dealInChunks(deck, numPlayers, handSize, chunkSize) {
+  const hands = Array.from({ length: numPlayers }, () => []);
+  let pos = 0;
+  const totalCards = numPlayers * handSize;
+
+  while (pos < totalCards && pos < deck.length) {
+    for (let p = 0; p < numPlayers && pos < totalCards; p++) {
+      const end = Math.min(pos + chunkSize, totalCards - hands.reduce((s, h, i) => i !== p ? s + (handSize - h.length) : s, 0));
+      const take = Math.min(chunkSize, handSize - hands[p].length, deck.length - pos);
+      for (let c = 0; c < take; c++) {
+        hands[p].push(deck[pos++]);
+      }
+    }
+  }
+
+  return { hands, remaining: deck.slice(pos) };
+}
+
 module.exports = {
   createDizhuDeck,
   shuffleDeck,
   parseHand,
   compareHands,
-  parseHandAll
+  parseHandAll,
+  createPackedDeck,
+  dealInChunks
 };
 

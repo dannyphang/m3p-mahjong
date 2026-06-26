@@ -69,7 +69,7 @@ export interface GameState {
   settings: {
     enableTimer: boolean;
     timerDuration?: number;
-    mode?: 'classic' | 'laizi';
+    mode?: 'classic' | 'laizi' | 'noshuffle' | 'noshuffle_laizi';
   };
 }
 

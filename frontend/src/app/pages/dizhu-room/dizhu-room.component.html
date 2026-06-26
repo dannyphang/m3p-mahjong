@@ -31,7 +31,7 @@
             </div>
           </div>
 
-          <div *ngIf="state.settings.mode === 'laizi' && state.status !== 'WAITING'">
+          <div *ngIf="(state.settings.mode === 'laizi' || state.settings.mode === 'noshuffle_laizi') && state.status !== 'WAITING'">
             <h3>{{ t('dizhu.wildcardTitle') }}</h3>
             <div class="cards-row small">
               @if (wildcardDisplay) {
@@ -163,9 +163,11 @@
                   <select *ngIf="isHost" [ngModel]="state.settings.mode || 'classic'" (ngModelChange)="changeGameMode($event)" class="lobby-bot-select">
                     <option value="classic">{{ t('dizhu.modeClassic') }}</option>
                     <option value="laizi">{{ t('dizhu.modeLaizi') }}</option>
+                    <option value="noshuffle">{{ t('dizhu.modeNoShuffle') }}</option>
+                    <option value="noshuffle_laizi">{{ t('dizhu.modeNoShuffleLaizi') }}</option>
                   </select>
                   <span *ngIf="!isHost" class="game-mode-label">
-                    {{ state.settings.mode === 'laizi' ? t('dizhu.modeLaizi') : t('dizhu.modeClassic') }}
+                    {{ getModeLabel() }}
                   </span>
 
                   <button *ngIf="isHost && state.players.length < 3" (click)="addBot()" class="btn-action-mini add-bot">{{ t('lobby.addBot') }}</button>
