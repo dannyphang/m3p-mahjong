@@ -22,20 +22,27 @@
 
     <div class="button-group" style="display: flex; flex-direction: column; gap: 10px">
       <button (click)="joinRoom()" class="btn-primary" style="width: 100%">{{ t('lobby.joinRoom') }}</button>
-      <div style="display: flex; gap: 10px; width: 100%">
+      <div style="display: flex; gap: 8px; width: 100%">
         <button
           (click)="navigateToLamiLobby()"
           class="btn-secondary"
-          style="flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2)"
+          style="flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.85rem;"
         >
           {{ t('login.goToLami') }}
         </button>
         <button
           (click)="navigateToDizhuLobby()"
           class="btn-secondary"
-          style="flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2)"
+          style="flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.85rem;"
         >
           {{ t('dizhu.lobbyTitle') }}
+        </button>
+        <button
+          (click)="navigateToPokerLobby()"
+          class="btn-secondary"
+          style="flex: 1; background: linear-gradient(135deg, rgba(255, 179, 0, 0.2), rgba(255, 111, 0, 0.2)); border: 1px solid rgba(255, 193, 7, 0.4); color: #ffd54f; font-size: 0.85rem; font-weight: 600;"
+        >
+          {{ t('poker.lobbyTitle') }}
         </button>
       </div>
     </div>

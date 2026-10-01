@@ -1,5 +1,7 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
+const fs = require('fs');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { 
@@ -18,6 +20,7 @@ const {
 } = require('./engine');
 const LamiGameState = require('./lami_state');
 const DizhuGameState = require('./dizhu_state');
+const PokerGameState = require('./poker_state');
 const { db, auth, updatePlayerStats: dbUpdatePlayerStats, getPlayerCoins } = require('./firebase-admin');
 
 // Global error handlers to prevent silent crashes
@@ -46,8 +49,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Health check routes to prevent Render inactivity
-app.get('/', (req, res) => res.send('M3P Mahjong Backend is alive!'));
+// Health check route
 app.get('/ping', (req, res) => res.send('pong'));
 
 // Score API for Playground
@@ -89,6 +91,41 @@ app.post('/api/score', (req, res) => {
   }
 });
 
+// Static directory resolution for Angular frontend
+function getStaticDir() {
+  const distDirs = [
+    path.resolve(__dirname, '../frontend/dist/frontend/browser'),
+    path.resolve(__dirname, '../frontend/dist/browser'),
+    path.resolve(__dirname, '../frontend/dist'),
+    path.resolve(__dirname, 'public')
+  ];
+  return distDirs.find(d => fs.existsSync(d) && fs.existsSync(path.join(d, 'index.html'))) || null;
+}
+
+// Serve static assets
+app.use((req, res, next) => {
+  const staticDir = getStaticDir();
+  if (staticDir) {
+    return express.static(staticDir)(req, res, next);
+  }
+  next();
+});
+
+// SPA fallback for non-API routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/socket.io') || req.path === '/ping') {
+    return next();
+  }
+  const staticDir = getStaticDir();
+  if (staticDir) {
+    const indexPath = path.join(staticDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+  }
+  res.send('M3P Mahjong Backend is alive!');
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -97,8 +134,8 @@ const io = new Server(server, {
   }
 });
 
-// Port configuration
-const PORT = process.env.PORT || 3000;
+// Port configuration (AI Studio uses port 3000)
+const PORT = 3000;
 
 // Game rooms in memory
 const rooms = {};
@@ -1330,18 +1367,21 @@ class GameState {
 io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) {
-    // For local dev without auth or backward compatibility, allow connection
-    // But ideal is to throw error: return next(new Error('Authentication error: No token provided'));
     socket.user = null;
     return next();
   }
   try {
-    const decodedToken = await auth.verifyIdToken(token);
-    socket.user = decodedToken;
+    if (auth && auth.verifyIdToken) {
+      const decodedToken = await auth.verifyIdToken(token);
+      socket.user = decodedToken;
+    } else {
+      socket.user = null;
+    }
     next();
   } catch (error) {
-    console.error('Socket authentication error:', error);
-    return next(new Error('Authentication error: Invalid token'));
+    console.warn('Socket auth notice (proceeding as guest):', error.message);
+    socket.user = null;
+    return next();
   }
 });
 
@@ -1356,6 +1396,8 @@ io.on('connection', (socket) => {
         room = new LamiGameState(roomId);
       } else if (gameType === 'dizhu') {
         room = new DizhuGameState(roomId);
+      } else if (gameType === 'poker') {
+        room = new PokerGameState(roomId);
       } else {
         room = new GameState(roomId);
       }
@@ -1364,14 +1406,15 @@ io.on('connection', (socket) => {
       let expectedGameType = 'mahjong';
       if (room.gameType === 'lami') expectedGameType = 'lami';
       else if (room.gameType === 'dizhu') expectedGameType = 'dizhu';
+      else if (room.gameType === 'poker') expectedGameType = 'poker';
       
       if (room.gameType !== expectedGameType) {
-        socket.emit('errorMsg', `Room ${roomId} is a ${room.gameType === 'lami' ? 'Lami' : room.gameType === 'dizhu' ? 'Dou Dizhu' : 'Mahjong'} room. You cannot join it from this game mode.`);
+        socket.emit('errorMsg', `Room ${roomId} is a ${room.gameType === 'lami' ? 'Lami' : room.gameType === 'dizhu' ? 'Dou Dizhu' : room.gameType === 'poker' ? 'Poker' : 'Mahjong'} room. You cannot join it from this game mode.`);
         return;
       }
     }
 
-    const maxPlayers = room.gameType === 'lami' ? 4 : 3;
+    const maxPlayers = room.gameType === 'poker' ? 6 : (room.gameType === 'lami' ? 4 : 3);
     const isReconnecting = room.players.some(p => p.name === name && !p.isBot && p.isConnected === false);
     
     if (room.players.length >= maxPlayers && !isReconnecting) {
@@ -1384,8 +1427,8 @@ io.on('connection', (socket) => {
 
     socket.join(roomId);
     
-    // Fetch initial coins from Firebase for humans, fallback to default (1000 for lami/dizhu, 100 for mahjong)
-    let initialCoins = (gameType === 'lami' || gameType === 'dizhu') ? 1000 : 100;
+    // Fetch initial coins from Firebase for humans, fallback to default (1000 for lami/dizhu/poker, 100 for mahjong)
+    let initialCoins = (gameType === 'lami' || gameType === 'dizhu' || gameType === 'poker') ? 1000 : 100;
     if (socket.user && socket.user.uid) {
       const dbCoins = await getPlayerCoins(socket.user.uid);
       if (dbCoins !== null && dbCoins !== undefined) {
@@ -1394,8 +1437,8 @@ io.on('connection', (socket) => {
     }
 
     let addedPlayer;
-    if (gameType === 'lami' || gameType === 'dizhu') {
-      addedPlayer = room.addPlayer(name, socket.id, false, initialCoins, avatar);
+    if (gameType === 'lami' || gameType === 'dizhu' || gameType === 'poker') {
+      addedPlayer = room.addPlayer(name, socket.id, false, 'normal', initialCoins, avatar);
     } else {
       addedPlayer = room.addPlayer(name, socket.id, false, 'easy', initialCoins, avatar);
     }
@@ -1403,7 +1446,7 @@ io.on('connection', (socket) => {
     if (addedPlayer) {
       socket.emit('joined', { playerId: addedPlayer.id, gameType: room.gameType });
       
-      if (room.gameType === 'lami' || room.gameType === 'dizhu') {
+      if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') {
         room.broadcastState(io);
       } else {
         room.broadcastState();
@@ -1421,7 +1464,7 @@ io.on('connection', (socket) => {
       p.isReady = !p.isReady;
       room.addLog({ key: 'log.ready', params: { name: p.name, status: p.isReady ? 'READY' : 'NOT READY' } });
       
-      if (room.gameType === 'lami' || room.gameType === 'dizhu') room.broadcastState(io);
+      if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') room.broadcastState(io);
       else room.broadcastState();
     }
   });
@@ -1432,13 +1475,13 @@ io.on('connection', (socket) => {
     if (room && room.status === 'WAITING') {
       const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
       
-      if (room.gameType === 'lami' || room.gameType === 'dizhu') {
+      if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') {
         room.addPlayer(botName, null, true, difficulty || 'normal');
       } else {
         room.addPlayer(botName, null, true, difficulty || 'easy'); // initialCoins defaults to 100
       }
       
-      if (room.gameType === 'lami' || room.gameType === 'dizhu') room.broadcastState(io);
+      if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') room.broadcastState(io);
       else room.broadcastState();
     }
   });
@@ -1458,7 +1501,7 @@ io.on('connection', (socket) => {
         delete room.discards?.[botId];
         delete room.accumulatedPoints?.[botId];
 
-        if (room.gameType === 'lami' || room.gameType === 'dizhu') room.broadcastState(io);
+        if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') room.broadcastState(io);
         else room.broadcastState();
       }
     }
@@ -1490,7 +1533,7 @@ io.on('connection', (socket) => {
           io.to(kickedPlayer.socketId).emit('kickedFromRoom');
         }
 
-        if (room.gameType === 'lami' || room.gameType === 'dizhu') room.broadcastState(io);
+        if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') room.broadcastState(io);
         else room.broadcastState();
       }
     }
@@ -1588,6 +1631,26 @@ io.on('connection', (socket) => {
   });
   // -----------------------------
 
+  // --- POKER SPECIFIC EVENTS ---
+  socket.on('pokerAction', ({ roomId, playerId, action, amount }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'poker') {
+      room.handlePlayerAction(playerId, action, amount, io);
+    }
+  });
+
+  socket.on('updatePokerSettings', ({ roomId, smallBlind, bigBlind, enableTimer, timerDuration }) => {
+    const room = rooms[roomId];
+    if (room && room.gameType === 'poker' && room.status === 'WAITING') {
+      if (smallBlind) room.settings.smallBlind = Number(smallBlind);
+      if (bigBlind) room.settings.bigBlind = Number(bigBlind);
+      if (enableTimer !== undefined) room.settings.enableTimer = !!enableTimer;
+      if (timerDuration) room.settings.timerDuration = Number(timerDuration);
+      room.broadcastState(io);
+    }
+  });
+  // -----------------------------
+
   socket.on('updateTimer', ({ roomId, enableTimer, timerDuration }) => {
     const room = rooms[roomId];
     if (room && room.status === 'WAITING') {
@@ -1670,11 +1733,11 @@ io.on('connection', (socket) => {
     // Check if caller is host
     if (room.players.length === 0 || room.players[0].id !== socket.id) return;
 
-    const maxPlayers = (room.gameType === 'lami' || room.gameType === 'dizhu') ? (room.gameType === 'lami' ? 4 : 3) : 3;
-    const allReady = room.players.length === maxPlayers && room.players.every(pl => pl.isReady);
+    const minRequired = room.gameType === 'poker' ? 2 : (room.gameType === 'lami' ? 4 : 3);
+    const allReady = room.players.length >= minRequired && room.players.every(pl => pl.isReady);
     
     if (allReady && room.status === 'WAITING') {
-      if (room.gameType === 'lami' || room.gameType === 'dizhu') room.startGame(io);
+      if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') room.startGame(io);
       else room.startGame();
     }
   });
@@ -1699,7 +1762,7 @@ io.on('connection', (socket) => {
       room.players.forEach(p => {
         p.isReady = p.isBot; // bots stay ready
         room.hands[p.id] = [];
-        if (room.gameType !== 'lami' && room.gameType !== 'dizhu') {
+        if (room.gameType !== 'lami' && room.gameType !== 'dizhu' && room.gameType !== 'poker') {
           room.exposed[p.id] = [];
           room.flowers[p.id] = [];
           room.discards[p.id] = [];
@@ -1716,7 +1779,7 @@ io.on('connection', (socket) => {
       }
     }
 
-    if (room.gameType === 'lami' || room.gameType === 'dizhu') room.broadcastState(io);
+    if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') room.broadcastState(io);
     else room.broadcastState();
   });
 
@@ -1729,13 +1792,22 @@ io.on('connection', (socket) => {
       if (shouldDestroy) {
         delete rooms[roomId];
       } else {
-        if (room.gameType === 'lami' || room.gameType === 'dizhu') room.broadcastState(io);
+        if (room.gameType === 'lami' || room.gameType === 'dizhu' || room.gameType === 'poker') room.broadcastState(io);
         else room.broadcastState();
       }
     });
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is in use. Exiting process cleanly...`);
+    process.exit(0);
+  } else {
+    console.error('Server error:', err);
+  }
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server listening on 0.0.0.0:${PORT}`);
 });

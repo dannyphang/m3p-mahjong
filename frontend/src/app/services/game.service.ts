@@ -22,6 +22,9 @@ export interface Player {
   passedOut?: boolean;
   burned?: boolean;
   avatar?: string;
+  coins?: number;
+  folded?: boolean;
+  allIn?: boolean;
 }
 
 export interface Meld {
@@ -31,8 +34,10 @@ export interface Meld {
 
 export interface GameState {
   roomId: string;
+  gameType?: string;
   players: Player[];
   status: string;
+  stage?: string;
   roundNumber: number;
   currentTurn: number;
   dealerIndex?: number;
@@ -58,6 +63,14 @@ export interface GameState {
   highestBid?: number;
   landlordId?: string | null;
   wildcardRank?: number | null;
+  pot?: number;
+  currentBet?: number;
+  minRaise?: number;
+  roundBets?: { [key: string]: number };
+  totalContributions?: { [key: string]: number };
+  communityCards?: any[];
+  handEvaluations?: { [key: string]: any };
+  winners?: any[];
   rates?: {
     win?: number;
     joker?: number;
@@ -70,6 +83,8 @@ export interface GameState {
     enableTimer: boolean;
     timerDuration?: number;
     mode?: 'classic' | 'laizi' | 'noshuffle' | 'noshuffle_laizi';
+    smallBlind?: number;
+    bigBlind?: number;
   };
 }
 
@@ -135,7 +150,7 @@ export class GameService {
     }
 
     const token = await this.authService.getToken();
-    const backendUrl = isDevMode() ? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000') : 'https://mahjong-new.onrender.com';
+    const backendUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
     this.socket = io(backendUrl, {
       auth: { token }
     });

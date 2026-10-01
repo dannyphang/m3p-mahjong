@@ -1,0 +1,14 @@
+{
+  "name": "m3p-mahjong",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=frontend",
+    "dev": "node -e \"if(!require('fs').existsSync('frontend/dist/frontend/browser/index.html')){require('child_process').execSync('npm run build',{stdio:'inherit'});}\" && node backend/server.js",
+    "start": "node backend/server.js"
+  }
+}

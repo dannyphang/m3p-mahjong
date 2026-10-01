@@ -178,6 +178,15 @@ export class HeaderComponent {
     return this.router.url.includes('dizhu');
   }
 
+  get isPokerRoom() {
+    return this.router.url.includes('poker');
+  }
+
+  get pokerState() {
+    const s = this.gameService.gameState();
+    return this.isPokerRoom ? s : null;
+  }
+
   get dizhuState() {
     const s = this.gameService.gameState();
     return this.isDizhuRoom ? s : null;

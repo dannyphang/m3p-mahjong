@@ -1,0 +1,300 @@
+<div class="poker-container" *ngIf="state">
+  <!-- Main Area -->
+  <div class="game-grid">
+    <!-- WAITING LOBBY VIEW -->
+    <div class="waiting-area" *ngIf="state.status === 'WAITING'">
+      <div class="lobby-card glass-panel">
+        <h2>{{ t('poker.title') }} - {{ t('lobby.waitingTitle') }}</h2>
+        <p class="subtitle">{{ t('poker.subtitle') }} (2-6 Players)</p>
+
+        <!-- Blinds Settings (Host only) -->
+        <div class="blinds-settings" *ngIf="isHost">
+          <label>Blinds (SB / BB):</label>
+          <div class="blinds-options">
+            <button class="pill-btn" [class.active]="state.settings.smallBlind === 10" (click)="updateBlinds(10, 20)">10 / 20</button>
+            <button class="pill-btn" [class.active]="state.settings.smallBlind === 25" (click)="updateBlinds(25, 50)">25 / 50</button>
+            <button class="pill-btn" [class.active]="state.settings.smallBlind === 50" (click)="updateBlinds(50, 100)">50 / 100</button>
+            <button class="pill-btn" [class.active]="state.settings.smallBlind === 100" (click)="updateBlinds(100, 200)">100 / 200</button>
+          </div>
+        </div>
+
+        <!-- Players Table -->
+        <div class="players-list">
+          <div class="player-slot" *ngFor="let p of state.players; let idx = index">
+            <div class="player-info-row">
+              <div class="avatar">{{ p.name.substring(0, 2) }}</div>
+              <div class="details">
+                <span class="name">
+                  {{ p.name }}
+                  <span *ngIf="p.id === myId"> {{ t('lobby.you') }}</span>
+                  <span *ngIf="p.isBot" class="bot-badge">({{ p.difficulty }})</span>
+                </span>
+                <span class="coins">🪙 {{ p.coins }}</span>
+              </div>
+              <div class="status-col">
+                <span class="ready-badge" [class.ready]="p.isReady">
+                  {{ p.isReady ? t('lobby.ready') : t('lobby.notReady') }}
+                </span>
+                <button *ngIf="isHost && p.isBot" class="btn-remove" (click)="removeBot(p.id)">✕</button>
+                <button *ngIf="isHost && !p.isBot && p.id !== myId" class="btn-remove" (click)="kickPlayer(p.id)">Kick</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Bot & Ready Controls -->
+        <div class="lobby-controls">
+          <div class="add-bot-group" *ngIf="isHost && state.players.length < 6">
+            <select [(ngModel)]="selectedBotDifficulty" class="select-input">
+              <option value="easy">{{ t('lobby.botEasy') }}</option>
+              <option value="normal">{{ t('lobby.botNormal') }}</option>
+              <option value="hard">{{ t('lobby.botHard') }}</option>
+            </select>
+            <button class="btn-secondary" (click)="addBot()">+ {{ t('lobby.addBot') }}</button>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-primary ready-btn" (click)="toggleReady()">
+              {{ myPlayer?.isReady ? t('lobby.cancelReady') : t('lobby.getReady') }}
+            </button>
+            <button *ngIf="isHost" class="btn-accent start-btn" [disabled]="!isAllReady" (click)="startGame()">
+              {{ t('room.startGame') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVE POKER TABLE VIEW -->
+    <div class="board-area" *ngIf="state.status !== 'WAITING'">
+      <div class="poker-table">
+        <!-- Felt Ellipse Table -->
+        <div class="table-felt">
+          <!-- Opponents Seated Around Table -->
+          <div class="opponents-ring">
+            <div *ngFor="let opp of getOpponents(); let i = index" 
+                 [class]="'seat-box seat-' + i" 
+                 [class.active-turn]="opp.isTurn"
+                 [class.folded]="opp.folded">
+              
+              <div class="opp-avatar-box">
+                <div class="opp-avatar" [class.turn-glow]="opp.isTurn">
+                  {{ opp.name.substring(0, 2) }}
+                  <span class="dealer-badge" *ngIf="opp.isDealer">D</span>
+                </div>
+                <div class="opp-info">
+                  <div class="opp-name">{{ opp.name }}</div>
+                  <div class="opp-chips">🪙 {{ opp.coins }}</div>
+                </div>
+              </div>
+
+              <!-- Opponent's Bet Chips on Felt -->
+              <div class="bet-chip-badge" *ngIf="opp.roundBet > 0">
+                🪙 {{ opp.roundBet }}
+              </div>
+
+              <!-- Opponent Status Pill (Folded / All-In) -->
+              <div class="opp-status-pill" *ngIf="opp.folded">FOLD</div>
+              <div class="opp-status-pill all-in" *ngIf="opp.allIn">ALL-IN</div>
+
+              <!-- Opponent's Cards (hidden or revealed at showdown) -->
+              <div class="opp-cards-row">
+                <div *ngFor="let card of opp.cards" 
+                     [class]="'poker-card mini ' + (card.type === 'back' ? 'back' : card.suit)">
+                  <ng-container *ngIf="card.type !== 'back'">
+                    <span class="card-val">{{ card.display }}</span>
+                    <span class="card-suit-mini">{{ getSuitSymbol(card.suit) }}</span>
+                  </ng-container>
+                </div>
+              </div>
+
+              <!-- Showdown Hand Name -->
+              <div class="opp-hand-eval" *ngIf="opp.handEval && (state.status === 'SHOWDOWN' || state.status === 'GAME_OVER')">
+                {{ opp.handEval.rankNameZh }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Center: Pot and Community Cards -->
+          <div class="table-center">
+            <!-- Total Pot -->
+            <div class="pot-display">
+              <span class="pot-label">{{ t('poker.pot') }}</span>
+              <span class="pot-amount">🪙 {{ state.pot }}</span>
+            </div>
+
+            <!-- 5 Community Cards -->
+            <div class="community-cards-row">
+              <div *ngFor="let card of state.communityCards" 
+                   [class]="'poker-card community ' + card.suit">
+                <div class="card-top-left">
+                  <span class="card-val">{{ card.display }}</span>
+                  <span class="card-suit-mini">{{ getSuitSymbol(card.suit) }}</span>
+                </div>
+                <span class="card-suit-big">{{ getSuitSymbol(card.suit) }}</span>
+              </div>
+
+              <!-- Empty Placeholders for undealt community cards -->
+              <div *ngFor="let empty of [].constructor(5 - state.communityCards.length)" 
+                   class="poker-card community-placeholder">
+              </div>
+            </div>
+
+            <!-- Current Street Bet -->
+            <div class="current-bet-display" *ngIf="state.currentBet > 0">
+              {{ t('poker.currentBet') }}: 🪙 {{ state.currentBet }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Player (My Bottom Section) -->
+      <div class="hero-section" [class.my-turn]="isMyTurn">
+        <!-- Turn Alert -->
+        <div class="turn-indicator" *ngIf="isMyTurn">
+          <span class="pulse-dot"></span>
+          {{ t('game.yourTurn') }}
+        </div>
+
+        <div class="hero-board">
+          <!-- My Player Info -->
+          <div class="hero-info">
+            <div class="hero-avatar">
+              {{ myPlayer?.name?.substring(0, 2) }}
+              <span class="dealer-badge" *ngIf="myPlayer && state.dealerIndex === state.players?.indexOf(myPlayer)">D</span>
+            </div>
+            <div class="hero-meta">
+              <div class="hero-name">{{ myPlayer?.name }}</div>
+              <div class="hero-chips">🪙 {{ myPlayer?.coins }}</div>
+              <div class="hero-current-bet" *ngIf="(state.roundBets?.[myId] || 0) > 0">
+                Bet: 🪙 {{ state.roundBets?.[myId] }}
+              </div>
+            </div>
+          </div>
+
+          <!-- My Hole Cards & Hand Rank -->
+          <div class="hero-cards-box">
+            <div class="cards-row">
+              <div *ngFor="let card of myHand" 
+                   [class]="'poker-card hero-card ' + (card.type === 'back' ? 'back' : card.suit)">
+                <div class="card-top-left">
+                  <span class="card-val">{{ card.display }}</span>
+                  <span class="card-suit-mini">{{ getSuitSymbol(card.suit) }}</span>
+                </div>
+                <span class="card-suit-big">{{ getSuitSymbol(card.suit) }}</span>
+              </div>
+            </div>
+
+            <!-- Live Hand Evaluation Badge -->
+            <div class="hand-eval-badge" *ngIf="myHandEvaluation">
+              🔥 {{ myHandEvaluation.rankNameZh }} ({{ myHandEvaluation.rankName }})
+            </div>
+          </div>
+
+          <!-- Action Controls (Enabled when it is my turn) -->
+          <div class="hero-actions" *ngIf="state.status === 'BETTING'">
+            <div class="action-buttons-row">
+              <!-- Fold Button -->
+              <button class="btn-action btn-fold" [disabled]="!isMyTurn" (click)="fold()">
+                {{ t('poker.fold') }}
+              </button>
+
+              <!-- Check / Call Button -->
+              <button class="btn-action btn-check-call" [disabled]="!isMyTurn" (click)="checkOrCall()">
+                {{ canCheck ? t('poker.check') : t('poker.call') + ' 🪙 ' + toCall }}
+              </button>
+
+              <!-- Raise Controls -->
+              <div class="raise-controls" *ngIf="isMyTurn && myPlayer && myPlayer.coins > toCall">
+                <button class="btn-action btn-raise" (click)="raise()">
+                  {{ t('poker.raise') }} 🪙 {{ customRaiseAmount }}
+                </button>
+              </div>
+
+              <!-- All-In Button -->
+              <button class="btn-action btn-allin" [disabled]="!isMyTurn || !myPlayer || myPlayer.coins <= 0" (click)="allIn()">
+                {{ t('poker.allIn') }}
+              </button>
+            </div>
+
+            <!-- Quick Bet presets & Amount Slider -->
+            <div class="bet-presets-row" *ngIf="isMyTurn && myPlayer && myPlayer.coins > toCall">
+              <button class="preset-btn" (click)="setQuickBet('min')">Min</button>
+              <button class="preset-btn" (click)="setQuickBet('2bb')">2x BB</button>
+              <button class="preset-btn" (click)="setQuickBet('halfPot')">1/2 Pot</button>
+              <button class="preset-btn" (click)="setQuickBet('pot')">Pot</button>
+              <button class="preset-btn" (click)="setQuickBet('allIn')">Max</button>
+              
+              <div class="slider-box">
+                <input type="range" 
+                       [min]="minRaiseTarget" 
+                       [max]="(state.roundBets?.[myId] || 0) + (myPlayer?.coins || 0)" 
+                       [step]="state.settings?.bigBlind || 10" 
+                       [(ngModel)]="customRaiseAmount" 
+                       class="raise-slider" />
+                <input type="number" 
+                       [(ngModel)]="customRaiseAmount" 
+                       class="raise-number-input" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOATING VIEW TABLE BAR (When inspecting table during showdown) -->
+    <div class="view-table-banner" *ngIf="showGameOver && viewingTable()">
+      <div class="banner-winner-info">
+        <span *ngFor="let w of state.winners">
+          🏆 <strong>{{ w.player.name }}</strong> (+{{ w.amount }} 🪙) <span class="winner-hand-sub" *ngIf="w.handTypeZh">[{{ w.handTypeZh }}]</span>
+        </span>
+      </div>
+      <div class="banner-btns">
+        <button class="banner-btn result-btn" (click)="toggleViewTable()">
+          📋 {{ t('poker.showResults') }}
+        </button>
+        <button class="banner-btn next-btn" (click)="restartGame()">
+          ▶ {{ t('poker.nextHand') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- SHOWDOWN WINNER OVERLAY -->
+    <div class="modal-backdrop" *ngIf="showGameOver && !viewingTable() && state.winners && state.winners.length > 0">
+      <div class="winner-modal glass-card">
+        <h2 class="modal-title">🏆 {{ t('poker.winner') }}</h2>
+        <div class="winners-container">
+          <div class="winner-card" *ngFor="let w of state.winners">
+            <div class="winner-avatar">{{ w.player.name.substring(0, 2) }}</div>
+            <div class="winner-details">
+              <div class="winner-name">{{ w.player.name }}</div>
+              <div class="winner-payout">+{{ w.amount }} 🪙</div>
+              <div class="winner-hand" *ngIf="w.handTypeZh">
+                {{ w.handTypeZh }} ({{ w.handType }})
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="display: flex; gap: 10px;">
+          <button class="btn-secondary view-table-btn" (click)="toggleViewTable()" style="flex: 1; padding: 10px; font-weight: 700; border-radius: 8px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; cursor: pointer;">
+            👁️ {{ t('poker.viewTable') }}
+          </button>
+          <button class="btn-primary next-hand-btn" (click)="restartGame()" style="flex: 1; padding: 10px; font-weight: 700; border-radius: 8px;">
+            {{ t('poker.nextHand') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side Narrator Logs -->
+    <div class="logs-sidebar" *ngIf="showNarrator">
+      <div class="logs-header">{{ t('header.narratorTitle') }}</div>
+      <div class="logs-content" #logsContainer>
+        <div class="log-entry" *ngFor="let log of state.logs">
+          {{ formatLog(log) }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

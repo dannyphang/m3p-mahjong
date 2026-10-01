@@ -47,7 +47,11 @@ app-home,
 app-room,
 app-playground,
 app-lami-lobby,
-app-lami-room {
+app-lami-room,
+app-dizhu-lobby,
+app-dizhu-room,
+app-poker-lobby,
+app-poker-room {
   display: block;
   width: 100%;
   height: 100%;

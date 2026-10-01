@@ -23,6 +23,9 @@
         <button [class.active]="selectedTab === 'dizhu'" (click)="setTab('dizhu')">
           ⚔️ {{ t('stats.dizhu') }}
         </button>
+        <button [class.active]="selectedTab === 'poker'" (click)="setTab('poker')">
+          🪙 {{ t('stats.poker') }}
+        </button>
       </div>
     </div>
 
@@ -453,6 +456,113 @@
               <span class="label">{{ t('stats.rocketCount') }}</span>
               <span class="value pos">{{ profile.stats.dizhu?.rocketCount || 0 }}</span>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POKER STATS -->
+    <div class="stats-grid" *ngIf="selectedTab === 'poker'">
+      <!-- Hero Card -->
+      <div class="stat-card hero-card">
+        <div class="win-rate-ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="45"></circle>
+            <circle class="ring-progress" cx="50" cy="50" r="45"
+              [style.stroke-dasharray]="getCircleDashArray()"
+              [style.stroke-dashoffset]="getCircleDashOffset(getWinRateValue(profile.stats.poker?.totalWins || 0, profile.stats.poker?.totalGamesPlayed || 0))">
+            </circle>
+          </svg>
+          <div class="ring-text">
+            <span class="rate">{{ getWinRateValue(profile.stats.poker?.totalWins || 0, profile.stats.poker?.totalGamesPlayed || 0) }}%</span>
+            <span class="label">{{ t('stats.winRate') }}</span>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-row">
+            <span class="label">{{ t('stats.gamesPlayed') }}</span>
+            <span class="value">{{ profile.stats.poker?.totalGamesPlayed || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.wins') }} (胜局)</span>
+            <span class="value pos">{{ profile.stats.poker?.totalWins || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.winRate') }}</span>
+            <span class="value accent">{{ getWinRate(profile.stats.poker?.totalWins || 0, profile.stats.poker?.totalGamesPlayed || 0) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.netCoins') }}</span>
+            <span class="value" [class.pos]="getNetCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0) > 0" [class.neg]="getNetCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0) < 0">
+              {{ getNetCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0) > 0 ? '+' : '' }}{{ getNetCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Cards -->
+      <div class="mini-cards">
+        <div class="stat-card mini">
+          <div class="value accent">{{ profile.stats.poker?.highestCoinWin || 0 }}</div>
+          <div class="label">{{ t('stats.bestWin') }}</div>
+        </div>
+        <div class="stat-card mini">
+          <div class="value neg">{{ profile.stats.poker?.highestCoinLose || 0 }}</div>
+          <div class="label">{{ t('stats.worstLoss') }}</div>
+        </div>
+        <div class="stat-card mini">
+          <div class="value" [class.pos]="getNetCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0) > 0" [class.neg]="getNetCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0) < 0">
+            {{ getNetCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0) > 0 ? '+' : '' }}{{ getNetCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0) }}
+          </div>
+          <div class="label">{{ t('stats.totalNet') }}</div>
+        </div>
+        <div class="stat-card mini">
+          <div class="value accent">{{ getAverageCoins(profile.stats.poker?.totalCoinsGained || 0, profile.stats.poker?.totalCoinsLost || 0, profile.stats.poker?.totalGamesPlayed || 0) }}</div>
+          <div class="label">{{ t('stats.coinsPerGame') }}</div>
+        </div>
+      </div>
+
+      <!-- Detail Cards -->
+      <div class="detail-cards">
+        <!-- Card 1: Streaks & Record -->
+        <div class="stat-card detail">
+          <div class="card-title">{{ t('stats.streaksAndPenalties') }}</div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.currentWinStreak') }}</span>
+            <span class="value">{{ profile.stats.poker?.currentWinStreak || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.highestWinStreak') }}</span>
+            <span class="value accent">{{ profile.stats.poker?.highestWinStreak || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Total Gained (总盈利)</span>
+            <span class="value pos">🪙 {{ profile.stats.poker?.totalCoinsGained || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Total Lost (总亏损)</span>
+            <span class="value neg">🪙 {{ profile.stats.poker?.totalCoinsLost || 0 }}</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Hand Details -->
+        <div class="stat-card detail">
+          <div class="card-title">{{ t('stats.handDetails') }}</div>
+          <div class="stat-row">
+            <span class="label">{{ t('stats.bestHand') }}</span>
+            <span class="value accent">{{ getPokerHandDisplay(profile.stats.poker?.bestHand) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Table Type (牌桌类型)</span>
+            <span class="value">No-Limit Texas Hold'em</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Single Hand Max Win (单局最大赢金)</span>
+            <span class="value pos">🪙 {{ profile.stats.poker?.highestCoinWin || 0 }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Single Hand Max Loss (单局最大失分)</span>
+            <span class="value neg">🪙 {{ profile.stats.poker?.highestCoinLose || 0 }}</span>
           </div>
         </div>
       </div>

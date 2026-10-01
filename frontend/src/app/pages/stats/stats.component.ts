@@ -85,10 +85,27 @@ export class StatsComponent {
     return `${spRate}% / ${dRate}%`;
   }
 
-  selectedTab: 'mahjong' | 'lami' | 'dizhu' = 'mahjong';
+  selectedTab: 'mahjong' | 'lami' | 'dizhu' | 'poker' = 'mahjong';
 
-  setTab(tab: 'mahjong' | 'lami' | 'dizhu') {
+  setTab(tab: 'mahjong' | 'lami' | 'dizhu' | 'poker') {
     this.selectedTab = tab;
+  }
+
+  getPokerHandDisplay(hand?: string): string {
+    if (!hand) return '-';
+    const handMap: Record<string, string> = {
+      'Royal Flush': '皇家同花顺 (Royal Flush)',
+      'Straight Flush': '同花顺 (Straight Flush)',
+      'Four of a Kind': '四条 (Four of a Kind)',
+      'Full House': '葫芦 (Full House)',
+      'Flush': '同花 (Flush)',
+      'Straight': '顺子 (Straight)',
+      'Three of a Kind': '三条 (Three of a Kind)',
+      'Two Pair': '两对 (Two Pair)',
+      'One Pair': '一对 (One Pair)',
+      'High Card': '高牌 (High Card)'
+    };
+    return handMap[hand] || hand;
   }
 
   getWinRateValue(wins: number, played: number): number {

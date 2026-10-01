@@ -236,9 +236,7 @@ export class PlaygroundComponent {
     this.isCalculating.set(true);
     
     try {
-      const backendUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000' 
-        : 'https://m3p-mahjong.onrender.com';
+      const backendUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
         
       const response = await fetch(`${backendUrl}/api/score`, {
         method: 'POST',

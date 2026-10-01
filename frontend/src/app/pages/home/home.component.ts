@@ -62,6 +62,10 @@ export class HomeComponent {
     this.router.navigate(['/dizhu-lobby']);
   }
 
+  navigateToPokerLobby() {
+    this.router.navigate(['/poker-lobby']);
+  }
+
   t(key: string): string {
     const lang = this.gameService.currentLanguage();
     return TRANSLATIONS[lang as keyof typeof TRANSLATIONS]?.[key] || key;

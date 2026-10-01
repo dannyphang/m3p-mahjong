@@ -93,6 +93,17 @@ export interface UserProfile {
       quadTwoCount?: number;
       bombPlayedCount?: number;
     };
+    poker?: {
+      totalGamesPlayed: number;
+      totalWins: number;
+      totalCoinsGained?: number;
+      totalCoinsLost?: number;
+      highestCoinWin?: number;
+      highestCoinLose?: number;
+      currentWinStreak?: number;
+      highestWinStreak?: number;
+      bestHand?: string;
+    };
   };
 }
 

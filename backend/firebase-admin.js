@@ -8,34 +8,48 @@ const path = require('path');
 let app;
 const serviceAccountPath = path.join(__dirname, 'service-account.json');
 
-if (process.env.FIREBASE_PRIVATE_KEY) {
-  // Use .env variables if available
-  app = initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // Replace literal \n in string with actual newlines
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    })
-  });
-} else if (fs.existsSync(serviceAccountPath)) {
-  // Use local service account key if it exists
-  const serviceAccount = require(serviceAccountPath);
-  app = initializeApp({
-    credential: cert(serviceAccount)
-  });
-} else {
-  // Use Application Default Credentials (e.g. on Render)
-  app = initializeApp({
-    projectId: 'm3p-mahjong-auth-5678'
-  });
+try {
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const hasValidKey = privateKey && typeof privateKey === 'string' && privateKey.includes('-----BEGIN PRIVATE KEY-----');
+  if (hasValidKey && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL) {
+    // Use .env variables if available
+    app = initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // Replace literal \n in string with actual newlines
+        privateKey: privateKey.replace(/\\n/g, '\n'),
+      })
+    });
+  } else if (fs.existsSync(serviceAccountPath)) {
+    // Use local service account key if it exists
+    const serviceAccount = require(serviceAccountPath);
+    app = initializeApp({
+      credential: cert(serviceAccount)
+    });
+  } else {
+    // Use Application Default Credentials (e.g. on Render)
+    app = initializeApp({
+      projectId: 'm3p-mahjong-auth-5678'
+    });
+  }
+} catch (err) {
+  console.warn('[AI Studio] Firebase Admin app init notice:', err.message);
 }
 
-const db = getFirestore(app);
-const auth = getAuth(app);
+let db = null;
+let auth = null;
+try {
+  if (app) {
+    db = getFirestore(app);
+    auth = getAuth(app);
+  }
+} catch (err) {
+  console.warn('[AI Studio] Firestore/Auth init notice:', err.message);
+}
 
 async function updatePlayerStats(uid, gameType, netCoins, isWin, extraStats = {}) {
-  if (!uid) return;
+  if (!uid || !db) return;
   try {
     const userRef = db.collection('users').doc(uid);
     
@@ -93,6 +107,8 @@ async function updatePlayerStats(uid, gameType, netCoins, isWin, extraStats = {}
            } else {
              updates[`stats.${type}.${key}`] = prevVal + val;
            }
+        } else if (typeof val === 'string') {
+           updates[`stats.${type}.${key}`] = val;
         }
       }
 
@@ -104,7 +120,7 @@ async function updatePlayerStats(uid, gameType, netCoins, isWin, extraStats = {}
 }
 
 async function getPlayerCoins(uid) {
-  if (!uid) return null;
+  if (!uid || !db) return null;
   try {
     const userRef = db.collection('users').doc(uid);
     const doc = await userRef.get();
